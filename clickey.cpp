@@ -31,7 +31,8 @@ Clickey::Clickey(Graphic *g1, Graphic *g2) {
 
 Clickey::Clickey(int x, int y,
 	const char *l, color ct, color cl, color cb, color cd) {
-  Clickey();
+  flags |= SPRITE_ISCONTROL;
+  state = 0;
   Create(x, y, l, ct, cl, cb, cd);
   }
 

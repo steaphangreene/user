@@ -11,7 +11,8 @@ Stickey::Stickey() {
 
 Stickey::Stickey(int x, int y,
 	const char *l, color ct, color cl, color cb, color cd) {
-  Stickey();
+  flags |= SPRITE_ISCONTROL;
+  state = 0;
   Create(x, y, l, ct, cl, cb, cd);
   }
 
@@ -19,11 +20,11 @@ Stickey::~Stickey() {
   }
 
 void Stickey::Click(int b) {
-  printf("Click the Stickey!\n");
+  if(state) Clickey::UnClick(b);
+  else Clickey::Click(b);
   }
 
 void Stickey::UnClick(int b) {
-  printf("UnClick the Stickey!\n");
   }
 
 void Stickey::RemappedKeyPressed() {
