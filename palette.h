@@ -2,7 +2,7 @@
 // palette.h
 // Basic Palette class, Pre ALPHA non-distribution version
 //
-// -By Insomnia (Steaphan Greene)      (Copyright 1997-1998 Steaphan Greene)
+// -By Insomnia (Steaphan Greene)      (Copyright 1997-1999 Steaphan Greene)
 //                   (insomnia@core.binghamton.edu)
 //      No waranty stated or implied, I am not responsible for any damage
 // caused directly or indirectly by this software.
@@ -35,15 +35,15 @@ class Palette  {
   cval GetBlueEntry(cval el) const;
   TrueCol GetTrueCol(cval el);
   void SetTrueCol(cval el, TrueCol tc);
-  void GetPalette(const char *fn);
+  void Set(const char *fn);
   cval GetClosestColor(cval r, cval g, cval b);
   cval colors[768];
   int coldec;
 
   private:
-  void GetMSPalette(const char *fn);
-  void GetPSPPalette(const char *fn);
-  void GetBMPPalette(const char *fn);
+  void SetMS(const char *fn);
+  void SetPSP(const char *fn);
+  void SetBMP(const char *fn);
   TrueCol tcols[256];
   };
 

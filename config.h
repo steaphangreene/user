@@ -11,20 +11,31 @@
 * Operating System Defines for Graphics *
 ****************************************/
 
-#define X_WINDOWS
-#define XF86_DGA // Must also define X_WINDOWS (above)
+#ifdef __DJGPP__
+	#define DOS
+#else
+	#define X_WINDOWS
+	#define XF86_DGA // Must also define X_WINDOWS (above)
 
-//#define SVGALIB
-
-//#define DOS
+	//#define SVGALIB
+#endif
 
 /*************************************
 * Operating System Defines for Sound *
 *************************************/
 
-#define OSS_SOUND
+#ifdef __DJGPP__
+	#define DOS_SOUND
+#else
+	#define OSS_SOUND
+#endif
 
-//#define DOS_SOUND
+/*************************************
+* Operating System Defines for Input *
+*************************************/
+
+#define KB_BUF_SIZE	128
+#define KEY_MAX		65536
 
 #endif
 

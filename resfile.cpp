@@ -231,15 +231,12 @@ Graphic *ResFile::GrabGraphic()  {
 
 Palette *ResFile::GrabPalette()  {
   Palette *ret;
-  int ctr;
   ret = new Palette;
   if(ret == NULL)  {
     Exit(1, "Out of Memory for Palette!\r\n");
     }
   ret->coldec = ReadInt(); 
-  for(ctr=0; ctr<((long)ret->coldec)*3; ctr++)  {
-    ret->colors[ctr] = ReadChar();
-    }
+  Read(ret->colors, ((long)ret->coldec)*3);
   return ret;
   }
 
@@ -248,10 +245,12 @@ Sound *ResFile::GrabSound()  {
   if(ret == NULL)  {
     Exit(1, "Out of Memory for Sound Sample!\r\n");
     }
-  Read(&ret->len, sizeof(unsigned long));
-  Read(&ret->freq, sizeof(int));
-//  ret->wav_data = new unsigned char[ret->len];
-//  Read(ret->wav_data, ret->len);
+  ret->len = ReadInt();
+  ret->freq = ReadInt();
+  ret->bits = ReadChar();
+  ret->stereo = ReadChar();
+  ret->data.uc = new unsigned char[ret->len];
+  Read(ret->data.uc, ret->len);
   return ret;
   }
 
@@ -364,12 +363,9 @@ void NewResFile::Add(const Palette *in)  {
     Write(NULL_TAG, TAG_SIZE);
     return;
     }
-  int ctr;
   Write(PALETTE_TAG, TAG_SIZE);
   WriteInt(in->coldec);
-  for(ctr=0; ctr<((long)in->coldec)*3; ++ctr)  {
-    WriteChar(in->colors[ctr]);
-    }
+  Write(in->colors, ((long)in->coldec)*3);
   }
 
 void NewResFile::Add(const Sound *in)  {
@@ -378,9 +374,11 @@ void NewResFile::Add(const Sound *in)  {
     return;
     }
   Write(SOUND_TAG, TAG_SIZE);
-  Write(&in->len, sizeof(unsigned long));
-  Write(&in->freq, sizeof(int));
-//  Write(in->wav_data, in->len);
+  WriteInt(in->len);
+  WriteInt(in->freq);
+  WriteChar(in->bits);
+  WriteChar(in->stereo);
+  Write(in->data.uc, in->len);
   } 
 
 NewResFile::~NewResFile()  {

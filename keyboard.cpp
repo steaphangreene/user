@@ -1,23 +1,67 @@
+#include "config.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <ctype.h>
 
-#include "config.h"
+#ifdef DOS
+#include <pc.h>
+#include <bios.h>
+#include <sys/segments.h>
+
+#include "asm_crap.h"
+
+#define KEYBOARD_INT 9
+#endif
+
 #include "screen.h"
 #include "keyboard.h"
 
 extern Screen *__Da_Screen;
+extern Keyboard *__Da_Keyboard;
+
+#ifdef DOS
+const char *__Char_Lookup = "\0\E1234567890-=\b\tqwertyuiop[]\n\0asdfghjkl;'`\0\\zxcvbnm,./\0*\0 \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0-\0\0+\0\0\0\0\b\0\0";
+const char *__Shift_Char_Lookup = "\0\E!@#$%^&*()_+\b\tQWERTYUIOP{}\n\0ASDFGHJKL:\"~\0\\ZXCVBNM<>?\0*\0 \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0-\0\0+\0\0\0\0\b\0\0";
+#endif
 
 Keyboard::Keyboard() {
   if(__Da_Screen == NULL) Exit(-1, "Must create Screen before Keyboard!\n");
-  memset(key_stat, 0, 65536);
+  memset(KeyRemap, 0, KB_BUF_SIZE*(sizeof(Sprite *)));
+  memset(KeyStats, 0, KB_BUF_SIZE);
+  memset((char *)key_stat, 0, KB_BUF_SIZE);
+
+#ifdef DOS
+  handler_area.handle = (unsigned long)_my_cs();
+  handler_area.size = (unsigned long)dummy_marker_function
+        - (long)keyboard_handler;
+  handler_area.address = (unsigned long)keyboard_handler;
+
+  __dpmi_get_protected_mode_interrupt_vector(KEYBOARD_INT, &old_handler);
+  __dpmi_lock_linear_region(&handler_area);
+
+  handler_seginfo.selector = _my_cs();
+  handler_seginfo.offset32 = (long)keyboard_handler;
+  __dpmi_set_protected_mode_interrupt_vector(KEYBOARD_INT, &handler_seginfo);
+#endif
+
   crit = 0;
+  __Da_Keyboard = this;
+  }
+
+Keyboard::~Keyboard() {
+  __Da_Keyboard = NULL;
+#ifdef DOS
+  __dpmi_set_protected_mode_interrupt_vector(KEYBOARD_INT, &old_handler);
+  __dpmi_unlock_linear_region(&handler_area);
+#endif
   }
 
 void Keyboard::Update() {
   if(crit) return;
+#ifdef X_WINDOWS
   XEvent e;
   XFlush(__Da_Screen->_Xdisplay);
   while(XCheckMaskEvent(__Da_Screen->_Xdisplay,
@@ -28,6 +72,7 @@ void Keyboard::Update() {
 	__Da_Screen->_Xdisplay, e.xkey.keycode, 0)] = 0;
     XFlush(__Da_Screen->_Xdisplay);
     }
+#endif
   }
 
 int Keyboard::IsPressed(int k) {
@@ -52,7 +97,7 @@ int Keyboard::GetAKey(int t) {
   if(__Da_Screen == NULL)
     while(t>0&&ret==0) { t-=100; usleep(100000); ret = GetAKey(); }
   else  {
-    long dest, udest;
+    time_t dest; long udest;
     timeval tv;
     gettimeofday(&tv, NULL);
     dest = t/1000;
@@ -60,7 +105,7 @@ int Keyboard::GetAKey(int t) {
     dest += tv.tv_sec;
     udest += tv.tv_usec;
     if(udest > 1000000) { udest -= 1000000; dest += 1; }
-    while((tv.tv_sec<dest || tv.tv_usec<udest) && ret==0) {
+    while((tv.tv_sec<dest ||(tv.tv_sec==dest && tv.tv_usec<udest)) && ret==0) {
       __Da_Screen->RefreshFast(); ret = GetAKey(); gettimeofday(&tv, NULL);
       }
     }
@@ -85,7 +130,7 @@ char Keyboard::GetAChar(int t) {
   if(__Da_Screen == NULL)
     while(t>0&&ret==0) { t-=100; usleep(100000); ret = GetAChar(); }
   else  {
-    long dest, udest;
+    time_t dest; long udest;
     timeval tv;
     gettimeofday(&tv, NULL);
     dest = t/1000;
@@ -93,7 +138,7 @@ char Keyboard::GetAChar(int t) {
     dest += tv.tv_sec;
     udest += tv.tv_usec;
     if(udest > 1000000) { udest -= 1000000; dest += 1; }
-    while((tv.tv_sec<dest || tv.tv_usec<udest) && ret==0) {
+    while((tv.tv_sec<dest ||(tv.tv_sec==dest && tv.tv_usec<udest)) && ret==0) {
       __Da_Screen->RefreshFast(); ret = GetAChar(); gettimeofday(&tv, NULL);
       }
     }
@@ -102,10 +147,32 @@ char Keyboard::GetAChar(int t) {
   }
 
 int Keyboard::GetAKey() {
+  int ret=0;
+#ifdef X_WINDOWS
   XEvent e;
   XFlush(__Da_Screen->_Xdisplay);
-  if(!XCheckMaskEvent(__Da_Screen->_Xdisplay, KeyPressMask, &e)) return 0;
-  return XKeycodeToKeysym(__Da_Screen->_Xdisplay, e.xkey.keycode, 0);
+  while(ret == 0 && XCheckMaskEvent(__Da_Screen->_Xdisplay,
+	KeyPressMask|KeyReleaseMask, &e)) {
+    if(e.type == KeyPress)  {
+      ret = XKeycodeToKeysym(__Da_Screen->_Xdisplay, e.xkey.keycode, 0);
+      key_stat[ret] = 1;
+      }
+    else  {
+      key_stat[XKeycodeToKeysym(__Da_Screen->_Xdisplay, e.xkey.keycode, 0)]=0;
+      }
+    }
+#endif
+#ifdef DOS
+  if(buf_ind>0)  {
+    unsigned int ctr;
+    ret = keyboard_buf[0];
+    for(ctr=0; ctr<buf_ind; ctr++)  {
+      keyboard_buf[ctr] = keyboard_buf[ctr+1];
+      }
+    --buf_ind;
+    }
+#endif
+  return ret;
   }
 
 
@@ -118,48 +185,140 @@ char Keyboard::KeyToChar(int key) {
   int ret;
   switch(key)  {
     case(0): return 0; break;
-    case(SCAN_INSERT):  ret = KEY_INSERT;  break;
-    case(SCAN_DEL):  ret = KEY_DELETE;  break;
-    case(SCAN_BACKSP):  ret = KEY_BACKSPACE;  break;
-    case(SCAN_UP):  ret = KEY_UP;  break;
-    case(SCAN_DOWN):  ret = KEY_DOWN;  break;
-    case(SCAN_LEFT):  ret = KEY_LEFT;  break;
-    case(SCAN_RIGHT):  ret = KEY_RIGHT;  break;
-    case(SCAN_ESC):  ret = KEY_ESCAPE;  break;
-    case(SCAN_END):  ret = KEY_END;  break;
-    case(SCAN_HOME):  ret = KEY_HOME;  break;
-    case(SCAN_PGUP):  ret = KEY_PGUP;  break;
-    case(SCAN_PGDN):  ret = KEY_PGDN;  break;
+    case(KEY_INSERT):  ret = CHAR_INSERT;  break;
+    case(KEY_DEL):  ret = CHAR_DELETE;  break;
+    case(KEY_BACKSP):  ret = CHAR_BACKSPACE;  break;
+    case(KEY_UP):  ret = CHAR_UP;  break;
+    case(KEY_DOWN):  ret = CHAR_DOWN;  break;
+    case(KEY_LEFT):  ret = CHAR_LEFT;  break;
+    case(KEY_RIGHT):  ret = CHAR_RIGHT;  break;
+    case(KEY_ESC):  ret = CHAR_ESCAPE;  break;
+    case(KEY_END):  ret = CHAR_END;  break;
+    case(KEY_HOME):  ret = CHAR_HOME;  break;
+    case(KEY_PGUP):  ret = CHAR_PGUP;  break;
+    case(KEY_PGDN):  ret = CHAR_PGDN;  break;
 #ifdef DOS
-    default:  ret=__Char_Lookup[which];  break;
+    default:  ret=__Char_Lookup[key];  break;
 #endif
 #ifdef X_WINDOWS
-    case(SCAN_RETURN):
-    case(SCAN_ENTER):  ret = '\n'; break;
-    case(SCAN_TAB):  ret = '\t'; break;
-    case(SCAN_SPACE):  ret = ' '; break;
-    case(SCAN_QUOTE):  ret = '\''; break;
-    case(SCAN_BQUOTE):  ret = '`'; break;
-    case(SCAN_DOT):  ret = '.'; break;
-    case(SCAN_COMA):  ret = ','; break;
-    case(SCAN_BSLASH):  ret = '\\'; break;
-    case(SCAN_SLASH):  ret = '/'; break;
-    case(SCAN_EQUALS):  ret = '='; break;
-    case(SCAN_MINUS):  ret = '-'; break;
-    case(SCAN_CAPS):
-    case(SCAN_LCTRL):
-    case(SCAN_RCTRL):
-    case(SCAN_RSHIFT):
-    case(SCAN_LSHIFT):
-    case(SCAN_LALT):
-    case(SCAN_RALT):  ret = 0; break;
+    case(KEY_RETURN):
+    case(KEY_ENTER):  ret = '\n'; break;
+    case(KEY_TAB):  ret = '\t'; break;
+    case(KEY_SPACE):  ret = ' '; break;
+    case(KEY_QUOTE):  ret = '\''; break;
+    case(KEY_BQUOTE):  ret = '`'; break;
+    case(KEY_DOT):  ret = '.'; break;
+    case(KEY_COMA):  ret = ','; break;
+    case(KEY_BSLASH):  ret = '\\'; break;
+    case(KEY_SLASH):  ret = '/'; break;
+    case(KEY_EQUALS):  ret = '='; break;
+    case(KEY_MINUS):  ret = '-'; break;
+    case(KEY_CAPS):
+    case(KEY_LCTRL):
+    case(KEY_RCTRL):
+    case(KEY_RSHIFT):
+    case(KEY_LSHIFT):
+    case(KEY_LALT):
+    case(KEY_RALT):  ret = 0; break;
     default:  {
       ret = XKeysymToString(key)[0];
-      if(key_stat[SCAN_LSHIFT]	|| key_stat[SCAN_RSHIFT])  {
+      if(key_stat[KEY_LSHIFT]  || key_stat[KEY_RSHIFT])  {
 	ret = toupper(ret);
 	}
       }break;
-    }
 #endif
+    }
   return ret;
   }
+
+void Keyboard::DisableQueue()  {
+#ifdef DOS
+  buf_ind=0;
+#endif
+  queue_keys=0;
+  }
+
+void Keyboard::EnableQueue()  {
+  queue_keys=1;
+  }
+
+#ifdef DOS
+
+volatile void Keyboard::keyboard_handler()  {
+  START_INTERRUPT();
+
+  __asm__ __volatile__ (
+	"inb     $0x60, %al
+	xorl	%edx, %edx
+	movb    %al, %dl
+	cmpb	$0xE1, %al
+	jne	not_ext2
+	movb	$2, %cl
+	movb	%cl, __8Keyboard$in_ext
+	jmp	skip_to_end
+not_ext2:
+	cmpb	$0xE0, %al
+	jne	not_ext
+	movb	$1, %cl
+	movb	%cl, __8Keyboard$in_ext
+	jmp	skip_to_end
+not_ext:
+	andl    $0x7f, %edx
+	xorb	%cl, %cl
+	cmpb	%cl, __8Keyboard$in_ext
+	je	not_was_ext
+	decb	__8Keyboard$in_ext
+	movb	$0, %cl
+	cmpb	%cl, __8Keyboard$in_ext
+	jne	skip_to_end
+	orl	$0x80, %edx
+not_was_ext:
+	movb	$170, %cl
+	cmpb	%cl, %dl
+	je	skip_to_end
+	movb	$198, %cl
+	cmpb	%cl, %dl
+	jne	done_remaping
+	movb	$197, %dl
+done_remaping:
+	movb    __8Keyboard$key_stat(%edx), %ch
+	testb   $0x80, %al
+	setz    __8Keyboard$key_stat(%edx)
+	movb    __8Keyboard$key_stat(%edx), %cl
+	cmpb	%cl, %ch
+	je	skip_to_end
+	cmpb	$0, %cl
+	je	skip_to_end
+	movb	%dl, %al
+	movb	%cl, %ah
+	xorb	$0x1, %ah
+	movb	__8Keyboard$queue_keys, %cl
+	cmpb	$0, %cl
+	je	skip_to_end
+	movl	__8Keyboard$buf_ind, %edx
+	addl	%edx, %edx
+	movw    %ax, __8Keyboard$keyboard_buf(%edx)
+	incl	%edx
+	movl	%edx, __8Keyboard$buf_ind
+skip_to_end:
+"	);
+
+  ACKNOWLEDGE_KEYBOARD_INTERRUPT();
+  END_INTERRUPT();
+  }
+
+volatile unsigned short Keyboard::ModKey[10];
+
+#endif
+volatile char Keyboard::key_stat[KEY_MAX];
+volatile char Keyboard::queue_keys = 1;
+#ifdef DOS
+
+volatile unsigned short Keyboard::keyboard_buf[KB_BUF_SIZE];
+volatile unsigned short Keyboard::modkey_buf[KB_BUF_SIZE];
+volatile unsigned long Keyboard::buf_ind = 0;
+volatile char Keyboard::in_ext = 0;
+
+volatile void Keyboard::dummy_marker_function()  {}
+#endif
+

@@ -1,7 +1,10 @@
-CC:=	gcc -O3 -s `User-CFlags`
-OBJS:=	screen.o engine.o graphic.o palette.o sound.o speaker.o sprite.o input.o keyboard.o mouse.o resfile.o bag.o
+CFLAGS:=$(shell U2-CFlgs) -Wall
+LIBS:=	$(shell U2-Libs)
+CC:=	gcc -O3 -s $(CFLAGS)
+OBJS:=	screen.o engine.o graphic.o palette.o sound.o speaker.o sprite.o \
+	input.o keyboard.o mouse.o resfile.o bag.o control.o \
+	movable.o clickey.o stickey.o
 ALL:=	*.h Makefile
-LIBS:=	`User-Libs`
 CCC:=	$(CC)
 TSTR:=  $(shell date +"%Y%m%d%H%M")
 
@@ -22,6 +25,7 @@ mtest.o:	mtest.cpp $(ALL)
 
 libuser.a:	$(OBJS) $(ALL)
 	ar rcs libuser.a $(OBJS)
+	U2-Inst
 
 screen.o:	screen.cpp $(ALL)
 	$(CC) -c screen.cpp
@@ -39,7 +43,7 @@ sound.o:	sound.cpp $(ALL)
 	$(CC) -c sound.cpp
 
 speaker.o:	speaker.cpp $(ALL)
-	$(CC) -c speaker.cpp
+	$(CC) -fomit-frame-pointer -c speaker.cpp
 
 sprite.o:	sprite.cpp $(ALL)
 	$(CC) -c sprite.cpp
@@ -48,7 +52,7 @@ input.o:	input.cpp $(ALL)
 	$(CC) -c input.cpp
 
 keyboard.o:	keyboard.cpp $(ALL)
-	$(CC) -c keyboard.cpp
+	$(CC) -fomit-frame-pointer -c keyboard.cpp
 
 mouse.o:	mouse.cpp $(ALL)
 	$(CC) -c mouse.cpp
@@ -59,7 +63,19 @@ bag.o:	bag.cpp $(ALL)
 resfile.o:	resfile.cpp $(ALL)
 	$(CC) -c resfile.cpp
 
+control.o:	control.cpp $(ALL)
+	$(CC) -c control.cpp
+
+movable.o:	movable.cpp $(ALL)
+	$(CC) -c movable.cpp
+
+clickey.o:	clickey.cpp $(ALL)
+	$(CC) -c clickey.cpp
+
+stickey.o:	stickey.cpp $(ALL)
+	$(CC) -c stickey.cpp
+
 tar:	screen.h
 	cd .. ; tar czhvf ~/c/archive/user-2.0-pre$(TSTR).tar.gz \
 	user/*.cpp user/*.[hc] user/Makefile user/*.bmp user/*.wav user.h \
-	user/User-*
+	user/U2-*

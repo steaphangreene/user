@@ -1,30 +1,61 @@
+#include "config.h"
+
 #include <stdio.h>
 #include <string.h>
 
+#ifdef DOS
+#include <pc.h>
+#include <bios.h>
+#include <dpmi.h>
+#include <sys/segments.h>
+#endif
+
+#include "list.h"
 #include "mouse.h"
 #include "engine.h"
 #include "screen.h"
 #include "sprite.h"
 #include "graphic.h"
+#include "control.h"
 
 extern Screen *__Da_Screen;
 extern Mouse *__Da_Mouse;
 
 Mouse::Mouse() {
   cvis = 1;
+  crit = 0;
   cursor = NULL;
+  curcont = NULL;
   mtype = MOUSE_NONE;
   xpos = -666; ypos = -666;
   if(__Da_Screen == NULL) Exit(-1, "Need to create Screen before Mouse!\n");
   memset(butt_stat, 0, 8);
   switch(__Da_Screen->VideoType())  {
+    #ifdef DOS
+    case(VIDEO_DOS): {
+      mtype=MOUSE_DOS;
+
+      __dpmi_regs regs;
+      regs.x.ax = 0x0000;
+      __dpmi_int(0x33, &regs);
+      if(regs.x.ax != 0xFFFF)  {
+	Exit(1, "Mouse Driver Not installed!\n");
+	}
+      num_butt = regs.x.bx;
+      }break;
+    #endif
     #ifdef X_WINDOWS
-    case(VIDEO_XWINDOWS): { mtype=MOUSE_XWINDOWS; } break;
+    case(VIDEO_XWINDOWS): {
+      mtype=MOUSE_XWINDOWS;
+      }break;
     #ifdef XF86_DGA
-    case(VIDEO_XF86DGA): { mtype=MOUSE_XF86DGA; } break;
+    case(VIDEO_XF86DGA): {
+      mtype=MOUSE_XF86DGA;
+      }break;
     #endif
     #endif
     }
+  SetRange(0, 0, __Da_Screen->XSize(), __Da_Screen->YSize());
   __Da_Mouse = this;
   }
 
@@ -43,31 +74,55 @@ int Mouse::YPos() { Update(); return ypos; }
 
 void Mouse::Update() {
   if(crit) return;
-  XEvent e;
-  XFlush(__Da_Screen->_Xdisplay);
-  while(XCheckMaskEvent(__Da_Screen->_Xdisplay,
-	PointerMotionMask|ButtonPressMask|ButtonReleaseMask, &e))  {
-    if(e.type == ButtonPress) {
-      butt_stat[e.xbutton.button] = 1;
-//      printf("Press %d\n", e.xbutton.button);
-      }
-    else if(e.type == ButtonRelease) {
-      butt_stat[e.xbutton.button] = 0;
-//      printf("Release %d\n", e.xbutton.button);
-      }
-    else  {
-      xpos = e.xmotion.x; ypos = e.xmotion.y;
-      }
-    XFlush(__Da_Screen->_Xdisplay);
-    }
-  if(cvis && cursor != NULL && xpos != -666 && ypos != -666)  {
-    cursor->Move(xpos, ypos);
-//    printf("Moved to (%d, %d)\n", xpos, ypos);
+  switch(mtype)  {
+#ifdef DOS
+    case(MOUSE_DOS): {
+      __dpmi_regs regs;
+      regs.x.ax = 0x0003;
+      __dpmi_int(0x33, &regs);
+      xpos = regs.x.cx/2;
+      ypos = regs.x.dx;
+      butt_stat[0] = (regs.x.bx & 1);
+      butt_stat[2] = (regs.x.bx & 2)>>1;
+      if(num_butt > 2)
+	butt_stat[1] = (regs.x.bx & 4)>>2;
+      else
+	butt_stat[1] = (butt_stat[0] && butt_stat[2]);
+      }break;
+#endif
+
+#ifdef X_WINDOWS
+#ifdef XF86_DGA
+    case(MOUSE_XF86DGA):
+#endif
+    case(MOUSE_XWINDOWS): {
+      int xp=xpos, yp=ypos;
+      XEvent e;
+      XFlush(__Da_Screen->_Xdisplay);
+      while(XCheckMaskEvent(__Da_Screen->_Xdisplay,
+		PointerMotionMask|ButtonPressMask|ButtonReleaseMask, &e))  {
+	if(e.type == ButtonPress) {
+	  xp=e.xbutton.x; yp=e.xbutton.y;
+	  Pressed(e.xbutton.button, e.xbutton.x, e.xbutton.y);
+	  }
+	else if(e.type == ButtonRelease) {
+	  xp=e.xbutton.x; yp=e.xbutton.y;
+	  Released(e.xbutton.button, e.xbutton.x, e.xbutton.y);
+	  }
+	else  {
+	  xp=e.xmotion.x; yp=e.xmotion.y;
+	  }
+	XFlush(__Da_Screen->_Xdisplay);
+	}
+      Moved(xp, yp);
+      }break;
+#endif
     }
   }
 
 void Mouse::SetCursor(Graphic &g) {
   Debug("User:Mouse:SetCursor() Begin");
+#ifdef X_WINDOWS
   if(mtype == MOUSE_XWINDOWS)  {
     XColor fgc, bgc;
     Pixmap fg, msk;
@@ -82,6 +137,7 @@ void Mouse::SetCursor(Graphic &g) {
       XCreatePixmapCursor(__Da_Screen->_Xdisplay, fg, msk, &fgc, &bgc, 1, 1));
 
     }
+#endif
   if(cursor != NULL) delete cursor;
   Debug("User:Mouse:SetCursor() Middle");
   cursor = new Sprite(g);
@@ -96,5 +152,54 @@ void Mouse::ShowCursor() {
 void Mouse::HideCursor() {
   if(cvis == 0 || cursor == NULL) return;
   cvis = 0;  cursor->Erase();
+  }
+
+void Mouse::SetRange(int x1, int y1, int x2, int y2) {
+#ifdef DOS
+  __dpmi_regs regs;
+  regs.x.ax = 0x0007;
+  regs.x.cx = x1*2;
+  regs.x.dx = x2*2;
+  __dpmi_int(0x33, &regs);
+  regs.x.ax = 0x0008;
+  regs.x.cx = y1;
+  regs.x.dx = y2;
+  __dpmi_int(0x33, &regs);
+#endif  
+  }
+
+void Mouse::Pressed(int b, int x, int y) {
+  butt_stat[b] = 1;
+  IntList clk = __Da_Screen->CollideRectangle(x, y, 1, 1);
+  if(clk.Size() > 0)  {
+    int ctr; Sprite *s;
+    for(ctr=0; ctr<clk.Size(); ctr++)  {
+      s = __Da_Screen->GetSpriteByNumber(clk[ctr]);
+      if(s!=NULL && s->IsControl())  {
+	curcont = (Control *)s;
+	contx = x; conty = y; contb = b;
+	curcont->Click(b);
+	return;
+	}
+      }
+    }
+  }
+
+void Mouse::Released(int b, int x, int y) {
+  butt_stat[b] = 0;
+  if(curcont != NULL) {
+    curcont->UnClick(b);
+    curcont = NULL;
+    }
+  }
+
+void Mouse::Moved(int x, int y) {
+  if(x==xpos && y==ypos) return;
+  xpos = x; ypos = y;
+  if(curcont != NULL) curcont->Drag(contb, x-contx, y-conty);
+  contx = x; conty = y;
+  if(cvis && cursor != NULL && xpos != -666 && ypos != -666)  {
+    cursor->Move(xpos, ypos);
+    }
   }
 

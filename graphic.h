@@ -51,7 +51,7 @@ class Graphic {
   Graphic RotatedCounterClock();
   Graphic RotatedFull();
   Graphic Scaled(double);
-  Graphic Scaled(unsigned, unsigned);
+  Graphic Scaled(int, int);
   Graphic Partial(int, int, int, int);
   void PaletteConvert(const Palette &, const Palette &);
   void DepthConvert(int, const Palette &);
@@ -64,7 +64,7 @@ class Graphic {
   void DefSize(int, int, int);
   void DefLin(char*);
   void DefLinH(char*);
-  unsigned xsize, ysize, zsize, depth;
+  long xsize, ysize, zsize, depth;
   int xcenter, ycenter, zcenter;
   unsigned char ** image;
   unsigned char *** image3d;
@@ -74,7 +74,7 @@ class Graphic {
   void Init(char *);
   void Init24(char *, Palette &);
   int linedef;
-  unsigned xdef, ydef, zdef;
+  long xdef, ydef, zdef;
   };
 
 #endif

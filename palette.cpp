@@ -2,7 +2,7 @@
 // palette.cpp
 // Basic Palette class, Pre ALPHA non-distribution version
 //
-// -By Insomnia (Steaphan Greene)      (Copyright 1997-1998 Steaphan Greene)
+// -By Insomnia (Steaphan Greene)      (Copyright 1997-1999 Steaphan Greene)
 //                   (insomnia@core.binghamton.edu)
 //      No waranty stated or implied, I am not responsible for any damage
 // caused directly or indirectly by this software.
@@ -27,7 +27,7 @@
 #include <io.h>
 #endif
 
-void Palette::GetPalette(const char *fn)  {
+void Palette::Set(const char *fn)  {
   FILE *palfl = fopen(fn, "rb");
   if(palfl==NULL)  {
     printf("Palette File \"%s\" Not Found!\n", fn);
@@ -36,16 +36,16 @@ void Palette::GetPalette(const char *fn)  {
   char header[24];
   read(fileno(palfl), header, 4);
   fclose(palfl);
-  if(!memcmp(header, "JASC", 4))  GetPSPPalette(fn);
-  else if(!memcmp(header, "BM", 2))  GetBMPPalette(fn);
-  else if(!memcmp(header, "RIFF", 4))  GetMSPalette(fn);
+  if(!memcmp(header, "JASC", 4))  SetPSP(fn);
+  else if(!memcmp(header, "BM", 2))  SetBMP(fn);
+  else if(!memcmp(header, "RIFF", 4))  SetMS(fn);
   else  {
     printf("No palette in \"%s\"\n", fn);
     exit(1);
     }
   }
 
-void Palette::GetMSPalette(const char *fn)  {
+void Palette::SetMS(const char *fn)  {
   int r, g, b, ctr, c;
   FILE *palfl = fopen(fn, "rb");
   if(palfl==NULL)  {
@@ -65,7 +65,7 @@ void Palette::GetMSPalette(const char *fn)  {
   }
 
 
-void Palette::GetPSPPalette(const char *fn)  {
+void Palette::SetPSP(const char *fn)  {
   int r, g, b, ctr;
   FILE *palfl = fopen(fn, "r");
   if(palfl==NULL)  {
@@ -81,7 +81,7 @@ void Palette::GetPSPPalette(const char *fn)  {
   coldec = 256;
   }
 
-void Palette::GetBMPPalette(const char *fn)  {
+void Palette::SetBMP(const char *fn)  {
  int coldec;
  FILE *bmp;
  unsigned size2, width, height;
@@ -118,7 +118,7 @@ Palette::Palette()  {
   }
 
 Palette::Palette(const char *fn)  {
-  GetPSPPalette(fn);
+  Set(fn);
   }
 
 Palette::Palette(cval *in)  {

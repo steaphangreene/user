@@ -4,6 +4,9 @@
 #include "config.h"
 #include "mfmt.h"
 #include "engine.h"
+#ifdef DOS
+#include "vesa.h"
+#endif
 
 #define MAX_SPRITES	4096
 
@@ -13,7 +16,10 @@
 #define VIDEO_SVGALIB	3
 #define VIDEO_FB	4
 #define VIDEO_DOS	5
-#define VIDEO_DIRECTX	6
+#define VIDEO_VESA	6
+#define VIDEO_VBE2	7
+#define VIDEO_VBE2L	8
+#define VIDEO_DIRECTX	9
 
 #ifdef X_WINDOWS
 #define Screen __XScreen
@@ -50,8 +56,13 @@ class Screen  {
   void RefreshFast();
   void RefreshFull();
   void Refresh();
+  void FullScreenModeOn();
+  void FullScreenModeOff();
+  void FullScreenModeToggle();
+
   void SetPaletteEntry(int, int, int, int);
-  void GetPalette(const char *);
+  void SetPalette(const char *);
+  void SetPalette(Palette &);
   void FadeIn();
   void FadeOut();
   void FadeIn(int);
@@ -59,16 +70,30 @@ class Screen  {
   void Clear();
   void RestoreRectangle(int, int, int, int);
   void FullScreenBMP(const char *);
+
   void FullScreenGraphic(Graphic &);
+  void FullScreenGraphicFG(Graphic &);
+
   void DrawTransparentGraphic(Graphic &, int, int);
   void DrawGraphic(Graphic &, int, int);
-  void FullScreenGraphicFG(Graphic &);
   void DrawTransparentGraphicFG(Graphic &, int, int);
   void DrawGraphicFG(Graphic &, int, int);
+
+  void DrawPartialTransparentGraphic(Graphic &, int, int, int, int, int, int);
+  void DrawPartialGraphic(Graphic &, int, int, int, int, int, int);
+  void DrawPartialTransparentGraphicFG(Graphic &, int, int, int, int, int, int);
+  void DrawPartialGraphicFG(Graphic &, int, int, int, int, int, int);
+
+  IntList CollideRectangle(int, int, int, int);
+  Sprite *GetSpriteByNumber(int);
   void MakeFriendly(Graphic *);
   void MakeFriendly(Sprite *);
+  void SetPointFG(int, int, int);
+  void SetPointFG(int, int, int, int, int);
   void SetPoint(int, int, int);
   void SetPoint(int, int, int, int, int);
+  void DrawRectangle(int, int, int, int, int);
+  void DrawRectangleFG(int, int, int, int, int);
   int VideoType() { return vtype; };
   int SetFont(const char *);
   int SetFont(const char *, const char *);
@@ -121,6 +146,20 @@ class Screen  {
   Sprite *TCursor;
   Graphic *font[256];
   int tcx, tcy;
+  int fullscreen;
+
+#ifdef DOS
+  void SetBank(int);
+  int curbank;
+  VESAInfo vinfo;
+  VESAModeInfo vminfo;
+  short *vesamode;
+  long *vesax, *vesay, *vesad;
+  long numvesamodes;
+  void (*vbe2_bank)(char);
+  VBE2_PM_Info *vbe2_info;
+#endif
+
   };
 
 #endif

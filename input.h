@@ -22,14 +22,15 @@ struct KeyboardAction {
 
 union InputAction {
   InputAction *next;
-  GeneralAction ga;
-  KeyboardAction ka;
-  MouseAction ma;
+  GeneralAction g;
+  KeyboardAction k;
+  MouseAction m;
   };
 
 class InputQueue {
   public:
   InputQueue();
+  ~InputQueue();
   void Update();
   };
 

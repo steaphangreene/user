@@ -5,6 +5,7 @@
 
 class Graphic;
 class Sprite;
+class Control;
 
 #define MOUSE_NONE      0
 #define MOUSE_XWINDOWS  1
@@ -25,12 +26,19 @@ class Mouse {
   void SetCursor(Graphic &);
   void ShowCursor();
   void HideCursor();
+  void SetRange(int, int, int, int);
 
   private:
+  void Pressed(int, int, int);
+  void Released(int, int, int);
+  void Moved(int, int);
   char butt_stat[8];
   int mtype, xpos, ypos;
   char crit, cvis;
+  char num_butt;
   Sprite *cursor;
+  Control *curcont;
+  int contx, conty, contb;
   };
 
 #endif

@@ -153,7 +153,7 @@ Graphic Graphic::Scaled(double scale)  {
   return ret;
   }
 
-Graphic Graphic::Scaled(unsigned xsz, unsigned ysz)  {
+Graphic Graphic::Scaled(int xsz, int ysz)  {
   Graphic ret;
   int xi, yi;
   double ox, oy;
@@ -580,7 +580,7 @@ void Graphic::DefSize(int xsz, int ysz) {
       }
     delete image3d;
     }
-  ysize = ((unsigned)ysz>ydef)?ysz:ydef; xsize = ((unsigned)xsz>xdef)?xsz:xdef;
+  ysize = (ysz>ydef)?ysz:ydef; xsize = (xsz>xdef)?xsz:xdef;
   image = new unsigned char*[ysize];
   for(ctr=0; ctr<(long)ysize; ctr++)
     image[ctr] = new unsigned char[xsize*BYTES];
@@ -609,9 +609,9 @@ void Graphic::DefSize(int xsz, int ysz, int zsz) {
     delete image3d;
     }
 
-  ysize = ((unsigned)ysz>ydef)?ysz:ydef;
-  xsize = ((unsigned)xsz>xdef)?xsz:xdef;
-  zsize = ((unsigned)zsz>zdef)?zsz:zdef;
+  ysize = (ysz>ydef)?ysz:ydef;
+  xsize = (xsz>xdef)?xsz:xdef;
+  zsize = (zsz>zdef)?zsz:zdef;
   image3d = new unsigned char**[zsize];
   for(ctr=0; ctr<(long)zsize; ctr++)  {
     image3d[ctr] = new unsigned char*[ysize];
@@ -625,7 +625,7 @@ void Graphic::DefSize(int xsz, int ysz, int zsz) {
 Graphic::~Graphic() {
   int ctr;
   if(image != NULL)  {
-    for(ctr=0; ctr<(long)((ysize>ydef)?ysize:ydef); ctr++)
+    for(ctr=0; ctr<((ysize>ydef)?(long)ysize:(long)ydef); ctr++)
       if(image[ctr] != NULL)  delete(image[ctr]);
     delete(image);
     }
@@ -676,7 +676,7 @@ Graphic::Graphic(char *fn, Palette &p)  {
   if(depth == 8)  {
     Init(fn);
     Palette po;
-    po.GetPalette(fn);
+    po.Set(fn);
     PaletteConvert(po, p);
     }
   else if(depth == 24)  {
@@ -697,9 +697,9 @@ void Graphic::Init(char *fn)  {
  Debug("Graphic::Init Begin");
  xdef = 0;  ydef = 0;  zdef = 0;
  int bmp, colused;
- unsigned size2, width, height, off = 0;
+ long size2, width, height, off = 0;
  unsigned char buffer[1280];
- unsigned detect;
+ long detect;
  {
 #ifdef O_BINARY
   bmp = open(fn, O_RDONLY|O_BINARY);
@@ -774,7 +774,7 @@ void Graphic::Init(char *fn)  {
  Debug("Graphic::Init End");
  }
 
-#define fpint(f, i) fprintf(f, "%c%c%c%c", i&255, (i>>8)&255, (i>>16)&255, (i>>24)&255)
+#define fpint(f, i) fprintf(f, "%c%c%c%c", (char)(i&255), (char)((i>>8)&255), (char)((i>>16)&255), (char)((i>>24)&255))
 
 void Graphic::SaveBMP(char *fn, const Palette &pal) {
  Debug("User::Graphic::SaveBMP(2) Begin");
@@ -866,9 +866,9 @@ void Graphic::Init24(char *fn, Palette &p)  {
   Debug("User::Graphic::Init24 Begin");
   xdef = 0;  ydef = 0;  zdef = 0;
   FILE *bmp;
-  unsigned size2, width, height;
+  long size2, width, height;
   unsigned char buffer[4096];
-  unsigned detect;
+  long detect;
   int ctr, ctr2;
 
   bmp = fopen(fn, "rb");

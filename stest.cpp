@@ -1,17 +1,36 @@
 #include <unistd.h>
 
+#include "engine.h"
 #include "sound.h"
 #include "speaker.h"
 
-int  main()  {
-  int ctr;
-  Sound ds1("test1.wav");
-  Sound ds2("test2.wav");
+#ifdef DOS
+#include <dos.h>
+#endif
 
-  Speaker sb(1, 16, 44100);
-//  ds1.Play();
-//  for(ctr=0; ctr<100; ctr++) sb.Update();
-  sb.Reconfigure(0, 8, 11025);
-  ds2.Play();
-  while(1) sb.Update();
+int  main(int argc, char **argv)  {
+  InitUserEngine(argc, argv);
+
+//  Speaker *sb = new Speaker(0, 16, 11025);
+//  Speaker *sb = new Speaker(1, 16, 11025);
+//  Speaker *sb = new Speaker(0, 16, 22050);
+//  Speaker *sb = new Speaker(1, 16, 22050);
+//  Speaker *sb = new Speaker(0, 16, 44100);
+  Speaker *sb = new Speaker(1, 16, 44100);
+//  Speaker *sb = new Speaker(0, 8, 11025);
+//  Speaker *sb = new Speaker(1, 8, 11025);
+//  Speaker *sb = new Speaker(0, 8, 22050);
+//  Speaker *sb = new Speaker(1, 8, 22050);
+//  Speaker *sb = new Speaker(0, 8, 44100);
+//  Speaker *sb = new Speaker(1, 8, 44100);
+
+  Sound ds1("test1.wav");
+//  Sound ds1("test2.wav");
+
+  ds1.Play();
+
+//  sb.Reconfigure(0, 8, 11025);
+//  ds2.Play();
+  while(1) sb->Update();
+  delete sb;
   }

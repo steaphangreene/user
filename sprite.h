@@ -13,6 +13,7 @@ class Sprite  {
   Sprite(const Graphic &);
   void SetImage(const Graphic *);
   void SetImage(const Graphic &);
+  void RedrawArea(int, int, int, int);
   IntList CMove(int, int);
   IntList CDraw(int, int);
   IntList CDraw();
@@ -29,14 +30,16 @@ class Sprite  {
   ~Sprite();
   int XPos() { return xpos; };
   int YPos() { return ypos; };
+  int IsControl() { return iscontrol; };
   void EnableCollisions() { collisions = 1; };
   void DisableCollisions() { collisions = 0; };
 
-  private:
+  protected:
   int Hits(Sprite *);
+  int Hits(int, int, int, int);
   Graphic *image, *trueimage;
   int snum, priority, xpos, ypos;
-  char drawn, collisions;
+  char drawn, collisions, iscontrol;
   friend class Screen;
   };
 

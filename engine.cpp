@@ -1,15 +1,24 @@
+#include "config.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <signal.h>
 #include <string.h>
+
 #include "engine.h"
 #include "screen.h"
 #include "speaker.h"
 #include "mouse.h"
+#include "keyboard.h"
+
+#ifdef DOS
+#include <time.h>
+#endif
 
 Screen *__Da_Screen = NULL;
 Speaker *__Da_Speaker = NULL;
 Mouse *__Da_Mouse = NULL;
+Keyboard *__Da_Keyboard = NULL;
 
 int USER_ARGC;
 char **USER_ARGV;
@@ -22,8 +31,20 @@ char *debug_position[16]
 	= {"","","","","","","","","","","","","","","",":USER DEBUG BEGIN:"};
 #endif
 
+void StopUserEngine()  __attribute__ ((destructor));
+
+void StopUserEngine()  {
+  if(__Da_Keyboard != NULL) delete __Da_Keyboard;
+  if(__Da_Speaker != NULL)  delete __Da_Speaker;
+  if(__Da_Screen != NULL)  delete __Da_Screen;
+  __Da_Keyboard = NULL;
+  __Da_Speaker = NULL;
+  __Da_Screen = NULL;
+  fprintf(stderr, "User 2.0: Engine Shut Down.\n");
+  }
+
 void InitUserEngine(int argc, char **argv)  {
-  printf("User Engine Initializing....\n\r");
+  printf("User 2.0: Engine Initializing....\n\r");
   signal(SIGKILL, SigHand);
   signal(SIGABRT, SigHand);
   signal(SIGINT, SigHand);
@@ -56,17 +77,26 @@ extern Display *___mydisplay;
 
 void SigHand(int sn)  {
 #ifdef USER_DEBUG
+  StopUserEngine();
+#ifdef DOS
+  fprintf(stderr, "\nReceived signal #%d, debug traceback follows:\n", sn);
+#else
   fprintf(stderr, "\nReceived signal \"%s\" (#%d), debug traceback follows:\n",
 	(char *)strsignal(sn), sn);
+#endif
   int ctr, ctr2;
   for(ctr=0; ctr<16; ctr++)  {
     for(ctr2=-1; ctr2<ctr; ctr2++) fprintf(stderr, "-");
     fprintf(stderr, "> ");
     fprintf(stderr, "%s\n", debug_position[(debug_index+(15-ctr))&15]);
     }
-  Exit(1);
+  _exit(1);
+#else
+#ifdef DOS
+  Exit(1, "\nReceived signal #%d.\n", sn);
 #else
   Exit(1, "Received signal \"%s\" (#%d)\n", (char *)strsignal(sn), sn);
+#endif
 #endif
   }
 
@@ -76,8 +106,7 @@ void Exit(int code)  {
 
 void Exit(int code, const char *out, ...)  {
   Debug("In Exit Function!");
-  if(__Da_Speaker != NULL)  delete __Da_Speaker;
-  if(__Da_Screen != NULL)  delete __Da_Screen;
+  StopUserEngine();
 
   va_list stuff;  
   va_start(stuff, out);

@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <stdio.h>
 #include <unistd.h>
 
@@ -93,9 +95,9 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
   int ctr; mfmt odata; odata.v = data.v;
   if(bits == 8 && bts == 16)  {
     data.s = new short[len];
-    for(ctr=0; ctr<len; ctr++)  {
+    for(ctr=0; ctr<(int)len; ctr++)  {
       data.s[ctr] = odata.uc[ctr];
-      data.s[ctr] ^= 128;
+      data.s[ctr] -= 128;
       data.s[ctr] <<= 8;
       }
     len <<= 1; bits = 16;
@@ -104,9 +106,9 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
   else if(bits == 16 && bts == 8)  {
     len >>= 1;
     data.uc = new unsigned char[len];
-    for(ctr=0; ctr<len; ctr++)  {
+    for(ctr=0; ctr<(int)len; ctr++)  {
       odata.s[ctr] >>= 8;
-      odata.s[ctr] ^= 128;
+      odata.s[ctr] += 128;
       data.uc[ctr] = odata.s[ctr];
       }
     bits = 8;
@@ -115,7 +117,7 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
 
   if(bits == 8 && stereo == 0 && stro == 1)  {
     data.uc = new unsigned char[len<<1];
-    for(ctr=0; ctr<len; ctr++)  {
+    for(ctr=0; ctr<(int)len; ctr++)  {
       data.uc[(ctr<<1)] = odata.uc[ctr];
       data.uc[(ctr<<1)+1] = odata.uc[ctr];
       }
@@ -125,7 +127,7 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
   else if(bits == 8 && stereo == 1 && stro == 0)  {
     len >>= 1;
     data.uc = new unsigned char[len];
-    for(ctr=0; ctr<len; ctr++)  {
+    for(ctr=0; ctr<(int)len; ctr++)  {
       data.uc[ctr] = (odata.uc[(ctr<<1)]>>1)+(odata.uc[(ctr<<1)+1]>>1);
       }
     stereo = 1;
@@ -133,7 +135,7 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
     }
   else if(bits == 16 && stereo == 0 && stro == 1)  {
     data.s = new short[len];
-    for(ctr=0; ctr<(len>>1); ctr++)  {
+    for(ctr=0; ctr<(int)(len>>1); ctr++)  {
       data.s[(ctr<<1)] = odata.s[ctr];
       data.s[(ctr<<1)+1] = odata.s[ctr];
       }
@@ -143,7 +145,7 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
   else if(bits == 16 && stereo == 1 && stro == 0)  {
     len >>= 1;
     data.s = new short[len>>1];
-    for(ctr=0; ctr<len>>1; ctr++)  {
+    for(ctr=0; ctr<(int)(len>>1); ctr++)  {
       data.s[ctr] = (odata.s[(ctr<<1)]>>1)+(odata.s[(ctr<<1)+1]>>1);
       }
     stereo = 1;
@@ -153,7 +155,7 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
   if(bits == 8 && freq == (fr<<2))  {
     len >>= 2;
     data.uc = new unsigned char[len];
-    for(ctr=0; ctr<len; ctr++)  {
+    for(ctr=0; ctr<(int)len; ctr++)  {
       data.uc[ctr] = odata.uc[ctr<<2];
       }
     freq = fr;
@@ -162,8 +164,27 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
   else if(bits == 8 && freq == (fr<<1))  {
     len >>= 1;
     data.uc = new unsigned char[len];
-    for(ctr=0; ctr<len; ctr++)  {
+    for(ctr=0; ctr<(int)len; ctr++)  {
       data.uc[ctr] = odata.uc[ctr<<1];
+      }
+    freq = fr;
+    delete odata.v; odata.v = data.v;
+    }
+  else if(bits == 8 && stereo && freq == (fr>>1))  {
+    len = (len<<1)-2;
+    data.uc = new unsigned char[len];
+    unsigned char tmp2a, tmpa = odata.uc[0];
+    unsigned char tmp2b, tmpb = odata.uc[1];
+    data.uc[0] = tmpa;
+    data.uc[1] = tmpb;
+    for(ctr=4; ctr<(int)len; ctr+=4)  {
+      tmp2a = odata.uc[(ctr>>1)];
+      tmp2b = odata.uc[(ctr>>1)+1];
+      data.uc[ctr-1] = ((tmpa+tmp2a)>>1);
+      data.uc[ctr] = tmp2a;
+      data.uc[ctr-3] = ((tmpb+tmp2b)>>1);
+      data.uc[ctr-2] = tmp2b;
+      tmpa = tmp2a; tmpb = tmp2b;
       }
     freq = fr;
     delete odata.v; odata.v = data.v;
@@ -173,10 +194,32 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
     data.uc = new unsigned char[len];
     unsigned char tmp2, tmp = odata.uc[0];
     data.uc[0] = tmp;
-    for(ctr=2; ctr<len; ctr+=2)  {
+    for(ctr=2; ctr<(int)len; ctr+=2)  {
       tmp2 = odata.uc[ctr>>1];
-      data.uc[ctr-1] = ((tmp+(tmp2^128))>>1);
+      data.uc[ctr-1] = ((tmp+tmp2)>>1);
       data.uc[ctr] = tmp2; tmp = tmp2;
+      }
+    freq = fr;
+    delete odata.v; odata.v = data.v;
+    }
+  else if(bits == 8 && stereo && freq == (fr>>2))  {
+    len = (len<<2)-6;
+    data.uc = new unsigned char[len];
+    unsigned long tmp2a, tmpa = odata.uc[0];
+    unsigned long tmp2b, tmpb = odata.uc[1];
+    data.uc[0] = tmpa;
+    data.uc[1] = tmpb;
+    for(ctr=8; ctr<(int)len; ctr+=8)  {
+      tmp2a = odata.uc[(ctr>>2)];
+      tmp2b = odata.uc[(ctr>>2)+1];
+      data.uc[ctr-3] = ((tmpb+tmp2b+tmp2b+tmp2b)>>2);
+      data.uc[ctr-2] = ((tmpb+tmp2b)>>1);
+      data.uc[ctr-1] = ((tmpb+tmpb+tmpb+tmp2b)>>2);
+      data.uc[ctr] = tmp2b; tmpb = tmp2b;
+      data.uc[ctr-7] = ((tmpa+tmp2a+tmp2a+tmp2a)>>2);
+      data.uc[ctr-6] = ((tmpa+tmp2a)>>1);
+      data.uc[ctr-5] = ((tmpa+tmpa+tmpa+tmp2a)>>2);
+      data.uc[ctr-4] = tmp2a; tmpa = tmp2a;
       }
     freq = fr;
     delete odata.v; odata.v = data.v;
@@ -184,14 +227,24 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
   else if(bits == 8 && freq == (fr>>2))  {
     len = (len<<2)-3;
     data.uc = new unsigned char[len];
-    unsigned char tmp2, tmp = odata.uc[0];
+    unsigned long tmp2, tmp = odata.uc[0];
     data.uc[0] = tmp;
-    for(ctr=4; ctr<len; ctr+=4)  {
+    for(ctr=4; ctr<(int)len; ctr+=4)  {
       tmp2 = odata.uc[ctr>>2];
-      data.uc[ctr-3] = (tmp+tmp2+tmp2+tmp2)>>2;
-      data.uc[ctr-2] = ((tmp+(tmp2^128))>>1);
-      data.uc[ctr-1] = (tmp+tmp+tmp+tmp2)>>2;
+      data.uc[ctr-3] = ((tmp+tmp2+tmp2+tmp2)>>2);
+      data.uc[ctr-2] = ((tmp+tmp2)>>1);
+      data.uc[ctr-1] = ((tmp+tmp+tmp+tmp2)>>2);
       data.uc[ctr] = tmp2; tmp = tmp2;
+      }
+    freq = fr;
+    delete odata.v; odata.v = data.v;
+    }
+  else if(bits == 16 && stereo && freq == (fr<<2))  {
+    len >>= 2;
+    data.s = new short[len>>1];
+    for(ctr=0; ctr<(int)(len>>1); ctr+=2)  {
+      data.s[ctr] = odata.s[ctr<<2];
+      data.s[ctr+1] = odata.s[(ctr<<2)+1];
       }
     freq = fr;
     delete odata.v; odata.v = data.v;
@@ -199,8 +252,18 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
   else if(bits == 16 && freq == (fr<<2))  {
     len >>= 2;
     data.s = new short[len>>1];
-    for(ctr=0; ctr<len>>1; ctr++)  {
+    for(ctr=0; ctr<(int)(len>>1); ctr++)  {
       data.s[ctr] = odata.s[ctr<<2];
+      }
+    freq = fr;
+    delete odata.v; odata.v = data.v;
+    }
+  else if(bits == 16 && stereo && freq == (fr<<1))  {
+    len >>= 1;
+    data.s = new short[len>>1];
+    for(ctr=0; ctr<(int)(len>>1); ctr+=2)  {
+      data.s[ctr] = odata.s[ctr<<1];
+      data.s[ctr+1] = odata.s[(ctr<<1)+1];
       }
     freq = fr;
     delete odata.v; odata.v = data.v;
@@ -208,8 +271,26 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
   else if(bits == 16 && freq == (fr<<1))  {
     len >>= 1;
     data.s = new short[len>>1];
-    for(ctr=0; ctr<len>>1; ctr++)  {
+    for(ctr=0; ctr<(int)(len>>1); ctr++)  {
       data.s[ctr] = odata.s[ctr<<1];
+      }
+    freq = fr;
+    delete odata.v; odata.v = data.v;
+    }
+  else if(bits == 16 && stereo && freq == (fr>>1))  {
+    len = (len<<1)-4;
+    data.s = new short[len>>1];
+    short tmp2a, tmpa = odata.s[0];
+    short tmp2b, tmpb = odata.s[1];
+    data.s[0] = tmpa;
+    data.s[1] = tmpb;
+    for(ctr=4; ctr<(int)(len>>1); ctr+=4)  {
+      tmp2a = odata.s[(ctr>>1)];
+      tmp2b = odata.s[(ctr>>1)+1];
+      data.s[ctr-1] = (tmpa+tmp2a)>>1;
+      data.s[ctr] = tmp2a; tmpa = tmp2a;
+      data.s[ctr-3] = (tmpb+tmp2b)>>1;
+      data.s[ctr-2] = tmp2b; tmpb = tmp2b;
       }
     freq = fr;
     delete odata.v; odata.v = data.v;
@@ -219,7 +300,7 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
     data.s = new short[len>>1];
     short tmp2, tmp = odata.s[0];
     data.s[0] = tmp;
-    for(ctr=2; ctr<(len>>1); ctr+=2)  {
+    for(ctr=2; ctr<(int)(len>>1); ctr+=2)  {
       tmp2 = odata.s[ctr>>1];
       data.s[ctr-1] = (tmp+tmp2)>>1;
       data.s[ctr] = tmp2; tmp = tmp2;
@@ -227,12 +308,34 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
     freq = fr;
     delete odata.v; odata.v = data.v;
     }
+  else if(bits == 16 && stereo && freq == (fr>>2))  {
+    len = (len<<2)-12;
+    data.s = new short[len>>1];
+    long tmp2a, tmpa = odata.s[0];
+    long tmp2b, tmpb = odata.s[1];
+    data.s[0] = tmpa;
+    data.s[1] = tmpb;
+    for(ctr=8; ctr<(int)(len>>1); ctr+=8)  {
+      tmp2a = odata.s[(ctr>>2)];
+      tmp2b = odata.s[(ctr>>2)+1];
+      data.s[ctr-3] = (tmpa+tmp2a+tmp2a+tmp2a)>>2;
+      data.s[ctr-2] = (tmpa+tmp2a)>>1;
+      data.s[ctr-1] = (tmpa+tmpa+tmpa+tmp2a)>>2;
+      data.s[ctr] = tmp2a; tmpa = tmp2a;
+      data.s[ctr-7] = (tmpb+tmp2b+tmp2b+tmp2b)>>2;
+      data.s[ctr-6] = (tmpb+tmp2b)>>1;
+      data.s[ctr-5] = (tmpb+tmpb+tmpb+tmp2b)>>2;
+      data.s[ctr-4] = tmp2b; tmpb = tmp2b;
+      }
+    freq = fr;
+    delete odata.v; odata.v = data.v;
+    }
   else if(bits == 16 && freq == (fr>>2))  {
     len = (len<<2)-6;
     data.s = new short[len>>1];
-    short tmp2, tmp = odata.s[0];
+    long tmp2, tmp = odata.s[0];
     data.s[0] = tmp;
-    for(ctr=4; ctr<(len>>1); ctr+=4)  {
+    for(ctr=4; ctr<(int)(len>>1); ctr+=4)  {
       tmp2 = odata.s[ctr>>2];
       data.s[ctr-3] = (tmp+tmp2+tmp2+tmp2)>>2;
       data.s[ctr-2] = (tmp+tmp2)>>1;
