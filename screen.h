@@ -8,19 +8,10 @@
 #include "vesa.h"
 #endif
 
-#define MAX_SPRITES		16384
-#define MAX_LG_SPRITES		1024
-#define MAX_BIN_SPRITES		1024
-#define REDRAW_RECTS		8
-#define BIN_SIZE		8  // Must Agree
-#define BIN_FACTOR		3   // (eg: 2^BIN_FACTOR = BIN_SIZE)
-#define LARGE_BIN_SIZE		32  // Must Agree
-#define LARGE_BIN_FACTOR	5   // (eg: 2^LARGE_BIN_FACTOR = LARGE_BIN_SIZE)
-
 #define VIDEO_NONE	0
 #define VIDEO_XWINDOWS	1
 #define VIDEO_XF86DGA	2
-#define VIDEO_SVGALIB	3
+#define VIDEO_XDGA2	3
 #define VIDEO_FB	4
 #define VIDEO_DOS	5
 #define VIDEO_VESA	6
@@ -36,8 +27,14 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
+
+#ifdef XF86_DGA
 #include <X11/extensions/xf86dga.h>
 #include <X11/extensions/xf86vmode.h>
+#ifdef X_XDGAQueryModes
+#define X_DGA2
+#endif
+#endif
 
 #undef Screen
 #undef Window
@@ -61,15 +58,18 @@ typedef unsigned long color;
   else if(d==32 && ad==16) { \
     c=((c&0xF800)<<8)|((c&0x07E0)<<5)|((c&0x001F)<<3); \
     } \
-  else Exit(1, "Don't know how to ConvertColor from %d to %d\n", ad, d); \
+  else Exit(1, "%s\nDon't know how to ConvertColor from %d to %d\n", \
+	__PRETTY_FUNCTION__, ad, d); \
   }
 
 class Screen  {
   public:
   Screen(char *n = DEFAULT_NAME);
-  Screen(int, int, char *n = DEFAULT_NAME);
+  Screen(int, int, int, char *n = DEFAULT_NAME);
   ~Screen();
-  void SetApparentDepth(int d) { appdepth=d; }
+  void SetApparentDepth(int);
+  int GetApparentDepth() { return appdepth; }
+  int GetDepth() { return depth; }
   void SetFrameRate(int);
   int SetSize(int, int);
   int XSize() { return xsize; };
@@ -103,6 +103,9 @@ class Screen  {
   void FullScreenGraphic(Graphic &);
   void FullScreenGraphicFG(Graphic &);
 
+  void ScrollPanel(Panel, int, int);
+  void ErasePanelSprites(Panel);
+
   void DrawTransparentGraphic(Graphic &, int, int, Panel p=0);
   void DrawGraphic(Graphic &, int, int, Panel p=0);
   void DrawTransparentGraphicFG(Graphic &, int, int, Panel p=0);
@@ -112,6 +115,11 @@ class Screen  {
   void DrawPartialGraphic(Graphic &, int, int, int, int, int, int, Panel p=0);
   void DrawPartialTransparentGraphicFG(Graphic &, int, int, int, int, int, int, Panel p=0);
   void DrawPartialGraphicFG(Graphic &, int, int, int, int, int, int, Panel p=0);
+
+  void RCDrawPartialTransparentGraphic(Graphic &, mfmt, int, int, int, int, int, int, Panel p=0);
+  void RCDrawPartialGraphic(Graphic &, mfmt, int, int, int, int, int, int, Panel p=0);
+  void RCDrawPartialTransparentGraphicFG(Graphic &, mfmt, int, int, int, int, int, int, Panel p=0);
+  void RCDrawPartialGraphicFG(Graphic &, mfmt, int, int, int, int, int, int, Panel p=0);
 
   void DropSprite(Sprite *sp);
   void LiftSprite(Sprite *sp);
@@ -131,8 +139,10 @@ class Screen  {
   void DrawRectangleFG(int, int, int, int, color);
   void ClearArea(int, int, int, int);
   int VideoType() { return vtype; };
+
   int SetFont(const char *);
   int SetFont(const char *, const char *);
+  void GetStringSize(char *, int *, int *);
   void AlignCursor();
   void SetCursor(Graphic &);
   void TGotoXY(int, int);
@@ -144,6 +154,9 @@ class Screen  {
   int Print(int, int, color, color, const char *);
   int Printf(int, int, color, color, const char *, ...)
 	__attribute__ ((format (printf, 6, 7)));
+  int CGPrint(Graphic *g, int, int, color, color, const char *);
+  int CGPrintf(Graphic *g, int, int, color, color, const char *, ...)
+	__attribute__ ((format (printf, 7, 8)));
   int GPrint(Graphic *g, int, int, color, color, const char *);
   int GPrintf(Graphic *g, int, int, color, color, const char *, ...)
 	__attribute__ ((format (printf, 7, 8)));
@@ -167,7 +180,13 @@ class Screen  {
   XColor _Xpal[256];
   XImage *_Ximage;
   XEvent _Xevent;
+#ifdef XF86_DGA
   XF86VidModeModeInfo oldv;
+#ifdef X_DGA2
+  int oldm;
+  int DGAFlags;
+#endif
+#endif
 #endif
 
 #ifdef DOS
@@ -184,9 +203,9 @@ class Screen  {
   mfmt frame;
   Palette *pal;
   IntList CollideRectangle(int, int, int, int, int);
-  Sprite *sprites[MAX_SPRITES], *spbuf[MAX_SPRITES];
+  Sprite *sprites[MAX_SPRITES];
   Sprite *huges, ***bins, ***lbins;
-  int xlong, ylong;
+  int xbins, ybins, xlbins, ylbins;
   int nextsprite;
   int RegisterSprite(Sprite *);
   void RemoveSprite(int, Sprite *);

@@ -2,7 +2,7 @@ CFLAGS:=$(shell U2-CFlgs)
 LIBS:=	$(shell U2-Libs)
 CC:=	gcc $(CFLAGS)
 OBJS:=	screen.o engine.o graphic.o palette.o sound.o speaker.o sprite.o \
-	input.o keyboard.o mouse.o resfile.o bag.o net.o \
+	input.o keyboard.o mouse.o resfile.o bag.o chunk.o net.o \
 	control.o movable.o clickey.o stickey.o
 ALL:=	*.h Makefile
 CCC:=	$(CC)
@@ -11,17 +11,17 @@ TSTR:=  $(shell date +"%Y%m%d%H%M")
 all:	stest mtest $(ALL)
 #all:	stest $(ALL)
 
-stest:	libuser.a stest.o $(ALL)
+stest:	libu2.a stest.o $(ALL)
 	$(CC) -o stest stest.o $(LIBS)
 
-mtest:	libuser.a mtest.o $(ALL)
+mtest:	libu2.a mtest.o $(ALL)
 	$(CC) -o mtest mtest.o $(LIBS)
 
-libuser.a:	$(OBJS) $(ALL)
-	ar rcs libuser.a $(OBJS)
+libu2.a:	$(OBJS) $(ALL)
+	ar rcs libu2.a $(OBJS)
 	U2-Inst
 
-user:	libuser.a
+user:	libu2.a
 
 %.o:	%.cpp $(ALL)
 	$(CC) -c $<
@@ -36,3 +36,6 @@ tar:	screen.h
 	cd .. ; tar czhvf ~/c/archive/user-2.0-pre$(TSTR).tar.gz \
 	user/*.cpp user/*.[hc] user/Makefile user/*.bmp user/*.wav user.h \
 	user/U2-*
+
+clean:
+	rm -f *.o *.a *.so

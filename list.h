@@ -73,14 +73,11 @@ class IntList  {
 
   void operator -=(int killval)  {
     int ctr;
-    if(*this != killval || size < 1)  return;
-    else  {
-      for(ctr=0; ctr<size; ctr++)  {
-	if(data[ctr] == killval)  {
-	  size--;
-	  for(; ctr<size; ctr++)  {
-	    data[ctr] = data[ctr+1];
-	    }
+    for(ctr=0; ctr<size; ++ctr)  {
+      if(data[ctr] == killval)  {
+	size--;
+	for(; ctr<size; ctr++)  {
+	  data[ctr] = data[ctr+1];
 	  }
 	}
       }

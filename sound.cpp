@@ -77,12 +77,12 @@ Sound::Sound(char *fn)  {
   }
 
 Sound::~Sound()  {
-  Debug("User:Sound:~Sound Begin");
+  UserDebug("User:Sound:~Sound Begin");
   if(__Da_Speaker != NULL) __Da_Speaker->StopByBuffer(data, (long)len);
-  Debug("User:Sound:~Sound Middle");
+  UserDebug("User:Sound:~Sound Middle");
   if(data.v != NULL) delete data.v;
   data.v = NULL;
-  Debug("User:Sound:~Sound End");
+  UserDebug("User:Sound:~Sound End");
   }
 
 int Sound::Play()  {
@@ -100,7 +100,7 @@ void Sound::Stop(int s)  {
   }
 
 void Sound::ConvertTo(int bts, int stro, int fr)  {
-  Debug("User:Sound:ConvertTo Begin");
+  UserDebug("User:Sound:ConvertTo Begin");
   if(bits == bts && stro == stereo && fr == freq) return;
   int ctr; mfmt odata; odata.v = data.v;
   if(bits == 8 && bts == 16)  {
@@ -355,5 +355,5 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
     freq = fr;
     delete odata.v; odata.v = data.v;
     }
-  Debug("User:Sound:ConvertTo End");
+  UserDebug("User:Sound:ConvertTo End");
   }

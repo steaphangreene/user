@@ -376,7 +376,7 @@ int Speaker::Configure(int stro, int bts, int fr)  {
     }
   if(bits==8) tmp = AFMT_U8;
   else if(bits==16) tmp = AFMT_S16_LE;
-  else Exit(-1, "Bits = %d!?\n", bits);
+  else Exit(-1, "Bits = %ld!?\n", bits);
   if(ioctl(dsp, SNDCTL_DSP_SETFMT, &tmp)==-1) {
     perror("User");
     fprintf(stderr, "Error setting format\n");
@@ -502,7 +502,7 @@ void Speaker::SetAsAmbient(Sound &smp) {
   }
 
 void Speaker::Update() {
-  Debug("User:Speaker:Update Begin");
+  UserDebug("User:Speaker:Update Begin");
   int ctr, ctr2;
 
 #ifdef DOS_SOUND
@@ -595,7 +595,7 @@ void Speaker::Update() {
 //  if(stype == SOUND_ESD) fcntl(dsp, F_SETFL, O_SYNC);
 #endif
 
-  Debug("User:Speaker:Update End");
+  UserDebug("User:Speaker:Update End");
   }
 
 void Speaker::Stop(int s)  {

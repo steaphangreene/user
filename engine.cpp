@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <signal.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "engine.h"
 #include "screen.h"
@@ -12,6 +13,7 @@
 #include "keyboard.h"
 #include "input.h"
 #include "net.h"
+#include "chunk.h"
 
 #ifdef DOS
 #include <time.h>
@@ -44,13 +46,15 @@ void StopUserEngine()  {
   __Da_Keyboard = NULL;
   __Da_Speaker = NULL;
   __Da_Screen = NULL;
+  Chunk *tmp;
+  tmp->DeleteAll();
   fprintf(stderr, "User 2.0: Engine Shut Down.\n");
   }
 
 void InitUserEngine(int argc, char **argv)  {
-  printf("User 2.0: Engine Initializing....\n\r");
+  fprintf(stderr, "User 2.0: Engine Initializing....\n\r");
+  signal(SIGABRT, SIG_DFL);  // Make sure abort can still generate core dumps
   signal(SIGKILL, SigHand);
-  signal(SIGABRT, SigHand);
   signal(SIGINT, SigHand);
   signal(SIGILL, SigHand);
   signal(SIGQUIT, SigHand);
@@ -63,7 +67,7 @@ void InitUserEngine(int argc, char **argv)  {
 
 #ifdef DOS
   uclock();
-#endif
+#endif /*DOS*/
   }
 
 #ifdef X_WINDOWS
@@ -98,7 +102,7 @@ void SigHand(int sn)  {
     fprintf(stderr, "> ");
     fprintf(stderr, "%s\n", debug_position[(debug_index+(15-ctr))&15]);
     }
-  _exit(1);
+  abort();
 #else
 #ifdef DOS
   Exit(1, "\nReceived signal #%d.\n", sn);
@@ -109,16 +113,16 @@ void SigHand(int sn)  {
   }
 
 void Exit(int code)  {
-  Exit(code, "");
+  Exit(code, "%s", "");
   }
 
 void Exit(int code, const char *out, ...)  {
-  Debug("In Exit Function!");
+  UserDebug("In Exit Function!");
   StopUserEngine();
 
   va_list stuff;  
   va_start(stuff, out);
   vprintf(out, stuff);
   va_end(stuff);
-  _exit(code);
+  _exit(0);
   }

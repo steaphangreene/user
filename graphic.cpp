@@ -45,26 +45,24 @@
   else if(d==32 && ad==16) { \
     c=((c&0xF800)<<8)|((c&0x07E0)<<5)|((c&0x001F)<<3); \
     } \
-  else Exit(1, "Don't know how to ConvertColor from %d to %d\n", ad, d); \
+  else Exit(1, "%s\nDon't know how to ConvertColor from %d to %d\n", \
+	__PRETTY_FUNCTION__, ad, d); \
   }
 
 
 Graphic::Graphic() {
-  image = NULL;  image3d = NULL;
-  xdef = 0;  ydef = 0;  zdef = 0;
+  image = NULL;
+  xdef = 0;  ydef = 0;
+  xsize = 0;  ysize = 0;
   depth = 8; tcolor=0;
   }
 
 Graphic::Graphic(int xsz, int ysz) {
-  xdef = 0;  ydef = 0;  zdef = 0;
+  image = NULL;
+  xdef = 0;  ydef = 0;
+  xsize = 0;  ysize = 0;
   depth = 8; tcolor=0;
   DefSize(xsz, ysz);
-  }
-
-Graphic::Graphic(int xsz, int ysz, int zsz) {
-  xdef = 0;  ydef = 0;  zdef = 0;
-  depth = 8; tcolor=0;
-  DefSize(xsz, ysz, zsz);
   }
 
 void Graphic::PaletteConvert(const Palette &p1, const Palette &p2)  {
@@ -110,28 +108,63 @@ void Graphic::PaletteConvert(const Palette &p1, const Palette &p2)  {
   tcolor = remap[tcolor];
   }
 
-Graphic Graphic::Hashed()  {
+Graphic Graphic::DoubleX()  {
+  Graphic ret;
+  int Y;
+  ret.depth = depth;
+  ret.tcolor = tcolor;
+  ret.xcenter = xcenter;
+  ret.ycenter = ycenter;
+  ret.DefSize(xsize*2, ysize);
+  for(Y=0; Y<(long)ysize; Y++)  {
+    memcpy(ret.image[Y].uc, image[Y].uc, xsize*(depth>>3));
+    if(depth == 8)
+      memcpy(ret.image[Y].uc+xsize, image[Y].uc, xsize);
+    else if(depth == 32)
+      memcpy(ret.image[Y].ul+xsize, image[Y].ul, xsize*4);
+    else if(depth == 16)
+      memcpy(ret.image[Y].us+xsize, image[Y].us, xsize*2);
+    }
+  return ret;
+  }
+
+Graphic Graphic::DoubleY()  {
+  Graphic ret;
+  int Y;
+  ret.depth = depth;
+  ret.tcolor = tcolor;
+  ret.xcenter = xcenter;
+  ret.ycenter = ycenter;
+  ret.DefSize(xsize, ysize*2);
+  for(Y=0; Y<(long)ysize; Y++)  {
+    memcpy(ret.image[Y].uc, image[Y].uc, xsize*(depth>>3));
+    memcpy(ret.image[Y+ysize].uc, image[Y].uc, xsize*(depth>>3));
+    }
+  return ret;
+  }
+
+Graphic Graphic::Hashed(color c)  {
   Graphic ret;
   int X, Y;
   ret = *this;
   for(Y=0; Y<(long)ysize; Y++)  {
     for(X=(Y&1); X<(long)xsize; X+=2)  {
-      if(depth == 8) ret.image[Y].uc[X] = 0;
-      else if(depth == 32) ret.image[Y].ul[X] = 0;
+      if(depth == 8) ret.image[Y].uc[X] = c;
+      else if(depth == 32) ret.image[Y].ul[X] = c;
       else Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
   return ret;
   }
 
-Graphic Graphic::OffHashed()  {
+Graphic Graphic::OffHashed(color c)  {
   Graphic ret;
   int X, Y;
   ret = *this;
   for(Y=0; Y<(long)ysize; Y++)  {
     for(X=(1-(Y&1)); X<(long)xsize; X+=2)  {
-      if(depth == 8) ret.image[Y].uc[X] = 0;
-      else if(depth == 32) ret.image[Y].ul[X] = 0;
+      if(depth == 8) ret.image[Y].uc[X] = c;
+      else if(depth == 32) ret.image[Y].ul[X] = c;
       else Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
@@ -186,120 +219,6 @@ Graphic Graphic::Scaled(int xsz, int ysz)  {
   ret.xcenter = (xcenter * ret.xsize) / xsize;
   ret.ycenter = (ycenter * ret.ysize) / ysize;
   ret.tcolor = tcolor;
-  return ret;
-  }
-
-Graphic Graphic::Rotated(double sc, int xa, int ya, int za)  {
-  Graphic ret;
-  ret.tcolor = tcolor;
-  int sz, xsz, ysz;
-  sz = (int)(sc*zsize*(1.75)+1.5);
-  xsz = (int)(sc*xsize*(1.75)+1.5);
-  ysz = (int)(sc*ysize*(1.75)+1.5);
-  if(ysz > sz) sz = ysz;
-  if(xsz > sz) sz = xsz;
-  ret.depth = depth;
-  ret.DefSize(sz, sz);
-  ret.FindTrueCenter();
-  sz++;  sz >>= 1;
-
-  int ctr, ctr2;
-  double ax = cd2rad(xa);
-  double ay = cd2rad(ya);
-  double az = cd2rad(za);
-  double b1x, b1y, b1z;
-  double b2x, b2y, b2z;
-  double cx, cy, cz;
-  double cosx = cos(ax);
-  double sinx = sin(ax);
-  double cosy = cos(ay);
-  double siny = sin(ay);
-  double cosz = cos(az);
-  double sinz = sin(az);
-
-//  double incx_x=cosz,	incy_x= -sinz,	incz_x= 0;
-//  double incx_y=sinz,	incy_y= cosz,	incz_y= 0;
-//  double incx_z=0,	incy_z= 0,	incz_z= 1;
-
-//  double incx_x= cosz*cosy,	incy_x= -sinz*cosy,	incz_x= siny;
-//  double incx_y=   sinz,	incy_y=    cosz,	incz_y= 0;
-//  double incx_z= -siny*cosz,	incy_z=  sinz*siny,	incz_z= cosy;
-
-  double incx_x=cosz*cosy, incy_x= cosz*siny*sinx-sinz*cosx, incz_x= cosz*siny*cosx+sinz*sinx;
-  double incx_y=sinz*cosy, incy_y= sinz*siny*sinx+cosz*cosx, incz_y= sinz*siny*cosx-cosz*sinx;
-  double incx_z=  -siny,   incy_z=         cosy*sinx,        incz_z=          cosy*cosx;
-
-  incx_x /= sc;  incx_y /= sc;  incx_z /= sc;
-  incy_x /= sc;  incy_y /= sc;  incy_z /= sc;
-  incz_x /= sc;  incz_y /= sc;  incz_z /= sc;
-
-  b1x = (double)0.5;
-  b1x += -(incx_x * (double)sz);
-  b1x += -(incy_x * (double)sz);
-  b1x += -(incz_x * (double)sz);
-  b1x += (double)xcenter;
-
-  b1y = (double)0.5;
-  b1y += -(incx_y * (double)sz);
-  b1y += -(incy_y * (double)sz);
-  b1y += -(incz_y * (double)sz);
-  b1y += (double)ycenter;
-
-  b1z = (double)0.5;
-  b1z += -(incx_z * (double)sz);
-  b1z += -(incy_z * (double)sz);
-  b1z += -(incz_z * (double)sz);
-  b1z += (double)zcenter;
-
-  unsigned long point;
-  mfmt curline;
-
-  for(ctr=0; ctr<(int)ret.ysize; ctr++)  {
-    if(depth == 8) memset(ret.image[ctr].uc, tcolor, ret.xsize);
-    else if(depth == 32) memset(ret.image[ctr].uc, tcolor, ret.xsize<<2);
-    }
-  for(ctr=0; ctr<(int)ret.ysize; ctr++)  {
-    curline.v = ret.image[ctr].v;
-    b2x = b1x;  b2y = b1y;  b2z = b1z;
-    for(ctr2=0; ctr2<(int)ret.xsize; ctr2++)  {
-      cx = b2x;  cy = b2y;  cz = b2z;  point=tcolor;
-      int ctr3 = -(int)(sz/sc);
-      for(; point==tcolor && ctr3<=(sz/sc); ctr3++)  {
-	if(cz>=0 && cz<zsize && cy>=0 && cy<ysize && cx>=0 && cx<xsize)  {
-	  if(depth == 8) {
-	    point = image3d[(int)cz][(int)cy].uc[(int)cx];
-	    if(point != tcolor) curline.uc[ctr2] = point;
-	    }
-	  else if(depth == 32) {
-	    point = image3d[(int)cz][(int)cy].ul[(int)cx];
-	    if(point != tcolor) curline.ul[ctr2] = point;
-	    }
-	  else Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
-	  }
-	cx += (incz_x*sc);  cy += (incz_y*sc);  cz += (incz_z*sc);
-	}
-      b2x += incx_x;  b2y += incx_y;  b2z += incx_z;
-      }
-    b1x += incy_x;  b1y += incy_y;  b1z += incy_z;
-    }
-  ret.Trim();
-
-/*
-  xa &= 255;	ya &= 255;	za &= 255;
-  int fy = (xa >= 64 && xa < 192);
-  if(fy)  { xa+=128; xa&=255; }
-  int fx = (xa >= 64 && xa < 192);
-  if(fx)  { xa+=128; xa&=255; }
-  Graphic tmp1, tmp2, tmp3;
-  double tmpa;
-  tmpa = xa;
-  tmpa *= M_PI;
-  tmpa /= 128;
-  ret = Scaled(xsize, 1+(unsigned)((double)cos(tmpa)*(double)(ysize-1)));
-  if(fy)  ret.YFlip();
-  if(fx)  ret.XFlip();
-  ret = ret.Rotated(za);
-*/
   return ret;
   }
 
@@ -421,7 +340,7 @@ void Graphic::SetRect(int xs, int ys, int d, unsigned long c) {
   int ctry, ctrx;
 
   for(ctry=0; ctry<ysize; ++ctry)
-    memset(image[ctry].uc, tcolor, xsize*(depth>>2));
+    memset(image[ctry].uc, tcolor, xsize*(depth>>3));
 
   if(depth==8) {
     memset(image[0].uc, c, xsize);
@@ -467,23 +386,54 @@ void Graphic::SetFillRect(int xs, int ys, int d, unsigned long c) {
   else Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
   }
 
+void Graphic::Clear() {
+  ClearArea(0, 0, xsize, ysize);
+  }
+
 void Graphic::ClearArea(int x, int y, int xs, int ys) {
-  int ctr;
-  for(ctr=y; ctr<y+ys; ++ctr) {
-    memset(image[ctr].uc+(x*(depth>>3)), 0, xs*(depth>>3));
+  if(tcolor == 0) {
+    int ctr;
+    for(ctr=y; ctr<y+ys; ++ctr) {
+      memset(image[ctr].uc+(x*(depth>>3)), 0, xs*(depth>>3));
+      }
+    }
+  else {
+    int ctrx, ctry;
+    for(ctry=0; ctry<ysize; ++ctry) {
+      for(ctrx=0; ctrx<xsize; ++ctrx) {
+	if(depth == 8) image[ctry].uc[ctry] = tcolor;
+	else if(depth == 16) image[ctry].us[ctry] = tcolor;
+	else if(depth == 32) image[ctry].ul[ctry] = tcolor;
+	}
+      }
+    }
+  }
+
+void Graphic::DrawPixel(int x, int y, int d, unsigned long c) {
+  ConvertColor(c, d, (int)depth);
+  if(depth == 8) {
+    image[y].uc[x] = c;
+    }
+  else if (depth == 16) {
+    image[y].us[x] = c;
+    }
+  else if (depth == 32) {
+    image[y].ul[x] = c;
     }
   }
 
 void Graphic::DrawLine(int x, int y, int xs, int ys, int d, unsigned long c) {
   Graphic *g = new Graphic;
-  g->SetLine(xs, ys, d, c);
+  ConvertColor(c, d, (int)depth);
+  g->SetLine(xs, ys, depth, c);
   PasteTransparentGraphic(g, x, y);
   delete g;
   }
 
 void Graphic::DrawRect(int x, int y, int xs, int ys, int d, unsigned long c) {
   Graphic *g = new Graphic;
-  g->SetRect(xs, ys, d, c);
+  ConvertColor(c, d, (int)depth);
+  g->SetRect(xs, ys, depth, c);
   PasteTransparentGraphic(g, x, y);
   delete g;
   }
@@ -498,6 +448,7 @@ void Graphic::DrawFillRect(int x, int y, int xs, int ys, int d, unsigned long c)
 
 void Graphic::SetRotated(Graphic &in, int angle) {
   tcolor = in.tcolor;
+  depth = in.depth;
   int dx, dy, size;
   if((in.xcenter) > (((long)in.xsize - in.xcenter) - 1))  dx = in.xcenter;
   else  dx = (in.xsize - in.xcenter) - 1;
@@ -558,62 +509,46 @@ void Graphic::SetRotated(Graphic &in, int angle) {
   }
 
 Graphic::Graphic(const Graphic &from) {
-//  Debug("Graphic:Copy Constructor   Begin");
-  int ctr, ctr2;
-  xdef = 0;  ydef = 0;  zdef = 0;
-//  DefSize(from.xsize, from.ysize, from.zsize);
+//  UserDebug("Graphic:Copy Constructor   Begin");
+  int ctr;
+  image = NULL;
+  xdef = 0;  ydef = 0;
   depth = from.depth;
   DefSize(from.xsize, from.ysize);
-  for(ctr=0; ctr<(int)from.zsize; ctr++)  {
-    for(ctr2=0; ctr2<(int)from.ysize; ctr2++)  {
-      memcpy(image3d[ctr][ctr2].v, from.image3d[ctr][ctr2].v,
-		from.xsize*depth>>3);
-      }
+  for(ctr=0; ctr<(int)from.ysize; ctr++)  {
+    memcpy(image[ctr].v, from.image[ctr].v,
+	from.xsize*(depth>>3));
     }
   xcenter = from.xcenter;
   ycenter = from.ycenter;
-  zcenter = from.zcenter;
   tcolor = from.tcolor;
-//  Debug("Graphic:Copy Constructor   End");
+//  UserDebug("Graphic:Copy Constructor   End");
   }
 
 void Graphic::operator =(const Graphic &from) {
-  int ctr, ctr2;
+  int ctr;
   mfmt *cur;
   cur = image;
-//  if(image != NULL)  {
-//    for(ctr=0; ctr<(long)ysize; ctr++)  {
-//      if(*cur != NULL)  delete(*cur);
-//      cur++;
-//      }
-//    delete(image);
-//    }
 
-//  DefSize(from.xsize, from.ysize, from.zsize);
   depth = from.depth;
   DefSize(from.xsize, from.ysize);
-  for(ctr=0; ctr<(int)from.zsize; ctr++)  {
-    for(ctr2=0; ctr2<(int)from.ysize; ctr2++)  {
-      memcpy(image3d[ctr][ctr2].v, from.image3d[ctr][ctr2].v,
-		from.xsize*depth>>3);
-      }
+  for(ctr=0; ctr<(int)from.ysize; ctr++)  {
+    memcpy(image[ctr].v, from.image[ctr].v, from.xsize*(depth>>3));
     }
   xcenter = from.xcenter;
   ycenter = from.ycenter;
-  zcenter = from.zcenter;
   tcolor = from.tcolor;
   }
 
 Graphic Graphic::operator +(const Graphic &from)  {
   Graphic ret;
-  unsigned char tcol;
-  tcol = 0;
   int xc=xcenter, xe=xsize-xcenter, yc=ycenter, ye=ysize-ycenter;
   if(from.xcenter > xc)  xc = from.xcenter;
   if(from.ycenter > yc)  yc = from.ycenter;
   if(((long)from.xsize-from.xcenter) > xe)  xe = from.xsize-from.xcenter;
   if(((long)from.ysize-from.ycenter) > ye)  ye = from.ysize-from.ycenter;
   ret.DefSize(xc+xe, yc+ye);
+  ret.tcolor = tcolor;
   ret.xcenter = xc;
   ret.ycenter = yc;
   int ctrx, ctry;
@@ -623,25 +558,25 @@ Graphic Graphic::operator +(const Graphic &from)  {
 	if((ctrx+from.xcenter >= 0) && (ctry+from.ycenter >= 0) && 
 		(ctrx+from.xcenter < (long)from.xsize) && 
 		(ctry+from.ycenter < (long)from.ysize) &&
-		(from.image[ctry+from.ycenter].uc[ctrx+from.xcenter] != tcol))
+		(from.image[ctry+from.ycenter].uc[ctrx+from.xcenter] != from.tcolor))
 	  ret.image[ctry+yc].uc[ctrx+xc] =
 		from.image[ctry+from.ycenter].uc[ctrx+from.xcenter];
 	else if((ctrx+xcenter >= 0) && (ctry+ycenter >= 0) && 
 		(ctrx+xcenter < (long)xsize) && (ctry+ycenter < (long)ysize) &&
-		(image[ctry+ycenter].uc[ctrx+xcenter] != tcol))
+		(image[ctry+ycenter].uc[ctrx+xcenter] != from.tcolor))
 	  ret.image[ctry+yc].uc[ctrx+xc] = image[ctry+ycenter].uc[ctrx+xcenter];
-	else ret.image[ctry+yc].uc[ctrx+xc] = tcol;
+	else ret.image[ctry+yc].uc[ctrx+xc] = from.tcolor;
 	}
       else if(depth == 32) {
 	if((ctrx+from.xcenter >= 0) && (ctry+from.ycenter >= 0) && 
 		(ctrx+from.xcenter < (long)from.xsize) && 
 		(ctry+from.ycenter < (long)from.ysize) &&
-		(from.image[ctry+from.ycenter].ul[ctrx+from.xcenter] != tcol))
+		(from.image[ctry+from.ycenter].ul[ctrx+from.xcenter] != from.tcolor))
 	  ret.image[ctry+yc].ul[ctrx+xc] =
 		from.image[ctry+from.ycenter].ul[ctrx+from.xcenter];
 	else if((ctrx+xcenter >= 0) && (ctry+ycenter >= 0) && 
 		(ctrx+xcenter < (long)xsize) && (ctry+ycenter < (long)ysize) &&
-		(image[ctry+ycenter].ul[ctrx+xcenter] != tcol))
+		(image[ctry+ycenter].ul[ctrx+xcenter] != from.tcolor))
 	  ret.image[ctry+yc].ul[ctrx+xc] = image[ctry+ycenter].ul[ctrx+xcenter];
 	else ret.image[ctry+yc].ul[ctrx+xc] = 0;
 	}
@@ -651,52 +586,64 @@ Graphic Graphic::operator +(const Graphic &from)  {
   return ret;
   }
 
-void Graphic::XFlip() {  //** 8-bit only
+void Graphic::XFlip() {
   int ctr, ctr2;
-  mfmt tmp;
-  for(ctr = 0; ctr < (long)ysize; ctr++)  {
-    tmp.v = image[ctr].v;
-    image[ctr].uc = new unsigned char[xsize];
-    for(ctr2 = 0; ctr2 < (long)xsize; ctr2++)  {
-      image[ctr].uc[ctr2] = tmp.uc[(xsize-1) - ctr2];
+  if(depth == 8) {
+    unsigned char tmp;
+    for(ctr = 0; ctr < (long)ysize; ctr++)  {
+      for(ctr2 = 0; ctr2 < (long)xsize/2; ctr2++)  {
+ 	tmp = image[ctr].uc[ctr2];
+	image[ctr].uc[ctr2] = image[ctr].uc[(xsize-1) - ctr2];
+	image[ctr].uc[(xsize-1) - ctr2] = tmp;
+        }
       }
-    delete tmp.c;
+    }
+  else if(depth == 16) {
+    unsigned short tmp;
+    for(ctr = 0; ctr < (long)ysize; ctr++)  {
+      for(ctr2 = 0; ctr2 < (long)xsize/2; ctr2++)  {
+ 	tmp = image[ctr].us[ctr2];
+	image[ctr].us[ctr2] = image[ctr].us[(xsize-1) - ctr2];
+	image[ctr].us[(xsize-1) - ctr2] = tmp;
+        }
+      }
+    }
+  else if(depth == 32) {
+    unsigned long tmp;
+    for(ctr = 0; ctr < (long)ysize; ctr++)  {
+      for(ctr2 = 0; ctr2 < (long)xsize/2; ctr2++)  {
+ 	tmp = image[ctr].ul[ctr2];
+	image[ctr].ul[ctr2] = image[ctr].ul[(xsize-1) - ctr2];
+	image[ctr].ul[(xsize-1) - ctr2] = tmp;
+        }
+      }
     }
   xcenter = (xsize-1)-xcenter;
   }
 
 void Graphic::YFlip() {
   int ctr;
-  mfmt tmp;
+  unsigned char tmp[xsize*(depth>>3)];
   for(ctr = 0; ctr < ((long)ysize/2); ctr++)  {
-    tmp.v = image[ctr].v;
-    image[ctr].v = image[(ysize-1) - ctr].v;
-    image[(ysize-1) - ctr].v = tmp.v;
+    memcpy(tmp, image[ctr].uc, xsize*(depth>>3));
+    memcpy(image[ctr].uc, image[(ysize-1) - ctr].uc, xsize*(depth>>3));
+    memcpy(image[(ysize-1) - ctr].uc, tmp, xsize*(depth>>3));
     }
   ycenter = (ysize-1)-ycenter;
   }
 
 void Graphic::Trim() {
-  Debug("Graphic:Trim()  Begin");
-  int yb = ysize, ye = 0, xb = xsize, xe = 0, ctrx, ctry, ctr;
+  UserDebug("Graphic:Trim()  Begin");
+  int yb = ysize, ye = 0, xb = xsize, xe = 0, ctrx, ctry;
   int yclear = 1;
-  if((ysize == 0) || (xsize == 0) || zsize == 0)  {
-    Debug("Graphic:Trim()  Pre-Delete 1");
-    if(image != NULL)  {
-      for(ctr=0; ctr<(long)ysize; ctr++)
-	if(image[ctr].v != NULL)
-	  delete(image[ctr].c);
-      delete(image);
-      }
-    image3d = new mfmt*[1];
-    image3d[0] = new mfmt[1];
-    image3d[0][0].ul = new unsigned long;
-    image3d[0][0].ul[0] = tcolor;
-    image = image3d[0];
-    xsize = 1;  ysize = 1;  zsize = 1;
-    xdef = 1;  ydef = 1;  zdef = 1;
-    xcenter = 0;  ycenter = 0;  zcenter = 0;
-    Debug("Graphic:Trim()  Post-Delete 1 -- End");
+  if((ysize == 0) || (xsize == 0))  {
+    UserDebug("Graphic:Trim()  Pre-Delete 1");
+    if(image != NULL)  { delete image;  image = NULL; }
+    image = new mfmt[1];
+    xsize = 1;  ysize = 1;
+    xdef = 1;  ydef = 1;
+    xcenter = 0;  ycenter = 0;
+    UserDebug("Graphic:Trim()  Post-Delete 1 -- End");
     return;
     }
   for(ctry = 0; ctry < (long)ysize; ctry++)  {
@@ -715,54 +662,38 @@ void Graphic::Trim() {
     }
   if((yb == 0) && (xb == 0) && (ye == ((long)ysize -1))
 	&& (xe == ((long)xsize -1)))  {
-    Debug("Graphic:Trim()  Do nothing -- End");
+    UserDebug("Graphic:Trim()  Do nothing -- End");
     return;
     }
   if((yb > ye) || (xb > xe))  {
-    Debug("Graphic:Trim()  Pre-Delete 2");
-    if(image != NULL)  {
-      for(ctr=0; ctr<(long)ysize; ctr++)  if(image[ctr].v != NULL)
-	delete(image[ctr].c);
-      delete(image);
-      }
-    image3d = new mfmt*[1];
-    image3d[0] = new mfmt[1];
-    image3d[0][0].ul = new unsigned long;
-    image3d[0][0].ul[0] = tcolor;
-    image = image3d[0];
-    xsize = 1;  ysize = 1;  zsize = 1;
-    xdef = 1;  ydef = 1;  zdef = 1;
-    xcenter = 0;  ycenter = 0;  zcenter = 0;
-    Debug("Graphic:Trim()  Post-Delete 2 -- End");
+    UserDebug("Graphic:Trim()  Pre-Delete 2");
+    if(image != NULL)  { delete image;  image = NULL; }
+    image = new mfmt[1];
+    xsize = 1;  ysize = 1;
+    xdef = 1;  ydef = 1;
+    xcenter = 0;  ycenter = 0;
+    UserDebug("Graphic:Trim()  Post-Delete 2 -- End");
     return;
     }
-  Debug("Graphic:Trim()  Begin Alloc");
-  mfmt *tmpimage = image;
-  int tmpysz = ysize;
-  int tmpxcn = xcenter - xb;
-  int tmpycn = ycenter - yb;
-  xdef = 0;  ydef = 0; zdef = 0;
-  DefSize((xe-xb)+1, (ye-yb)+1);
-  Debug("Graphic:Trim()  Begin Trim");
+  UserDebug("Graphic:Trim()  Begin Alloc");
+  int xcenter = xcenter - xb;
+  int ycenter = ycenter - yb;
+  UserDebug("Graphic:Trim()  Begin Trim");
   for(ctry = yb; ctry < (ye+1); ctry++)  {
     if(depth == 8)
-	memcpy(image[ctry-yb].uc, &tmpimage[ctry].uc[xb], xsize);
+	memmove(image[ctry-yb].uc, &image[ctry].uc[xb], xsize);
+    else if(depth == 16)
+	memmove(image[ctry-yb].us, &image[ctry].us[xb], xsize*2);
     else if(depth == 32)
-	memcpy(image[ctry-yb].ul, &tmpimage[ctry].ul[xb], xsize*4);
+	memmove(image[ctry-yb].ul, &image[ctry].ul[xb], xsize*4);
     else Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
     }
-  Debug("Graphic:Trim()  Begin Cleanup");
-  for(ctr=0; ctr<tmpysz; ctr++)  delete(tmpimage[ctr].c);
-  free(tmpimage);
-  xcenter = tmpxcn;
-  ycenter = tmpycn;
-  Debug("Graphic:Trim()  End");
+  UserDebug("Graphic:Trim()  End");
   }
 
 void Graphic::FindTrueCenter() {
   xcenter = xsize / 2;
   ycenter = ysize / 2;
-  zcenter = zsize / 2;
   }
 
 void Graphic::SetCenter(int xcr, int ycr) {
@@ -771,81 +702,50 @@ void Graphic::SetCenter(int xcr, int ycr) {
   }
 
 void Graphic::DefSize(int xsz, int ysz) {
-//  Debug("User::Graphic::DefSize Begin");
-  int ctr, ctr2;
+  UserDebug("User:Graphic:DefSize Begin");
+  int ctr;
   xcenter = 0;		ycenter = 0;	linedef = 0;
-  ysize = ysz;          xsize = xsz;	zsize = 1;
-  if(xsz <= (int)xdef && ysz <= (int)ydef && 1 == zdef)  return;
-  if(zdef > 0)  {
-    if(ydef > 0)  {
-      for(ctr=0; ctr<(int)zdef; ctr++)  {
-	if(xdef > 0)  {
-	  for(ctr2=0; ctr2<(int)ydef; ctr2++)  {
-	    delete image3d[ctr][ctr2].c;
-	    }
-	  }
-        delete image3d[ctr];
-	}
-      }
-    delete image3d;
-    }
-//  Debug("User::Graphic::DefSize Middle");
-//  ysize = (ysz>ydef)?ysz:ydef; xsize = (xsz>xdef)?xsz:xdef;
-  image = new mfmt[ysize];
-  for(ctr=0; ctr<(long)ysize; ctr++)
-    image[ctr].uc = new unsigned char[xsize*(depth>>3)];
-  image3d = new mfmt*[1];
-  image3d[0] = image;
-  ydef = ysize;  xdef = xsize;  zdef = 1;
-//  Debug("User::Graphic::DefSize End");
-  }
+  ysize = ysz;          xsize = xsz;
+  if(xsz <= (int)xdef && ysz <= (int)ydef)  return;
 
-void Graphic::DefSize(int xsz, int ysz, int zsz) {
-  int ctr, ctr2;
-  xcenter = 0;		ycenter = 0;	linedef = 0;
-  ysize = ysz;          xsize = xsz;	zsize = zsz;
-  if(xsz <= (int)xdef && ysz <= (int)ydef && zsz <= (int)zdef)  return;
-  if(zdef > 0)  {
-    if(ydef > 0)  {
-      for(ctr=0; ctr<(int)zdef; ctr++)  {
-	if(xdef > 0)  {
-	  for(ctr2=0; ctr2<(int)ydef; ctr2++)  {
-	    delete image3d[ctr][ctr2].c;
-	    }
-	  }
-        delete image3d[ctr];
-	}
-      }
-    delete image3d;
+  UserDebug("User:Graphic:DefSize Continuing");
+  chunk.SetSize(xsz*ysz*(depth>>3));
+  ydef = 1; xdef = chunk.Size()/(depth>>3);
+  while(ydef < ysz || (xdef > (ydef<<1) && (xdef>>1) >= xsz)) {
+    xdef >>= 1;  ydef <<= 1;
+    }
+  if(xdef < xsz || ydef < ysz) {
+    ydef = ysz;
+    xdef = chunk.Size()/(ydef*(depth>>3));
     }
 
-  ysize = (ysz>ydef)?ysz:ydef;
-  xsize = (xsz>xdef)?xsz:xdef;
-  zsize = (zsz>zdef)?zsz:zdef;
-  image3d = new mfmt*[zsize];
-  for(ctr=0; ctr<(long)zsize; ctr++)  {
-    image3d[ctr] = new mfmt[ysize];
-    for(ctr2=0; ctr2<(long)ysize; ctr2++)
-	image3d[ctr][ctr2].uc = new unsigned char[xsize*(depth>>3)];
+  UserDebug("User:Graphic:DefSize Pre-Delete");
+  if(image) { delete image; image = NULL; }
+  UserDebug("User:Graphic:DefSize Pre-New");
+  image = new mfmt[ydef];
+  UserDebug("User:Graphic:DefSize After Memory");
+  if(!image) Exit(-1, "Out of memory (image)!\n");
+  for(ctr=0; ctr<ydef; ++ctr) {
+    image[ctr].c = chunk.Data().c + ctr*xdef*(depth>>3);
     }
-  image = image3d[0];
-  ydef = ysize;  xdef = xsize;  zdef = zsize;
+
+  UserDebug("User:Graphic:DefSize End");
   }
 
 Graphic::~Graphic() {
-  int ctr;
-  if(image != NULL)  {
-    for(ctr=0; ctr<((ysize>ydef)?(long)ysize:(long)ydef); ctr++)
-      if(image[ctr].v != NULL)  delete(image[ctr].c);
-    delete(image);
-    }
+//  UserDebug("User:Graphic:~Graphic() Begin");
+  if(image) { delete image; image = NULL; }
+  ydef = 0;
+  xdef = 0;
+  ysize = 0;
+  xsize = 0;
+//  UserDebug("User:Graphic:~Graphic() End");
   }
 
 void Graphic::DefLin(char *data)  {
-  if(ysize == 0 || xsize == 0 || zsize == 0)  return;
-  int plane = linedef/ysize, line = linedef%ysize;
-  plane %= zsize;
-  memcpy(image3d[plane][line].uc, data, xsize*(depth>>3));
+  if(ysize == 0 || xsize == 0)  return;
+  int line = linedef%ysize;
+  memcpy(image[line].uc, data, xsize*(depth>>3));
   linedef++;
   }
 
@@ -869,6 +769,10 @@ void Graphic::DefLinH(char *data)  { //** 8-bit only
   }
 
 Graphic::Graphic(char *fn, Palette &p)  {
+  image = NULL;
+  xdef = 0;  ydef = 0;
+  xsize = 0;  ysize = 0;
+  depth = 8; tcolor=0;
   char buffer[16];
   FILE *bmp = fopen(fn, "rb");
   if(bmp == NULL)  {
@@ -898,6 +802,10 @@ Graphic::Graphic(char *fn, Palette &p)  {
   }
 
 Graphic::Graphic(char *fn)  {
+  image = NULL;
+  xdef = 0;  ydef = 0;
+  xsize = 0;  ysize = 0;
+  depth = 8; tcolor=0;
   Init(fn);
   }
 
@@ -970,8 +878,8 @@ void Graphic::InitTGA32(char *fn)  {
   }
 
 void Graphic::Init(char *fn)  {
- Debug("Graphic::Init Begin");
- xdef = 0;  ydef = 0;  zdef = 0;
+ UserDebug("Graphic::Init Begin");
+ xdef = 0;  ydef = 0;
  if(!strcasecmp(".tga", &fn[strlen(fn)-4])) { InitTGA32(fn); return; }
  int bmp, colused;
  long size2, width, height, off = 0;
@@ -984,31 +892,31 @@ void Graphic::Init(char *fn)  {
   bmp = open(fn, O_RDONLY);
 #endif
 
-  Debug("Graphic::Init First Read");
+  UserDebug("Graphic::Init First Read");
   read(bmp, buffer, 16);
   if((buffer[0] != 'B') || (buffer[1] != 'M'))  {
-    Debug("Graphic::Init Using First Exit!");
+    UserDebug("Graphic::Init Using First Exit!");
     Exit(1, "\"%s\" Not Found, or Not A Bitmap file!\n", fn);
     }
-  Debug("Graphic::Init After First Exit");
+  UserDebug("Graphic::Init After First Exit");
   size2 = buffer[14]+256*(buffer[15]);
   read(bmp, buffer, (size2 - 2));
   width = buffer[2]+256*(buffer[3]);
   height = buffer[6]+256*(buffer[7]);
   detect = buffer[10]+256*(buffer[11]);
-  Debug("Graphic::Init Plane Read");
+  UserDebug("Graphic::Init Plane Read");
   if(detect != 1)  {
     Exit(1, "I only suport 1 plane Bitmap files, \"%s\" is %ld-plane!\n",
         fn, detect);
     }
   depth = buffer[12]+256*(buffer[13]);
-  Debug("Graphic::Init Depth Read");
+  UserDebug("Graphic::Init Depth Read");
   if(depth != 8 && depth != 24)  {
     Exit(1, "\"%s\" is %ld-bit, Only 8 and 24-bit BMPs supported w/o palette!\n",
 	fn, depth);
     }
   detect = buffer[14]+256*(buffer[15]);
-  Debug("Graphic::Init Compression Read");
+  UserDebug("Graphic::Init Compression Read");
   if(detect != 0)  {
     Exit(1, "I do not support compressed Bitmap files, \"%s\" is compressed!\n",
         fn);
@@ -1054,16 +962,16 @@ void Graphic::Init(char *fn)  {
   if(depth == 8) tcolor = image[0].uc[0];
   else if(depth == 32) tcolor = image[0].uc[3]; //** 32-bit kludge
   else Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
-  Debug("Graphic::Init Close File");
+  UserDebug("Graphic::Init Close File");
   close(bmp);
   }
- Debug("Graphic::Init End");
+ UserDebug("Graphic::Init End");
  }
 
 #define fpint(f, i) fprintf(f, "%c%c%c%c", (char)(i&255), (char)((i>>8)&255), (char)((i>>16)&255), (char)((i>>24)&255))
 
 void Graphic::SaveBMP(char *fn, const Palette &pal) {
- Debug("User::Graphic::SaveBMP(2) Begin");
+ UserDebug("User::Graphic::SaveBMP(2) Begin");
  FILE *bmp;
  int ctr, ctr2;
  {
@@ -1104,11 +1012,11 @@ void Graphic::SaveBMP(char *fn, const Palette &pal) {
 //  printf("Xsize = %d, Ysize = %d\n  Size ?= (%d)\n", xsize, ysize,
 //	(ysize * ((xsize+3) - ((xsize+3)&3))) + (pal.coldec*4) + 54);
   }
- Debug("User::Graphic::SaveBMP(2) End");
+ UserDebug("User::Graphic::SaveBMP(2) End");
  }
 
 void Graphic::SaveBMP(char *fn)  {
- Debug("User::Graphic::SaveBMP(1) Begin");
+ UserDebug("User::Graphic::SaveBMP(1) Begin");
  if(depth != 32) Exit(1, "Depth = %ld and no Palette given!\n", depth);
  FILE *bmp;
  int ctr, ctr2;
@@ -1147,12 +1055,12 @@ void Graphic::SaveBMP(char *fn)  {
 //  printf("Xsize = %d, Ysize = %d\n  Size ?= (%d)\n", xsize, ysize,
 //	(ysize * ((xsize+3) - ((xsize+3)&3))) + 54);
   }
- Debug("User::Graphic::SaveBMP(1) End");
+ UserDebug("User::Graphic::SaveBMP(1) End");
  }
 
 void Graphic::Init24(char *fn, Palette &p)  {
-  Debug("User::Graphic::Init24 Begin");
-  xdef = 0;  ydef = 0;  zdef = 0;
+  UserDebug("User::Graphic::Init24 Begin");
+  xdef = 0;  ydef = 0;
   FILE *bmp;
   long size2, width, height;
   unsigned char buffer[4096];
@@ -1203,7 +1111,7 @@ void Graphic::Init24(char *fn, Palette &p)  {
   else Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
   
   fclose(bmp);
-  Debug("User::Graphic::Init24 End");
+  UserDebug("User::Graphic::Init24 End");
   }
 
 void Graphic::PasteGraphic(Graphic &g, int x, int y) {
@@ -1211,15 +1119,19 @@ void Graphic::PasteGraphic(Graphic &g, int x, int y) {
   }
 
 void Graphic::PasteGraphic(Graphic *g, int x, int y) {
+  UserDebug("User::Graphic::PasteGraphic() Begin");
   if(g==NULL) return;
   if(g->depth != depth)
     Exit(1, "Depth mismatch in %s\n", __PRETTY_FUNCTION__);
   int ctry;
-  if(x<0 || y<0 || x+g->xsize > xsize || y+g->ysize > ysize)
+  if(x<0 || y<0 || x+g->xsize > xsize || y+g->ysize > ysize) {
+    fprintf(stderr, "Pasting %ldx%ld into %ldx%ld at (%d,%d)\n",
+	g->xsize, g->ysize, xsize, ysize, x, y);
     Exit(1, "Out of bounds error in %s\n", __PRETTY_FUNCTION__);
+    }
   if(depth == 8) {
     for(ctry=0; ctry<g->ysize; ++ctry) {
-      memcpy(image[ctry+y].ul+x, g->image[ctry].ul, g->xsize);
+      memcpy(image[ctry+y].uc+x, g->image[ctry].ul, g->xsize);
       }   
     }
   else if(depth == 32) {
@@ -1235,6 +1147,7 @@ void Graphic::PasteGraphic(Graphic *g, int x, int y) {
       memcpy(image[ctry+y].us+x, g->image[ctry].us, (g->xsize)<<1);
       }   
     }
+  UserDebug("User::Graphic::PasteGraphic() End");
   }
 
 void Graphic::PasteTransparentGraphic(Graphic &g, int x, int y) {
@@ -1242,6 +1155,7 @@ void Graphic::PasteTransparentGraphic(Graphic &g, int x, int y) {
   }
 
 void Graphic::PasteTransparentGraphic(Graphic *gr, int x, int y) {
+  UserDebug("User::Graphic::PasteTransparentGraphic() Begin");
   if(gr==NULL) return;
   if(gr->depth != depth)
     Exit(1, "Depth mismatch in %s\n", __PRETTY_FUNCTION__);
@@ -1249,7 +1163,9 @@ void Graphic::PasteTransparentGraphic(Graphic *gr, int x, int y) {
   if(x<0 || y<0 || x+gr->xsize > xsize || y+gr->ysize > ysize)
     Exit(1, "Out of bounds error (%d->%ld, %d->%ld)->(%ldx%ld) in %s\n",
 	x, x+gr->xsize, y, y+gr->ysize, xsize, ysize, __PRETTY_FUNCTION__);
+  UserDebug("User::Graphic::PasteTransparentGraphic() Write");
   if(depth == 8) {
+    UserDebug("User::Graphic::PasteTransparentGraphic() 8bpp Write");
     for(ctry=0; ctry<gr->ysize; ++ctry) {
       for(ctrx=0; ctrx<gr->xsize; ++ctrx) {
 	if(gr->image[ctry].uc[ctrx] != tcolor)
@@ -1258,6 +1174,7 @@ void Graphic::PasteTransparentGraphic(Graphic *gr, int x, int y) {
       }   
     }
   else if(depth == 32) {
+    UserDebug("User::Graphic::PasteTransparentGraphic() 32bpp Write");
     for(ctry=0; ctry<gr->ysize; ++ctry) {
       for(ctrx=0; ctrx<gr->xsize; ++ctrx) {
 	unsigned long alpha=gr->image[ctry].uc[(ctrx<<2)+3];
@@ -1275,6 +1192,7 @@ void Graphic::PasteTransparentGraphic(Graphic *gr, int x, int y) {
       }   
     }
   else if(depth == 16) {
+    UserDebug("User::Graphic::PasteTransparentGraphic() 16bpp Write");
     for(ctry=0; ctry<gr->ysize; ++ctry) {
       for(ctrx=0; ctrx<gr->xsize; ++ctrx) {
 	if(gr->image[ctry].us[ctrx] != tcolor)
@@ -1282,10 +1200,11 @@ void Graphic::PasteTransparentGraphic(Graphic *gr, int x, int y) {
 	}
       }   
     }
+  UserDebug("User::Graphic::PasteTransparentGraphic() End");
   }
 
 void Graphic::DepthConvert(int d, const Palette &p) {
-  Debug("User::Graphic::DepthConvert Begin");
+  UserDebug("User::Graphic::DepthConvert Begin");
   int ctrx, ctry;
   if(depth==8 && d==32)  {
     Graphic g(*this);
@@ -1360,7 +1279,7 @@ void Graphic::DepthConvert(int d, const Palette &p) {
       }
     }
   else Exit(-1, "Unimplemented Graphic depth convert from %ld to %d\n", depth, d);
-  Debug("User::Graphic::DepthConvert End");
+  UserDebug("User::Graphic::DepthConvert End");
   }
 
 void Graphic::Undo3ds() {

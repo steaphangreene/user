@@ -3,7 +3,7 @@
 
 int main(int argc, char **argv)  {
   InitUserEngine(argc, argv);
-  Debug("test p1000");
+  UserDebug("test p1000");
   Screen *screen = new Screen;
   Mouse *mouse = new Mouse;
   screen->SetPalette("cursor.bmp");
@@ -16,13 +16,13 @@ int main(int argc, char **argv)  {
   screen->MakeFriendly(mc);
   Keyboard *key = new Keyboard;
   InputQueue input;
-  Debug("test p1001");
+  UserDebug("test p1001");
   screen->SetSize(640,480);
   mouse->SetCursor(*mc);
   mouse->ShowCursor();
-  Debug("test p1002");
+  UserDebug("test p1002");
   screen->Refresh();
-  Debug("test p1003");
+  UserDebug("test p1003");
   screen->Show();
   Panel pan = screen->NewPanel(50, 50, 590, 430);
 
@@ -57,7 +57,7 @@ int main(int argc, char **argv)  {
 	screen->Printf(0, 255, "Pressed!");
       }
     }
-  Debug("test p1004");
+  UserDebug("test p1004");
   delete key;
   delete mouse;
   delete screen;

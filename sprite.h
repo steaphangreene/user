@@ -2,6 +2,7 @@
 #define INSOMNIA_USER_SPRITE_H
 
 #include "config.h"
+#include "mfmt.h"
 
 #define SPRITE_ISCONTROL	1
 #define SPRITE_NOCOLLISIONS	2
@@ -18,7 +19,7 @@ typedef unsigned long color;
 
 class Sprite  {
   private:
-  Sprite *next, **prev;
+  Sprite *next2, *next, **prev;
 
   public:
   Sprite();
@@ -51,8 +52,8 @@ class Sprite  {
   int Priority() { return priority; };
   void SetPriority(int p) { priority = p; };
   ~Sprite();
-  int XPos() { return xpos; };
-  int YPos() { return ypos; };
+  int XPos();
+  int YPos();
   int XCenter();
   int YCenter();
   int IsControl() { return ((flags&SPRITE_ISCONTROL)>0); };
@@ -63,16 +64,19 @@ class Sprite  {
   int Flag(int i) { return (flags&i); };
   void SetPanel(Panel p) { pan = p; };
   void SetColormap(unsigned long *);
+  void SetColormap(unsigned char *);
+  void SetColormap(unsigned short *);
   int Visible() { return drawn; };
 
   protected:
   int Hits(Sprite *);
   int Hits(int, int, int, int);
+  void SetupBinFlags();
   Graphic *image, *trueimage;
   int inum, snum, priority, xpos, ypos, angle;
   char drawn, ownimage;
   unsigned long flags;
-  unsigned long *remap;
+  mfmt remap;
   Panel pan;
   friend class Screen;
   };

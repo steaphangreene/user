@@ -1,11 +1,30 @@
 #ifndef INSOMNIA_USER_CONFIG_H
 #define INSOMNIA_USER_CONFIG_H
 
+
+/*****************
+* Sprite Options *
+*****************/
+
+#define MAX_SPRITES             16384
+#define REDRAW_RECTS            8
+#define BIN_SIZE                32  // Must Agree
+#define BIN_FACTOR              5   // (eg: 2^BIN_FACTOR = BIN_SIZE)
+#define LARGE_BIN_SIZE          128  // Must Agree
+#define LARGE_BIN_FACTOR        7   // (eg: 2^LARGE_BIN_FACTOR = LARGE_BIN_SIZE)
+
+/***********************
+* Memory Chunk Options *
+***********************/
+
+#define CHUNK_MAX		256
+
 /********************
 * Debugging Options *
 ********************/
 
 #define USER_DEBUG
+#define USER_ENGINE_DEBUG
 
 /****************************************
 * Operating System Defines for Graphics *

@@ -1,6 +1,10 @@
 #!/bin/sh
-#echo -s -Wall -I/opt/gnome/include
-#echo -O6 -s -Wall -I/opt/gnome/include -ffast-math -fomit-frame-pointer
-#echo -O6 -s -Wall -I/opt/gnome/include -mpentiumpro -march=pentiumpro -malign-double -mstack-align-double -funroll-all-loops -Os -fno-exceptions -fno-rtti -ffast-math -fomit-frame-pointer
-echo -O6 -s -Wall -I/opt/gnome/include -mpentiumpro -march=pentiumpro -malign-double -funroll-all-loops -Os -fno-exceptions -fno-rtti -ffast-math -fomit-frame-pointer
-#echo -O3 -I/opt/gnome/include -ffast-math -pg -a -g -Wall
+#echo -s -Wall
+#echo -g -Wall
+echo -ggdb -Wall
+#echo -O2 -s -Wall -mpentiumpro -march=pentiumpro -malign-double -Os -fno-exceptions -fno-rtti -ffast-math -fomit-frame-pointer
+#echo -O6 -s -Wall -ffast-math -fomit-frame-pointer
+#echo -O6 -s -Wall -mpentiumpro -march=pentiumpro -malign-double -mstack-align-double -funroll-all-loops -Os -fno-exceptions -fno-rtti -ffast-math -fomit-frame-pointer
+#echo -O6 -s -Wall -mpentiumpro -march=pentiumpro -malign-double -funroll-all-loops -Os -fno-exceptions -fno-rtti -ffast-math -fomit-frame-pointer
+#echo -O3 -ffast-math -pg -a -g -Wall
+

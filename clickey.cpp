@@ -46,9 +46,11 @@ void Clickey::SetImage(Graphic *g1, Graphic *g2) {
   image = new Graphic[2];
   image[0] = *g1;
   image[1] = *g2;
+  SetupBinFlags();
   }
 
 Clickey::~Clickey() {
+  __Da_InputQueue->UnmapControl(this);
   }
 
 void Clickey::Click(int b) {
@@ -125,8 +127,16 @@ void Clickey::SetState(int s) {
 void Clickey::Create(int x, int y,
 	const char *l, color ct, color cl, color cb, color cd) {
   image = new Graphic[2];
-  image[0].SetFillRect(x, y, 32, cl);
-  image[1].SetFillRect(x, y, 32, cd);
-  __Da_Screen->GPrintf(&image[0], 2, 2, cl, ct, l);
-  __Da_Screen->GPrintf(&image[1], 2, 2, cd, ct, l);
+  image[0].SetFillRect(x, y, __Da_Screen->GetApparentDepth(), cl);
+  image[0].DrawFillRect(2, 2, x-2, y-2, __Da_Screen->GetApparentDepth(), cd);
+  image[0].DrawFillRect(2, 2, x-4, y-4, __Da_Screen->GetApparentDepth(), cb);
+  image[0].DrawPixel(1, y-1, __Da_Screen->GetApparentDepth(), cd);
+  image[0].DrawPixel(x-1, 0, __Da_Screen->GetApparentDepth(), cd);
+  image[0].DrawPixel(x-1, 1, __Da_Screen->GetApparentDepth(), cd);
+  image[0].DrawPixel(x-2, 1, __Da_Screen->GetApparentDepth(), cd);
+  __Da_Screen->GPrintf(&image[0], 3, 3, cb, ct, l);
+  image[1].SetFillRect(x, y, __Da_Screen->GetApparentDepth(), cd);
+  image[1].DrawFillRect(4, 4, x-4, y-4, __Da_Screen->GetApparentDepth(), cb);
+  __Da_Screen->GPrintf(&image[1], 5, 5, cb, ct, l);
+  SetupBinFlags();
   }

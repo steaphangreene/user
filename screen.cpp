@@ -17,11 +17,6 @@
 #include "mouse.h"
 #include "input.h"
 
-#ifdef X_DGA
-#include <X11/extensions/xf86dga.h>
-#include <X11/extensions/xf86vmode.h>
-#endif
-
 #ifdef DOS
 #include <dos.h>
 #include <go32.h>
@@ -34,7 +29,7 @@ extern Mouse *__Da_Mouse;
 extern InputQueue *__Da_InputQueue;
 
 Screen::~Screen()  {
-//  Debug("User::Screen::~Screen() Begin");
+//  UserDebug("User::Screen::~Screen() Begin");
   if(__Da_Screen != this) { __Da_Screen = NULL; Exit(1, "Phantom Screen!\n"); }
   __Da_Screen = NULL;
 
@@ -55,6 +50,11 @@ Screen::~Screen()  {
     case(VIDEO_XWINDOWS): {
       }break;
     #ifdef XF86_DGA
+    #ifdef X_DGA2
+    case(VIDEO_XDGA2): {
+      XDGACloseFramebuffer(_Xdisplay, _Xscreen);
+      }break;
+    #endif
     case(VIDEO_XF86DGA): {
       XF86VidModeSwitchToMode(_Xdisplay, _Xscreen, &oldv);
       XF86DGADirectVideo(_Xdisplay, _Xscreen, 0);
@@ -69,7 +69,7 @@ Screen::~Screen()  {
     }
   if(TCursor != NULL) delete TCursor;
   TCursor = NULL;
-//  Debug("User::Screen::~Screen() End");
+//  UserDebug("User::Screen::~Screen() End");
   }
 
 Screen::Screen(char *n)  {
@@ -77,14 +77,15 @@ Screen::Screen(char *n)  {
   Init();
   }
 
-Screen::Screen(int x, int y, char *n)  {
+Screen::Screen(int x, int y, int d, char *n)  {
   name=n;
   Init();
+  SetApparentDepth(d);
   SetSize(x, y);
   }
 
 void Screen::Init()  {
-  Debug("User::Screen::Init() 1000");
+  UserDebug("User::Screen::Init() 1000");
   if(__Da_Screen != NULL)  Exit(1, "One screen at a time!\n");
   __Da_Screen = this;
 
@@ -105,8 +106,10 @@ void Screen::Init()  {
   frame.v = NULL;
   shown = 0;
   fullscreen = 0;
-  xlong = 0;
-  ylong = 0;
+  xbins = 0;
+  ybins = 0;
+  xlbins = 0;
+  ylbins = 0;
 #ifdef DOS
   vbe2_info = NULL;
   vbe2_bank = NULL;
@@ -122,7 +125,7 @@ void Screen::Init()  {
 
   DetectVideoType();
 
-  Debug("User::Screen::Init() 1001");
+  UserDebug("User::Screen::Init() 1001");
   switch(vtype)  {
     #ifdef DOS
     case(VIDEO_DOS): {
@@ -133,13 +136,13 @@ void Screen::Init()  {
     #ifdef X_WINDOWS
     case(VIDEO_XWINDOWS): {
       rowlen = xsize;
-      Debug("User::Screen::Init() 1005");
+      UserDebug("User::Screen::Init() 1005");
       _Xscreen = DefaultScreen(_Xdisplay);
       depth = DefaultDepth(_Xdisplay, _Xscreen);
 //      printf("Colordepth = %d\n", depth);
       if(depth == 24) depth = 32;
 
-      Debug("User::Screen::Init() 1100");
+      UserDebug("User::Screen::Init() 1100");
       _Xshints = XAllocSizeHints();
       _Xshints->x = 0; _Xshints->y = 0;
       _Xshints->flags = PSize;
@@ -152,14 +155,22 @@ void Screen::Init()  {
 //      _Xshints->flags |= PWinGravity;
 //      _Xshints->flags |= PResizeInc;
 
-      Debug("User::Screen::Init() 1200");
+      UserDebug("User::Screen::Init() 1200");
       _Xwmhints = XAllocWMHints();
       _Xwmhints->flags = InputHint;
       _Xwmhints->input = True;
       }break;
     #ifdef XF86_DGA
+    #ifdef X_DGA2
+    case(VIDEO_XDGA2): {
+      UserDebug("User::Screen::Init() 1250");
+      _Xscreen = DefaultScreen(_Xdisplay);
+      depth = DefaultDepth(_Xdisplay, _Xscreen);
+      if(depth == 24) depth = 32;
+      }break;
+    #endif
     case(VIDEO_XF86DGA): {
-      Debug("User::Screen::Init() 1300");
+      UserDebug("User::Screen::Init() 1300");
       _Xscreen = DefaultScreen(_Xdisplay);
       depth = DefaultDepth(_Xdisplay, _Xscreen);
       if(depth == 24) depth = 32;
@@ -169,43 +180,49 @@ void Screen::Init()  {
     }
   appdepth = depth;
   pal->depth = depth;
-  Debug("User::Screen::Init() 1400");
+  UserDebug("User::Screen::Init() 1400");
   }
 
 
 int Screen::SetSize(int x, int y)  {
-  Debug("User::Screen::SetSize() Begin"); 
+  UserDebug("User::Screen::SetSize() Begin"); 
   int ctr, ctr2;
+
   if(bins!=NULL) {
-    for(ctr=0; ctr<xsize>>BIN_FACTOR; ++ctr) {
+    for(ctr=0; ctr<xbins; ++ctr) {
       delete bins[ctr];
       }
     delete bins;
     }
   if(lbins!=NULL) {
-    for(ctr=0; ctr<xsize>>LARGE_BIN_FACTOR; ++ctr) {
+    for(ctr=0; ctr<xlbins; ++ctr) {
       delete lbins[ctr];
       }
     delete lbins;
     }
   xsize = x; ysize = y;
+  xbins = (xsize+BIN_SIZE-1)>>BIN_FACTOR;
+  ybins = (ysize+BIN_SIZE-1)>>BIN_FACTOR;
+  xlbins = (xsize+LARGE_BIN_SIZE-1)>>LARGE_BIN_FACTOR;
+  ylbins = (ysize+LARGE_BIN_SIZE-1)>>LARGE_BIN_FACTOR;
+
   pxs[0] = 0; pys[0] = 0;
   pxe[0] = x; pye[0] = y;
-  bins = new (Sprite**)[xsize>>BIN_FACTOR];
+  bins = new (Sprite**)[xbins];
   if(!bins) Exit(1, "Insufficient memory!\n");
-  for(ctr=0; ctr<xsize>>BIN_FACTOR; ++ctr) {
-    bins[ctr] = new (Sprite*)[ysize>>BIN_FACTOR];
+  for(ctr=0; ctr<xbins; ++ctr) {
+    bins[ctr] = new (Sprite*)[ybins];
     if(!bins[ctr]) Exit(1, "Insufficient memory!\n");
-    for(ctr2=0; ctr2<ysize>>BIN_FACTOR; ++ctr2) {
+    for(ctr2=0; ctr2<ybins; ++ctr2) {
       bins[ctr][ctr2] = NULL;
       }
     }
-  lbins = new (Sprite**)[xsize>>LARGE_BIN_FACTOR];
+  lbins = new (Sprite**)[xlbins];
   if(!lbins) Exit(1, "Insufficient memory!\n");
-  for(ctr=0; ctr<xsize>>LARGE_BIN_FACTOR; ++ctr) {
-    lbins[ctr] = new (Sprite*)[ysize>>LARGE_BIN_FACTOR];
+  for(ctr=0; ctr<xlbins; ++ctr) {
+    lbins[ctr] = new (Sprite*)[ylbins];
     if(!lbins[ctr]) Exit(1, "Insufficient memory!\n");
-    for(ctr2=0; ctr2<ysize>>LARGE_BIN_FACTOR; ++ctr2) {
+    for(ctr2=0; ctr2<ylbins; ++ctr2) {
       lbins[ctr][ctr2] = NULL;
       }
     }
@@ -285,20 +302,20 @@ int Screen::SetSize(int x, int y)  {
 		Exit(-1, "No VESA detected!\n");
 	  short vmode = 0;
 	  int ctr;
-	  Debug("User::Screen::SetSize() Before Get Modes"); 
+	  UserDebug("User::Screen::SetSize() Before Get Modes"); 
 	  unsigned long vlist=(((unsigned long)vinfo.VideoModePtr)>>12) & 0xF0000;
 	  vlist |= ((unsigned long)vinfo.VideoModePtr & 0xFFFF);
 	  for(numvesamodes=0; vmode != -1; numvesamodes++) {
 	    dosmemget((numvesamodes<<1)+vlist, 2, &vmode);
 	    }
 	  --numvesamodes;
-	  Debug("User::Screen::SetSize() After Get Modes"); 
+	  UserDebug("User::Screen::SetSize() After Get Modes"); 
 	  vesamode = new short[numvesamodes];
 	  vesax = new long[numvesamodes];
 	  vesay = new long[numvesamodes];
 	  vesad = new long[numvesamodes];
 	  dosmemget(vlist, 2*numvesamodes, vesamode);
-	  Debug("User::Screen::SetSize() After Get Mode List"); 
+	  UserDebug("User::Screen::SetSize() After Get Mode List"); 
 	  for(ctr=0; ctr<numvesamodes; ctr++) {
 	    regs.x.ax = 0x4F01;
 	    regs.x.cx = vesamode[ctr];
@@ -315,7 +332,7 @@ int Screen::SetSize(int x, int y)  {
 		vesax[ctr], vesay[ctr], vesad[ctr]);
 	    }
 	  sptr += sprintf(sptr, "\n");
-	  Debug("User::Screen::SetSize() After Get Mode Info"); 
+	  UserDebug("User::Screen::SetSize() After Get Mode Info"); 
 	  }
 	int ctr;
 	int mode = -1;
@@ -455,6 +472,64 @@ int Screen::SetSize(int x, int y)  {
       while(!XCheckMaskEvent(_Xdisplay, ExposureMask, &_Xevent));
       }break;
     #ifdef XF86_DGA
+    #ifdef X_DGA2
+    case(VIDEO_XDGA2): {
+      XDGADevice *DGAdev; XDGAMode *modes;  int ctr, numm, mode=-1;
+      modes = XDGAQueryModes(_Xdisplay, _Xscreen, &numm);
+      int targetdepth = appdepth;
+      if(appdepth == 32) targetdepth = 24;
+      for(ctr=0; ctr<numm; ctr++)  {
+        if(modes[ctr].depth == targetdepth
+		&& modes[ctr].viewportWidth >= xsize
+		&& modes[ctr].viewportHeight >= ysize) {
+          mode = ctr;
+	  break;
+	  }
+        }
+      if(mode == -1) Exit(0, "No DGA Mode appropriate!\n");
+      for(; ctr<numm; ctr++)  {
+        if(modes[ctr].depth == targetdepth
+		&& modes[ctr].viewportWidth >= xsize
+		&& modes[ctr].viewportHeight >= ysize
+		&& modes[ctr].viewportWidth <= modes[mode].viewportWidth
+		&& modes[ctr].viewportHeight <= modes[mode].viewportHeight) {
+          mode = ctr;
+	  }
+        }
+      rowlen = modes[mode].bytesPerScanline * 8 / modes[mode].bitsPerPixel;
+// *************************************
+//	Radeon HACK!!!!  REMOVE THIS!!!!
+      rowlen = 1600;
+// *************************************
+      DGAFlags = modes[mode].flags;
+      collen = modes[mode].viewportHeight;
+      DGAdev = XDGASetMode(_Xdisplay, _Xscreen, modes[mode].num);
+      frame.uc = DGAdev->data;
+      depth = appdepth;
+      pal->depth = appdepth;
+      XDGASetViewport(_Xdisplay, _Xscreen, 0, 0, 0);
+      if(XGrabKeyboard(_Xdisplay, DefaultRootWindow(_Xdisplay), True,
+		GrabModeAsync, GrabModeAsync,  CurrentTime) != GrabSuccess) {
+	fprintf(stderr, "Failed to grab keyboard!\n");
+	}
+      if(XGrabPointer(_Xdisplay, DefaultRootWindow(_Xdisplay), True,
+		PointerMotionMask | ButtonPressMask | ButtonReleaseMask,
+		GrabModeAsync, GrabModeAsync, None,  None, CurrentTime)
+		!= GrabSuccess) {
+	fprintf(stderr, "Failed to grab mouse!\n");
+	}
+      if(depth == 8)  {
+	_Xmap = XDGACreateColormap(_Xdisplay, _Xscreen, DGAdev, AllocAll);
+	}
+      for(ctr=0; ctr<modes[mode].viewportHeight; ctr++) {
+	memset(frame.uc+((rowlen * modes[mode].bitsPerPixel / 8)*ctr), 0, 
+		modes[mode].viewportWidth * modes[mode].bitsPerPixel / 8);
+	}
+      frame.uc += (modes[mode].viewportWidth - xsize) * modes[mode].bitsPerPixel / 16;
+      frame.uc += (modes[mode].viewportHeight - ysize) * modes[mode].bytesPerScanline / 2;
+      delete(modes);
+      }break;
+    #endif
     case(VIDEO_XF86DGA): {
       int ctr, n;
       XWarpPointer(_Xdisplay, None, DefaultRootWindow(_Xdisplay),0,0,0,0,0,0);
@@ -504,7 +579,7 @@ int Screen::SetSize(int x, int y)  {
     #endif
     }
   if(__Da_Mouse != NULL)  __Da_Mouse->SetRange(0, 0, xsize, ysize);
-  Debug("User::Screen::SetSize() End"); 
+  UserDebug("User::Screen::SetSize() End"); 
   return 1;
   }
 
@@ -514,7 +589,7 @@ void Screen::Hide()  {
 void Screen::Show()  {
   if(shown) return;
   shown = 1;
-  Debug("User::Screen::Show() Entry");
+  UserDebug("User::Screen::Show() Entry");
 
   switch(vtype)  {
     #ifdef DOS
@@ -548,6 +623,23 @@ void Screen::Show()  {
       RefreshFull();
       }break;
     #ifdef XF86_DGA
+    #ifdef X_DGA2
+    case(VIDEO_XDGA2): {
+      if(depth == 8)  {
+	int ctr;
+	for(ctr=0; ctr<256; ctr++)  {
+	  _Xpal[ctr].pixel = ctr;
+	  _Xpal[ctr].red = ((unsigned short)pal->GetRedEntry(ctr))<<8;
+	  _Xpal[ctr].green = ((unsigned short)pal->GetGreenEntry(ctr))<<8;
+	  _Xpal[ctr].blue = ((unsigned short)pal->GetBlueEntry(ctr))<<8;
+	  _Xpal[ctr].flags = DoRed|DoGreen|DoBlue;
+	  }
+	XStoreColors(_Xdisplay, _Xmap, _Xpal, 256);
+	XDGAInstallColormap(_Xdisplay, _Xscreen, _Xmap);
+	}
+      RefreshFull();
+      }break;
+    #endif
     case(VIDEO_XF86DGA): {
       if(depth == 8)  {
 	int ctr;
@@ -566,7 +658,7 @@ void Screen::Show()  {
     #endif
     #endif
     }
-  Debug("User::Screen::Show() End");
+  UserDebug("User::Screen::Show() End");
   }
 
 void Screen::FullScreenModeOn() {
@@ -589,7 +681,7 @@ void Screen::Refresh()  {
   }
 
 void Screen::RefreshFast()  {
-  Debug("User::Screen::RefreshFast Begin");
+  UserDebug("User::Screen::RefreshFast Begin");
   if(__Da_Speaker != NULL) __Da_Speaker->Update();
   if(__Da_InputQueue != NULL)  __Da_InputQueue->Update();
   else {
@@ -597,6 +689,7 @@ void Screen::RefreshFast()  {
     }
   if(!shown) return;
   int ctrb;
+//  memset(frame.uc, 0, rowlen * ysize);
   for(ctrb=0; ctrb<REDRAW_RECTS; ctrb++)  {
     if(rxs[ctrb] != -1) {
       switch(vtype)  {
@@ -606,6 +699,9 @@ void Screen::RefreshFast()  {
 	      rxs[ctrb], rys[ctrb], rxe[ctrb]-rxs[ctrb], rye[ctrb]-rys[ctrb]);
 	  }break;
 	#ifdef XF86_DGA
+	#ifdef X_DGA2
+	case(VIDEO_XDGA2):
+	#endif
 	case(VIDEO_XF86DGA): {
 	  int ctry;
 	  if(depth == 8) {
@@ -674,7 +770,7 @@ void Screen::RefreshFast()  {
       rye[ctrb] = -1;
       }
     }
-  Debug("User::Screen::RefreshFast End");
+  UserDebug("User::Screen::RefreshFast End");
   }
 
 void Screen::RefreshFull()  {
@@ -694,10 +790,13 @@ void Screen::RefreshFull()  {
   switch(vtype)  {
     #ifdef X_WINDOWS
     case(VIDEO_XWINDOWS): {
-      Debug("User::Screen::RefreshFull() 1000");
+      UserDebug("User::Screen::RefreshFull() 1000");
       XPutImage(_Xdisplay, _Xwindow, _Xgc, _Ximage, 0, 0, 0, 0, xsize, ysize);
       }break;
     #ifdef XF86_DGA
+    #ifdef X_DGA2
+    case(VIDEO_XDGA2):
+    #endif
     case(VIDEO_XF86DGA): {
       int ctry;
       if(depth == 8) {
@@ -754,7 +853,7 @@ void Screen::RefreshFull()  {
     #endif
     }
   WaitForNextFrame();
-  Debug("User::Screen::RefreshFull() 1100");
+  UserDebug("User::Screen::RefreshFull() 1100");
   }
 
 void Screen::Clear()  {
@@ -928,12 +1027,14 @@ void Screen::SetPointFG(int x, int y, int r, int g, int b)  {
   }
 
 void Screen::FullScreenBMP(const char *fn) {
+  pal->Set((char*)fn);
   Graphic g((char*)fn);
   FullScreenGraphic(g);
   }
 
 void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
 	int xb, int yb, int xs, int ys, Panel p)  {
+//  printf("At (%d,%d), using (%d,%d)->(%d,%d)\n", x, y, xb, yb, xb+xs, yb+ys);
   if(x+g.xsize <= pxs[p] || y+g.ysize <= pys[p] || x >= pxe[p] || y >= pye[p])
 	return;
   if(g.depth != depth)  {
@@ -943,10 +1044,10 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
     delete g2;
     return;
     }
-  Debug("User:Screen:DrawPartialTransparentGraphicFG Middle");
+//  UserDebug("User:Screen:DrawPartialTransparentGraphicFG Middle");
   int ctrx, ctry;
   if(depth == 8)  {
-    Debug("User:Screen:DrawPartialTransparentGraphicFG Depth 8");
+//    UserDebug("User:Screen:DrawPartialTransparentGraphicFG Depth 8");
     for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
       for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
 	if(g.image[ctry].uc[ctrx] != g.tcolor)  {
@@ -956,7 +1057,7 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
       }
     }
   else if(depth == 32)  {
-    Debug("User:Screen:DrawPartialTransparentGraphicFG Depth 32");
+//    UserDebug("User:Screen:DrawPartialTransparentGraphicFG Depth 32");
     for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
       for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
 	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
@@ -981,7 +1082,7 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
       }
     }
   else if(depth == 16)  {
-    Debug("User:Screen:DrawPartialTransparentGraphicFG Depth 16");
+//    UserDebug("User:Screen:DrawPartialTransparentGraphicFG Depth 16");
     for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
       for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
 	if(g.image[ctry].us[ctrx] != g.tcolor)  {
@@ -991,7 +1092,7 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
       }
     }
   else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
-  Debug("User:Screen:DrawPartialTransparentGraphicFG End");
+//  UserDebug("User:Screen:DrawPartialTransparentGraphicFG End");
   }
 
 void Screen::DrawPartialGraphicFG(Graphic &g, int x, int y,
@@ -1005,30 +1106,129 @@ void Screen::DrawPartialGraphicFG(Graphic &g, int x, int y,
     delete g2;
     return;
     }
-  Debug("User:Screen:DrawPartialTransparentGraphicFG Middle");
+//  UserDebug("User:Screen:DrawPartialGraphicFG Middle");
   int ctry;
   int ix = (xb>?(pxs[p]-x)), ex = (pxe[p]-x)<?(xs+xb);
   int sx = ex-ix;
   if(depth == 8)  {
-    Debug("User:Screen:DrawPartialTransparentGraphicFG Depth 8");
+//    UserDebug("User:Screen:DrawPartialGraphicFG Depth 8");
     for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
       memcpy(image[ctry+y].uc+x+ix, g.image[ctry].uc+ix, sx);
       }
     }
   else if(depth == 16)  {
-    Debug("User:Screen:DrawPartialTransparentGraphicFG Depth 16");
+//    UserDebug("User:Screen:DrawPartialGraphicFG Depth 16");
     for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
       memcpy(image[ctry+y].us+x+ix, g.image[ctry].us+ix, sx<<1);
       }
     }
   else if(depth == 32)  {
-    Debug("User:Screen:DrawPartialTransparentGraphicFG Depth 32");
+//    UserDebug("User:Screen:DrawPartialGraphicFG Depth 32");
     for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
       memcpy(image[ctry+y].ul+x+ix, g.image[ctry].ul+ix, sx<<2);
       }
     }
   else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
-  Debug("User:Screen:DrawPartialTransparentGraphicFG End");
+//  UserDebug("User:Screen:DrawPartialGraphicFG End");
+  }
+
+void Screen::RCDrawPartialTransparentGraphicFG(Graphic &g, mfmt remap, 
+	int x, int y, int xb, int yb, int xs, int ys, Panel p)  {
+  if(x+g.xsize <= pxs[p] || y+g.ysize <= pys[p] || x >= pxe[p] || y >= pye[p])
+	return;
+  if(g.depth != depth)  {
+    Graphic *g2 = new Graphic(g);
+    g2->DepthConvert(depth, *pal);
+    DrawPartialTransparentGraphicFG(*g2, x, y, xb, yb, xs, ys, p);
+    delete g2;
+    return;
+    }
+//  UserDebug("User:Screen:RCDrawPartialTransparentGraphicFG Middle");
+  int ctrx, ctry;
+  if(depth == 8)  {
+//    UserDebug("User:Screen:RCDrawPartialTransparentGraphicFG Depth 8");
+    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+      for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
+	if(g.image[ctry].uc[ctrx] != g.tcolor)  {
+	  image[ctry+y].uc[ctrx+x] = remap.uc[g.image[ctry].uc[ctrx]];
+	  }
+	}
+      }
+    }
+  else if(depth == 32)  {
+//    UserDebug("User:Screen:RCDrawPartialTransparentGraphicFG Depth 32");
+    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+      for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
+	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
+	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
+	  }
+	else if(g.image[ctry].uc[(ctrx<<2)+3])  {
+	  int alpha = g.image[ctry].uc[(ctrx<<2)+3];
+	  unsigned long r1 = image[ctry+y].uc[((ctrx+x)<<2)];
+	  unsigned long g1 = image[ctry+y].uc[((ctrx+x)<<2)+1];
+	  unsigned long b1 = image[ctry+y].uc[((ctrx+x)<<2)+2];
+	  unsigned long r2 = g.image[ctry].uc[(ctrx<<2)];
+	  unsigned long g2 = g.image[ctry].uc[(ctrx<<2)+1];
+	  unsigned long b2 = g.image[ctry].uc[(ctrx<<2)+2];
+          r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
+          g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
+          b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
+	  image[ctry+y].uc[((ctrx+x)<<2)] = r1;
+	  image[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
+	  image[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
+	  }
+	}
+      }
+    }
+  else if(depth == 16)  {
+//    UserDebug("User:Screen:RCDrawPartialTransparentGraphicFG Depth 16");
+    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+      for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
+	if(g.image[ctry].us[ctrx] != g.tcolor)  {
+	  image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
+	  }
+	}
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+//  UserDebug("User:Screen:RCDrawPartialTransparentGraphicFG End");
+  }
+
+void Screen::RCDrawPartialGraphicFG(Graphic &g, mfmt remap, int x, int y,
+	int xb, int yb, int xs, int ys, Panel p)  {
+  if(x+g.xsize <= pxs[p] || y+g.ysize <= pys[p] || x >= pxe[p] || y >= pye[p])
+	return;
+  if(g.depth != depth)  {
+    Graphic *g2 = new Graphic(g);
+    g2->DepthConvert(depth, *pal);
+    DrawPartialTransparentGraphicFG(*g2, x, y, xb, yb, xs, ys, p);
+    delete g2;
+    return;
+    }
+//  UserDebug("User:Screen:RCDrawPartialGraphicFG Middle");
+  int ctry;
+  int ix = (xb>?(pxs[p]-x)), ex = (pxe[p]-x)<?(xs+xb);
+  int sx = ex-ix;
+  if(depth == 8)  {
+//    UserDebug("User:Screen:RCDrawPartialGraphicFG Depth 8");
+    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+      memcpy(image[ctry+y].uc+x+ix, g.image[ctry].uc+ix, sx);
+      }
+    }
+  else if(depth == 16)  {
+//    UserDebug("User:Screen:RCDrawPartialGraphicFG Depth 16");
+    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+      memcpy(image[ctry+y].us+x+ix, g.image[ctry].us+ix, sx<<1);
+      }
+    }
+  else if(depth == 32)  {
+//    UserDebug("User:Screen:RCDrawPartialGraphicFG Depth 32");
+    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+      memcpy(image[ctry+y].ul+x+ix, g.image[ctry].ul+ix, sx<<2);
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+//  UserDebug("User:Screen:RCDrawPartialGraphicFG End");
   }
 
 void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
@@ -1042,10 +1242,10 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
     return;
     }
   InvalidateRectangle(x, y, g.xsize, g.ysize);
-  Debug("User:Screen:DrawTransparentGraphicFG Middle");
+  UserDebug("User:Screen:DrawTransparentGraphicFG Middle");
   int ctrx, ctry;
   if(depth == 8)  {
-    Debug("User:Screen:DrawTransparentGraphicFG Depth 8");
+    UserDebug("User:Screen:DrawTransparentGraphicFG Depth 8");
     for(ctry=(0>?(pys[p]-y)); ctry<((pye[p]-y)<?g.ysize); ctry++)  {
       for(ctrx=(0>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?g.xsize); ctrx++)  {
 	if(g.image[ctry].uc[ctrx] != g.tcolor)  {
@@ -1055,7 +1255,7 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
       }
     }
   else if(depth == 32)  {
-    Debug("User:Screen:DrawTransparentGraphicFG Depth 32");
+    UserDebug("User:Screen:DrawTransparentGraphicFG Depth 32");
     for(ctry=(0>?(pys[p]-y)); ctry<((pye[p]-y)<?g.ysize); ctry++)  {
       for(ctrx=(0>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?g.xsize); ctrx++)  {
 	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
@@ -1080,7 +1280,7 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
       }
     }
   else if(depth == 16)  {
-    Debug("User:Screen:DrawTransparentGraphicFG Depth 16");
+    UserDebug("User:Screen:DrawTransparentGraphicFG Depth 16");
     for(ctry=(0>?(pys[p]-y)); ctry<((pye[p]-y)<?g.ysize); ctry++)  {
       for(ctrx=(0>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?g.xsize); ctrx++)  {
 	if(g.image[ctry].us[ctrx] != g.tcolor)  {
@@ -1090,34 +1290,38 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
       }
     }
   else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
-  Debug("User:Screen:DrawTransparentGraphicFG End");
+  UserDebug("User:Screen:DrawTransparentGraphicFG End");
   }
 
 void Screen::DrawGraphicFG(Graphic &g, int x, int y, Panel p)  {
   if(x+g.xsize <= pxs[p] || y+g.ysize <= pys[p] || x >= pxe[p] || y >= pye[p])
 	return;
-  InvalidateRectangle(x, y, g.xsize, g.ysize);
   if(g.depth != depth)  {
     Graphic *g2 = new Graphic(g);
     g2->DepthConvert(depth, *pal);
-    DrawGraphicFG(*g2, x, y);
+    DrawGraphic(*g2, x, y);
     delete g2;
     return;
     }
-  int ctry;
+  int ctry, xbc=0, xrlen=0, ybc=0, yrlen=0;
+  if(x < pxs[p]) xbc = pxs[p] - x;
+  if(x+g.xsize > pxe[p]) xrlen = xbc + (x+g.xsize) - pxe[p];
+  if(y < pys[p]) ybc = pys[p] - y;
+  if(y+g.ysize > pye[p]) yrlen = ybc + (y+g.ysize) - pye[p];
+  InvalidateRectangle(x+xbc, y+ybc, g.xsize-xrlen, g.ysize-yrlen);
   if(depth == 8)  {
-    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      memcpy(image[ctry+y].uc+x, g.image[ctry].uc, ((xsize-x)<?g.xsize));
+    for(ctry=0+ybc; ctry < g.ysize-yrlen; ctry++)  {
+      memcpy(image[ctry+y].uc+x+xbc, g.image[ctry].uc+xbc, g.xsize-xrlen);
       }
     }
   else if(depth == 16)  {
-    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      memcpy(image[ctry+y].us+x, g.image[ctry].us, (((xsize-x)<?g.xsize)<<1));
+    for(ctry=0+ybc; ctry < g.ysize-yrlen; ctry++)  {
+      memcpy(image[ctry+y].ul+x+xbc, g.image[ctry].ul+xbc, g.xsize-xrlen);
       }
     }
   else if(depth == 32)  {
-    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      memcpy(image[ctry+y].ul+x, g.image[ctry].ul, (((xsize-x)<?g.xsize)<<2));
+    for(ctry=0+ybc; ctry < g.ysize-yrlen; ctry++)  {
+      memcpy(image[ctry+y].us+x+xbc, g.image[ctry].us+xbc, g.xsize-xrlen);
       }
     }
   else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
@@ -1172,7 +1376,7 @@ void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
       }
     }
   else if(depth == 32)  {
-    Debug("User:Screen:DrawTransparentGraphic Depth 32");
+    UserDebug("User:Screen:DrawTransparentGraphic Depth 32");
     for(ctry=(0>?(pys[p]-y)); ctry<((pye[p]-y)<?g.ysize); ctry++)  {
       for(ctrx=(0>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?g.xsize); ctrx++)  {
 	if(g.image[ctry].uc[(ctrx<<2)+3] == 255)  {
@@ -1213,10 +1417,10 @@ void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
   else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   }
 
-void Screen::DrawGraphic(Graphic &g, int x, int y, Panel p)  {
-  if(x+g.xsize <= pxs[p] || y+g.ysize <= pys[p] || x >= pxe[p] || y >= pye[p])
+void Screen::DrawPartialGraphic(Graphic &g, int x, int y, 
+	int xb, int yb, int xs, int ys, Panel p)  {
+  if(x+xs <= pxs[p] || y+ys <= pys[p] || x >= pxe[p] || y >= pye[p])
 	return;
-  InvalidateRectangle(x, y, g.xsize, g.ysize);
   if(g.depth != depth)  {
     Graphic *g2 = new Graphic(g);
     g2->DepthConvert(depth, *pal);
@@ -1224,23 +1428,65 @@ void Screen::DrawGraphic(Graphic &g, int x, int y, Panel p)  {
     delete g2;
     return;
     }
-  int ctry;
+  int ctry, xbc=0, xrlen=0, ybc=0, yrlen=0;
+  if(x < pxs[p]) xbc = pxs[p] - x;
+  if(x+xs > pxe[p]) xrlen = xbc + (x+xs) - pxe[p];
+  if(y < pys[p]) ybc = pys[p] - y;
+  if(y+ys > pye[p]) yrlen = ybc + (y+ys) - pye[p];
+  InvalidateRectangle(x+xbc, y+ybc, xs-xrlen, ys-yrlen);
   if(depth == 8)  {
-    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      memcpy(image[ctry+y].uc+x, g.image[ctry].uc, ((xsize-x)<?g.xsize));
-      memcpy(backg[ctry+y].uc+x, g.image[ctry].uc, ((xsize-x)<?g.xsize));
+    for(ctry=0+ybc; ctry < ys-yrlen; ctry++)  {
+      memcpy(image[ctry+y].uc+x+xbc, g.image[ctry+yb].uc+xb+xbc, xs-xrlen);
+      memcpy(backg[ctry+y].uc+x+xbc, g.image[ctry+yb].uc+xb+xbc, xs-xrlen);
       }
     }
   else if(depth == 16)  {
-    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      memcpy(image[ctry+y].us+x, g.image[ctry].us, (((xsize-x)<?g.xsize)<<1));
-      memcpy(backg[ctry+y].us+x, g.image[ctry].us, (((xsize-x)<?g.xsize)<<1));
+    for(ctry=0+ybc; ctry < ys-yrlen; ctry++)  {
+      memcpy(image[ctry+y].ul+x+xbc, g.image[ctry+yb].ul+xb+xbc, xs-xrlen);
+      memcpy(backg[ctry+y].ul+x+xbc, g.image[ctry+yb].ul+xb+xbc, xs-xrlen);
       }
     }
   else if(depth == 32)  {
-    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      memcpy(image[ctry+y].ul+x, g.image[ctry].ul, (((xsize-x)<?g.xsize)<<2));
-      memcpy(backg[ctry+y].ul+x, g.image[ctry].ul, (((xsize-x)<?g.xsize)<<2));
+    for(ctry=0+ybc; ctry < ys-yrlen; ctry++)  {
+      memcpy(image[ctry+y].us+x+xbc, g.image[ctry+yb].us+xb+xbc, xs-xrlen);
+      memcpy(backg[ctry+y].us+x+xbc, g.image[ctry+yb].us+xb+xbc, xs-xrlen);
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  }
+
+void Screen::DrawGraphic(Graphic &g, int x, int y, Panel p)  {
+  if(x+g.xsize <= pxs[p] || y+g.ysize <= pys[p] || x >= pxe[p] || y >= pye[p])
+	return;
+  if(g.depth != depth)  {
+    Graphic *g2 = new Graphic(g);
+    g2->DepthConvert(depth, *pal);
+    DrawGraphic(*g2, x, y);
+    delete g2;
+    return;
+    }
+  int ctry, xbc=0, xrlen=0, ybc=0, yrlen=0;
+  if(x < pxs[p]) xbc = pxs[p] - x;
+  if(x+g.xsize > pxe[p]) xrlen = xbc + (x+g.xsize) - pxe[p];
+  if(y < pys[p]) ybc = pys[p] - y;
+  if(y+g.ysize > pye[p]) yrlen = ybc + (y+g.ysize) - pye[p];
+  InvalidateRectangle(x+xbc, y+ybc, g.xsize-xrlen, g.ysize-yrlen);
+  if(depth == 8)  {
+    for(ctry=0+ybc; ctry < g.ysize-yrlen; ctry++)  {
+      memcpy(image[ctry+y].uc+x+xbc, g.image[ctry].uc+xbc, g.xsize-xrlen);
+      memcpy(backg[ctry+y].uc+x+xbc, g.image[ctry].uc+xbc, g.xsize-xrlen);
+      }
+    }
+  else if(depth == 16)  {
+    for(ctry=0+ybc; ctry < g.ysize-yrlen; ctry++)  {
+      memcpy(image[ctry+y].ul+x+xbc, g.image[ctry].ul+xbc, g.xsize-xrlen);
+      memcpy(backg[ctry+y].ul+x+xbc, g.image[ctry].ul+xbc, g.xsize-xrlen);
+      }
+    }
+  else if(depth == 32)  {
+    for(ctry=0+ybc; ctry < g.ysize-yrlen; ctry++)  {
+      memcpy(image[ctry+y].us+x+xbc, g.image[ctry].us+xbc, g.xsize-xrlen);
+      memcpy(backg[ctry+y].us+x+xbc, g.image[ctry].us+xbc, g.xsize-xrlen);
       }
     }
   else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
@@ -1313,6 +1559,22 @@ void Screen::SetPaletteEntry(int c, int r, int g, int b) {
 	  }
 	}break;
       #ifdef XF86_DGA
+      #ifdef X_DGA2
+      case(VIDEO_XDGA2): {
+	if(depth == 8)  {
+	  _Xpal[c].pixel = c;
+	  _Xpal[c].red = r<<8;
+	  _Xpal[c].green = g<<8;
+	  _Xpal[c].blue = b<<8;
+	  _Xpal[c].flags = DoRed|DoGreen|DoBlue;
+	  XStoreColor(_Xdisplay, _Xmap, &_Xpal[c]);
+	  XDGAInstallColormap(_Xdisplay, _Xscreen, _Xmap);
+	  }
+	else {
+//	  RefreshFull();
+	  }
+	}break;
+      #endif
       case(VIDEO_XF86DGA): {
 	if(depth == 8)  {
 	  _Xpal[c].pixel = c;
@@ -1334,7 +1596,8 @@ void Screen::SetPaletteEntry(int c, int r, int g, int b) {
   }
 
 void Screen::SetPalette(Palette &p) {
-  pal = new Palette(p);
+  if(appdepth != p.depth) Exit(1, "Palette and Screen depth mismatch\n");
+  (*pal) = p;
   if(shown)  {
     switch(vtype)  {
       #ifdef DOS
@@ -1367,6 +1630,22 @@ void Screen::SetPalette(Palette &p) {
 	  }
         }break;
       #ifdef XF86_DGA
+      #ifdef X_DGA2
+      case(VIDEO_XDGA2): {
+        if(depth == 8)  {
+	  int ctr;
+	  for(ctr=0; ctr<256; ctr++)  {
+	    _Xpal[ctr].pixel = ctr;
+	    _Xpal[ctr].red = ((unsigned short)pal->GetRedEntry(ctr))<<8;
+	    _Xpal[ctr].green = ((unsigned short)pal->GetGreenEntry(ctr))<<8;
+	    _Xpal[ctr].blue = ((unsigned short)pal->GetBlueEntry(ctr))<<8;
+	    _Xpal[ctr].flags = DoRed|DoGreen|DoBlue;
+	    }
+	  XStoreColors(_Xdisplay, _Xmap, _Xpal, 256);
+	  XDGAInstallColormap(_Xdisplay, _Xscreen, _Xmap);
+	  }
+        }break;
+      #endif
       case(VIDEO_XF86DGA): {
         if(depth == 8)  {
 	  int ctr;
@@ -1388,6 +1667,7 @@ void Screen::SetPalette(Palette &p) {
   }
 
 void Screen::SetPalette(const char *fn) {
+  pal->depth = appdepth;
   pal->Set(fn);
   if(shown)  {
     switch(vtype)  {
@@ -1421,6 +1701,22 @@ void Screen::SetPalette(const char *fn) {
 	  }
         }break;
       #ifdef XF86_DGA
+      #ifdef X_DGA2
+      case(VIDEO_XDGA2): {
+        if(depth == 8)  {
+	  int ctr;
+	  for(ctr=0; ctr<256; ctr++)  {
+	    _Xpal[ctr].pixel = ctr;
+	    _Xpal[ctr].red = ((unsigned short)pal->GetRedEntry(ctr))<<8;
+	    _Xpal[ctr].green = ((unsigned short)pal->GetGreenEntry(ctr))<<8;
+	    _Xpal[ctr].blue = ((unsigned short)pal->GetBlueEntry(ctr))<<8;
+	    _Xpal[ctr].flags = DoRed|DoGreen|DoBlue;
+	    }
+	  XStoreColors(_Xdisplay, _Xmap, _Xpal, 256);
+	  XDGAInstallColormap(_Xdisplay, _Xscreen, _Xmap);
+	  }
+        }break;
+      #endif
       case(VIDEO_XF86DGA): {
         if(depth == 8)  {
 	  int ctr;
@@ -1556,15 +1852,18 @@ void Screen::InvalidateRectangle(int x, int y, int xs, int ys)  {
   }
 
 void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
-  Debug("Screen:RestoreRectangle() Begin");
-  if(x>xsize || y>ysize || x+xs<0 || y+ys<0) return;
+  UserDebug("Screen:RestoreRectangle() Begin");
+  static Sprite *spbin1[256], *spbin2[256];
+  if(x>xsize || y>ysize || x+xs<=0 || y+ys<=0) return;
   if(x<0) { xs += x; x=0; }
   if(y<0) { ys += y; y=0; }
   if(x+xs > xsize) xs = xsize-x;
   if(y+ys > ysize) ys = ysize-y;
+  if(xs < 0 || ys < 0) return;
+//  printf("Restoring (%d,%d)->(%d,%d)\n", x, y, x+xs, y+ys);
   InvalidateRectangle(x, y, xs, ys);
   int ctrx, ctry;
-  Debug("Screen:RestoreRectangle() Before Write");
+  UserDebug("Screen:RestoreRectangle() Before Write");
   if(depth == 8)  {
     for(ctry=y; ctry<y+ys; ctry++)  {
       memcpy(image[ctry].uc+x, backg[ctry].uc+x, xs);
@@ -1582,68 +1881,99 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
     }
   else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 
-  Debug("Screen:RestoreRectangle() Before Selection");
-  Sprite **spp = spbuf;
-  Debug("Screen:RestoreRectangle() Small 1");
+  UserDebug("Screen:RestoreRectangle() Before Identification of Sprites");
 
+  memset(spbin1, 0, sizeof(spbin1));
 #define snag(bxy) \
-    for(tmps=bxy; tmps!=NULL; tmps=tmps->next) {			\
-      if(tmps->drawn && (y+ys) > tmps->ypos && (x+xs) > tmps->xpos	\
-	  && tmps->image != NULL					\
-	  && x < (tmps->xpos + tmps->image->xsize)			\
-	  && y < (tmps->ypos + tmps->image->ysize))  {			\
-	*spp = tmps; ++spp;						\
+    for(tmps=bxy; tmps!=NULL;) {					\
+      if(tmps->drawn && tmps->image != NULL				\
+	  && (y+ys) > tmps->ypos && (x+xs) > tmps->xpos			\
+	  && y < (tmps->ypos + tmps->image->ysize)			\
+	  && x < (tmps->xpos + tmps->image->xsize))  {			\
+	cur = tmps;							\
+	tmps = tmps->next;						\
+	cur->next2 = spbin1[cur->priority & 255];			\
+	spbin1[cur->priority & 255] = cur;				\
 	}								\
+      else tmps = tmps->next;						\
       }
 
   int xb=(x>>BIN_FACTOR)-1, yb=(y>>BIN_FACTOR)-1;
   int xe=(x+xs+BIN_SIZE-1)>>BIN_FACTOR, ye=(y+ys+BIN_SIZE-1)>>BIN_FACTOR;
-  register Sprite *tmps;
+  Sprite *ind, *cur, *tmps;
   if(xb<0) xb=0;
   if(yb<0) yb=0;
-  if(xe>=(xsize>>BIN_FACTOR)) xe=(xsize>>BIN_FACTOR)-1;
-  if(ye>=(ysize>>BIN_FACTOR)) ye=(ysize>>BIN_FACTOR)-1;
+  if(xe>xbins) xe=xbins;
+  if(ye>ybins) ye=ybins;
   for(ctrx=xb; ctrx<xe; ++ctrx) {
     for(ctry=yb; ctry<ye; ++ctry) {
       snag(bins[ctrx][ctry]);
       }
     }
-  snag(huges);
 
   xb=(x>>LARGE_BIN_FACTOR)-1; yb=(y>>LARGE_BIN_FACTOR)-1;
   xe=(x+xs+LARGE_BIN_SIZE-1)>>LARGE_BIN_FACTOR;
   ye=(y+ys+LARGE_BIN_SIZE-1)>>LARGE_BIN_FACTOR;
   if(xb<0) xb=0;
   if(yb<0) yb=0;
-  if(xe>=(xsize>>LARGE_BIN_FACTOR)) xe=(xsize>>LARGE_BIN_FACTOR)-1;
-  if(ye>=(ysize>>LARGE_BIN_FACTOR)) ye=(ysize>>LARGE_BIN_FACTOR)-1;
+  if(xe>xlbins) xe=xlbins;
+  if(ye>ylbins) ye=ylbins;
   for(ctrx=xb; ctrx<xe; ++ctrx) {
     for(ctry=yb; ctry<ye; ++ctry) {
       snag(lbins[ctrx][ctry]);
       }
     }
+
   snag(huges);
+
 #undef snag(bxy)
 
-  Debug("Screen:RestoreRectangle() Before Sort");
-  *spp = NULL;
-
-  Sprite **ind, **best, **begin, *tmp;
-  for(begin=spbuf; *begin!=NULL; ++begin) {
-    for(best=begin,ind=begin; ind!=spp; ++ind) {
-      if((*ind)->priority > (*best)->priority) best=ind;
-      else if((*ind)->priority == (*best)->priority
-	&& (*ind)->snum > (*best)->snum) best=ind;
+  UserDebug("Screen:RestoreRectangle() Before Radix Sort");
+  memset(spbin2, 0, sizeof(spbin2));
+  for(ctrx=255; ctrx>=0; --ctrx) {
+    ind = spbin1[ctrx];
+    while(ind != NULL) {
+      cur = ind;
+      ind = ind->next2;
+      cur->next2 = spbin2[(cur->priority >> 8) & 255];
+      spbin2[(cur->priority >> 8) & 255] = cur;
       }
-    tmp = *best;
-    *best=*begin;
-    *begin=tmp;
     }
-  Debug("Screen:RestoreRectangle() Before Redraw");
-  for(spp = spbuf; *spp != NULL; spp++)  {
-    (*spp)->RedrawArea(x, y, xs, ys);
+  memset(spbin1, 0, sizeof(spbin1));
+  for(ctrx=0; ctrx<256; ++ctrx) {
+    ind = spbin2[ctrx];
+    while(ind != NULL) {
+      cur = ind;
+      ind = ind->next2;
+      cur->next2 = spbin1[(cur->priority >> 16) & 255];
+      spbin1[(cur->priority >> 16) & 255] = cur;
+      }
     }
-  Debug("Screen:RestoreRectangle() End");
+  memset(spbin2, 0, sizeof(spbin2));
+  for(ctrx=255; ctrx>=0; --ctrx) {
+    ind = spbin1[ctrx];
+    while(ind != NULL) {
+      cur = ind;
+      ind = ind->next2;
+      cur->next2 = spbin2[((cur->priority >> 24) ^ 128) & 255];
+      spbin2[((cur->priority >> 24) ^ 128) & 255] = cur;
+      }
+    }
+  ind = NULL;
+  for(ctrx=0; ctrx<256; ++ctrx) {
+    cur = spbin2[ctrx];
+    while(cur != NULL) {
+      tmps = cur;
+      cur = cur->next2;
+      tmps->next2 = ind;
+      ind = tmps;
+      }
+    }
+  while(ind != NULL) {
+    ind->RedrawArea(x, y, xs, ys);
+    ind = ind->next2;
+    }
+  UserDebug("Screen:RestoreRectangle() End");
   }
 
 void Screen::DetectVideoType()  {
@@ -1655,9 +1985,24 @@ void Screen::DetectVideoType()  {
   if(_Xdisplay != NULL)  {
     vtype = VIDEO_XWINDOWS;
 #ifdef XF86_DGA
-    if(!access("/dev/mem", W_OK))  {
-      int M, m;
-      if(XF86DGAQueryVersion(_Xdisplay, &M, &m))  {
+    if(geteuid() == 0 || (!access("/dev/mem", W_OK)))  {
+      int M, m, Q, q;
+      #ifdef X_DGA2
+      if(!XDGAQueryVersion(_Xdisplay, &M, &m)) M = 0;
+      if(M >= 2) {
+	XDGAQueryExtension(_Xdisplay, &Q, &q);
+	XDGAOpenFramebuffer(_Xdisplay, _Xscreen);
+
+	int uid, euid;
+	uid = getuid() ; euid = geteuid() ;
+	if (euid != uid && setuid(uid)) Exit(-1, "SETUID Failed!\n");
+
+	vtype = VIDEO_XDGA2;
+	}
+      else if(M == 1) {
+      #else
+      if(XF86DGAQueryVersion(_Xdisplay, &M, &m)) {
+      #endif
 //	fprintf(stderr, "Got DGA version %d.%d\n", M, m);
 	int Xbank, Xmem, Flags;
 	XF86DGAQueryDirectVideo(_Xdisplay, _Xscreen, &Flags);
@@ -1665,18 +2010,23 @@ void Screen::DetectVideoType()  {
 	XF86DGAGetVideo(_Xdisplay, _Xscreen,
 		&(frame.c), &rowlen, &Xbank, &Xmem);
 //	fprintf(stderr, "Width %d, Bank %d, Mem %d\n",  rowlen, Xbank, Xmem);
+
+	if(XF86VidModeQueryVersion(_Xdisplay, &M, &m))  {
+//	  fprintf(stderr, "Got VidMode version %d.%d\n", M, m);
+	  }
+	else { fprintf(stderr, "No VidMode support.\n"); return; }
+	vtype = VIDEO_XF86DGA;
+
+	int uid, euid;
+	uid = getuid() ; euid = geteuid() ;
+	if (euid != uid && setuid(uid)) Exit(-1, "SETUID Failed!\n");
 	}
       else { fprintf(stderr, "No DGA support.\n"); return; }
-      if(XF86VidModeQueryVersion(_Xdisplay, &M, &m))  {
-//	fprintf(stderr, "Got VidMode version %d.%d\n", M, m);
-	}
-      else { fprintf(stderr, "No VidMode support.\n"); return; }
-      vtype = VIDEO_XF86DGA;
       }
 #endif
     }
 #endif
-//  printf("Video trye = %d\n", vtype);
+//  printf("Video type = %d\n", vtype);
   if(vtype != VIDEO_NONE) return;
   Exit(-1, "No video capability detected!\n");
   }
@@ -1755,7 +2105,7 @@ int Screen::SetFont(const char *fn, const char *com)  {
   }
 
 void Screen::AlignCursor()  {
-  Debug("Screen::AlignCursor() Begin");
+  UserDebug("Screen::AlignCursor() Begin");
   if(tcx < 1) tcx = 1;
   else if(tcx >= xsize) tcx = xsize-1;
   if(tcy < 1) tcy = 1;
@@ -1769,7 +2119,7 @@ void Screen::AlignCursor()  {
     tcy ++;
 */
     }
-  Debug("Screen::AlignCursor() End");
+  UserDebug("Screen::AlignCursor() End");
   }
 
 void Screen::SetCursor(Graphic &g)  {
@@ -1779,7 +2129,7 @@ void Screen::SetCursor(Graphic &g)  {
 
 int Screen::GPrintf(Graphic *g, int x, int y, color cb, color cf,
 	const char *text, ...) {
-  Debug("User::Screen::Printf(g, x, y, ...) Begin");
+  UserDebug("User::Screen::GPrintf(...) Begin");
   if(g==NULL) return 0;
   int ret;
   va_list stuff;
@@ -1789,12 +2139,28 @@ int Screen::GPrintf(Graphic *g, int x, int y, color cb, color cf,
   vsprintf(buf, text, stuff);
   ret = GPrint(g, x, y, cb, cf, buf);
   va_end(stuff);
-  Debug("User::Screen::Printf(g, x, y, ...) End");
+  UserDebug("User::Screen::GPrintf(...) End");
+  return ret;
+  }
+
+int Screen::CGPrintf(Graphic *g, int x, int y, color cb, color cf,
+	const char *text, ...) {
+  UserDebug("User::Screen::CGPrintf(...) Begin");
+  if(g==NULL) return 0;
+  int ret;
+  va_list stuff;
+  va_start(stuff, text);
+  char buf[4096];
+  bzero(buf, 4096);
+  vsprintf(buf, text, stuff);
+  ret = CGPrint(g, x, y, cb, cf, buf);
+  va_end(stuff);
+  UserDebug("User::Screen::CGPrintf(...) End");
   return ret;
   }
 
 int Screen::Printf(int x, int y, color cb, color cf, const char *text, ...) {
-  Debug("User::Screen::Printf(x, y, ...) Begin");
+  UserDebug("User::Screen::Printf(x, y, ...) Begin");
   TGotoXY(x, y);
   int ret;
   va_list stuff;
@@ -1804,12 +2170,12 @@ int Screen::Printf(int x, int y, color cb, color cf, const char *text, ...) {
   vsprintf(buf, text, stuff);
   ret = Print(cb, cf, buf);
   va_end(stuff);
-  Debug("User::Screen::Printf(x, y, ...) End");
+  UserDebug("User::Screen::Printf(x, y, ...) End");
   return ret;
   }
 
 int Screen::Printf(color cb, color cf, const char *text, ...)  {
-  Debug("User::Screen::Printf(...) Begin");
+  UserDebug("User::Screen::Printf(...) Begin");
   int ret;
   va_list stuff;
   va_start(stuff, text);
@@ -1818,16 +2184,52 @@ int Screen::Printf(color cb, color cf, const char *text, ...)  {
   vsprintf(buf, text, stuff);
   ret = Print(cb, cf, buf);
   va_end(stuff);
-  Debug("User::Screen::Printf(...) End");
+  UserDebug("User::Screen::Printf(...) End");
   return ret;
+  }
+
+void Screen::GetStringSize(char *text, int *xsz, int *ysz) {
+  unsigned char *ind = (unsigned char *)text;
+  int xpos = 1, ypos = font[' ']->ysize;
+  *ysz = font[' ']->ysize;
+  *xsz = 1;
+  for(;(*ind) != 0; ind++)  {
+    if((*ind) == (unsigned char)'\t') (*ind)=' ';
+    if((*ind) == (unsigned char)CHAR_LEFT)  {
+      xpos -= font[' ']->xsize+1;
+      }
+    else if((*ind) == (unsigned char)CHAR_RIGHT)  {
+      xpos += font[' ']->xsize+1;
+      if(xpos > *xsz) *xsz = xpos;
+      }
+    else if((*ind) == (unsigned char)CHAR_UP)  {
+      ypos -= font[' ']->ysize+2;
+      }
+    else if((*ind) == (unsigned char)CHAR_DOWN)  {
+      ypos += font[' ']->ysize+2;
+      if(ypos > *ysz) *ysz = ypos;
+      }
+    else if((*ind) == (unsigned char)'\n')  {
+      xpos = 1;
+      ypos += font[' ']->ysize+2;
+      if(ypos > *ysz) *ysz = ypos;
+      }
+    else if((*ind) == (unsigned char)'\r')  {
+      xpos = 1;
+      }
+    else if(font[*ind] != NULL)  {
+      xpos += font[*ind]->xsize+1;
+      if(xpos > *xsz) *xsz = xpos;
+      }
+    }
   }
 
 int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
 	const char *text)  {
   if(g==NULL) return 0;
+  UserDebug("User::Screen::GPrint(...) Begin");
   ConvertColor(cb, appdepth, (int)g->depth);
   ConvertColor(cf, appdepth, (int)g->depth);
-  Debug("User::Screen::Print(...) Begin");
   if(font[' '] == NULL)  Exit(-1, "Must Screen.SetFont before Screen.Print!\n");
   unsigned char *ind = (unsigned char *)text;
 //  printf("%s\n", text);
@@ -1836,11 +2238,11 @@ int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
 
     if((*ind) == (unsigned char)'\t') (*ind)=' ';
     if((*ind) == (unsigned char)CHAR_LEFT)  {
-      x-=font[' ']->xsize;
+      x-=font[' ']->xsize+1;
       AlignCursor();
       }
     else if((*ind) == (unsigned char)CHAR_RIGHT)  {
-      x+=font[' ']->xsize;
+      x+=font[' ']->xsize+1;
       AlignCursor();
       }
     else if((*ind) == (unsigned char)CHAR_UP)  {
@@ -1861,6 +2263,7 @@ int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
       AlignCursor();
       }
     else if(font[*ind] != NULL)  {
+      UserDebug("User::Screen::GPrint(...) Printing character");
       if(((int)x + (int)font[*ind]->xsize + (int)font[*ind]->xcenter)
                 >= xsize)  {
         x=1;
@@ -1872,6 +2275,7 @@ int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
       Graphic res;
       res.depth=depth;
       res.DefSize(let.xsize, let.ysize);
+      UserDebug("User::Screen::GPrint(...) Outputting character");
       if(depth==8) {
 	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
 	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
@@ -1879,6 +2283,7 @@ int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
 	     else res.image[ctry].uc[ctrx] = cf;
 	     }
 	  }
+        UserDebug("User::Screen::GPrint(...) Pasting character graphic (8bpp)");
 	g->PasteTransparentGraphic(res, x-let.xcenter, y-let.ycenter);
 	}
       else if(depth==32) {
@@ -1894,6 +2299,7 @@ int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
 	    else res.image[ctry].ul[ctrx]=0;
 	    }
 	  }
+        UserDebug("User::Screen::GPrint(...) Pasting character graphic (32bpp)");
 	g->PasteTransparentGraphic(res, x-let.xcenter, y-let.ycenter);
 	}
       else if(depth==16) {
@@ -1917,16 +2323,135 @@ int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
 	    res.image[ctry].us[ctrx] = cl;
 	    }
 	  }
-	g->PasteGraphic(res, x-let.xcenter, y-let.ycenter);
-//	DrawTransparentGraphic(res, x-let.xcenter, y-let.ycenter);
+        UserDebug("User::Screen::GPrint(...) Pasting character graphic (16bpp)");
+	g->PasteTransparentGraphic(res, x-let.xcenter, y-let.ycenter);
 	}
       else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 
+      UserDebug("User::Screen::GPrint(...) Finishing character");
       x+=font[*ind]->xsize+1;
       AlignCursor();
       }
     }
-  Debug("User::Screen::Print(...) End");
+  UserDebug("User::Screen::Print(...) End");
+  return x;
+  }
+
+int Screen::CGPrint(Graphic *g, int x, int y, color cb, color cf,
+	const char *text)  {
+  if(g==NULL) return 0;
+  UserDebug("User::Screen::CGPrint(...) Begin");
+  ConvertColor(cb, appdepth, (int)g->depth);
+  ConvertColor(cf, appdepth, (int)g->depth);
+  if(font[' '] == NULL)  Exit(-1, "Must Screen.SetFont before Screen.Print!\n");
+  { int xsz, ysz;
+    GetStringSize((char *)text, &xsz, &ysz);
+    g->DefSize(xsz, ysz);
+    }
+  unsigned char *ind = (unsigned char *)text;
+//  printf("%s\n", text);
+  g->Clear();
+  for(;(*ind) != 0; ind++)  {
+//    printf("%d,%d:%d: ", TXPos(), TYPos(), *ind); fflush(stdout);
+
+    if((*ind) == (unsigned char)'\t') (*ind)=' ';
+    if((*ind) == (unsigned char)CHAR_LEFT)  {
+      x-=font[' ']->xsize+1;
+      AlignCursor();
+      }
+    else if((*ind) == (unsigned char)CHAR_RIGHT)  {
+      x+=font[' ']->xsize+1;
+      AlignCursor();
+      }
+    else if((*ind) == (unsigned char)CHAR_UP)  {
+      y-=(font[' ']->ysize+2);
+      AlignCursor();
+      }
+    else if((*ind) == (unsigned char)CHAR_DOWN)  {
+      y+=(font[' ']->ysize+2);
+      AlignCursor();
+      }
+    else if((*ind) == (unsigned char)'\n')  {
+      x=1;
+      y+=(font[' ']->ysize+2);
+      AlignCursor();
+      }
+    else if((*ind) == (unsigned char)'\r')  {
+      x=1;
+      AlignCursor();
+      }
+    else if(font[*ind] != NULL)  {
+      UserDebug("User::Screen::CGPrint(...) Printing character");
+      if(((int)x + (int)font[*ind]->xsize + (int)font[*ind]->xcenter)
+                >= xsize)  {
+        x=1;
+        y+=(font[' ']->ysize+2);
+        AlignCursor();
+        }
+      int ctrx, ctry;
+      Graphic let(*font[*ind]);
+      Graphic res;
+      res.depth=depth;
+      res.DefSize(let.xsize, let.ysize);
+      UserDebug("User::Screen::CGPrint(...) Outputting character");
+      if(depth==8) {
+	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
+	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
+	     if(let.image[ctry].uc[ctrx] == 0) res.image[ctry].uc[ctrx] = cb;
+	     else res.image[ctry].uc[ctrx] = cf;
+	     }
+	  }
+        UserDebug("User::Screen::CGPrint(...) Pasting character graphic (8bpp)");
+	g->PasteGraphic(res, x-let.xcenter, y-let.ycenter);
+	}
+      else if(depth==32) {
+	unsigned long alpha;
+	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
+	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
+	    alpha=let.image[ctry].uc[ctrx];
+	    if(alpha) {
+	      res.image[ctry].ul[ctrx] = cf;
+	      alpha*=((unsigned char*)&cf)[3]; alpha/=255;
+	      res.image[ctry].uc[(ctrx<<2)+3] = alpha;
+	      }
+	    else res.image[ctry].ul[ctrx]=0;
+	    }
+	  }
+        UserDebug("User::Screen::CGPrint(...) Pasting character graphic (32bpp)");
+	g->PasteGraphic(res, x-let.xcenter, y-let.ycenter);
+	}
+      else if(depth==16) {
+	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
+	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
+	    color cl, clf = cf, clb = cb;
+	    unsigned long alpha = let.image[ctry].uc[ctrx];
+	    ConvertColor(clf, 16, 32);
+	    ConvertColor(clb, 16, 32);
+	    ((unsigned char*)&cl)[0] =
+	      (((unsigned char*)&clf)[0]*alpha 
+		+ ((unsigned char*)&clb)[0]*(255-alpha))/255;
+	    ((unsigned char*)&cl)[1] =
+	      (((unsigned char*)&clf)[1]*alpha 
+		+ ((unsigned char*)&clb)[1]*(255-alpha))/255;
+	    ((unsigned char*)&cl)[2] =
+	      (((unsigned char*)&clf)[2]*alpha 
+		+ ((unsigned char*)&clb)[2]*(255-alpha))/255;
+	    ((unsigned char*)&cl)[3] = 255;
+	    ConvertColor(cl, 32, 16);
+	    res.image[ctry].us[ctrx] = cl;
+	    }
+	  }
+        UserDebug("User::Screen::CGPrint(...) Pasting character graphic (16bpp)");
+	g->PasteGraphic(res, x-let.xcenter, y-let.ycenter);
+	}
+      else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+
+      UserDebug("User::Screen::CGPrint(...) Finishing character");
+      x+=font[*ind]->xsize+1;
+      AlignCursor();
+      }
+    }
+  UserDebug("User::Screen::Print(...) End");
   return x;
   }
 
@@ -1938,7 +2463,7 @@ int Screen::Print(int x, int y, color cb, color cf, const char *text)  {
 int Screen::Print(color cb, color cf, const char *text)  {
   ConvertColor(cb, appdepth, depth);
   ConvertColor(cf, appdepth, depth);
-  Debug("User::Screen::Print(...) Begin");
+  UserDebug("User::Screen::Print(...) Begin");
   if(font[' '] == NULL)  Exit(-1, "Must Screen.SetFont before Screen.Print!\n");
   unsigned char *ind = (unsigned char *)text;
 //  printf("%s\n", text);
@@ -2042,7 +2567,7 @@ int Screen::Print(color cb, color cf, const char *text)  {
       }
     }
   if(TCursor != NULL)  TCursor->Move(tcx, tcy);
-  Debug("User::Screen::Print(...) End");
+  UserDebug("User::Screen::Print(...) End");
   return tcx;
   }
 
@@ -2075,6 +2600,87 @@ Panel Screen::WhichPanel(int x, int y) {
     if(x>=pxs[ctr] && y>=pys[ctr] && x<pxe[ctr] && y<pye[ctr]) ret=ctr;
     }
   return ret;
+  }
+
+void Screen::ErasePanelSprites(Panel p) {
+  int ctr;
+  for(ctr=0; ctr<nextsprite; ctr++)  {
+    if(sprites[ctr] != NULL && sprites[ctr]->pan == p) {
+      if(sprites[ctr]->drawn) sprites[ctr]->Erase();
+      }
+    }
+  }
+
+void Screen::ScrollPanel(Panel p, int x, int y) {
+  if(x==0 && y==0) return;
+  int xs, xd, xsz, ys, yd, ysz, ctr, ydiff, xdiff;
+  if(x>=0) { xs = pxs[p]+x; xd = pxs[p]+0; xsz = (pxe[p]-pxs[p])-x; }
+  else     { xs = pxs[p]+0; xd = pxs[p]-x; xsz = (pxe[p]-pxs[p])+x; }
+  if(y>=0) { ys = pys[p]+y; yd = pys[p]+0; ysz = (pye[p]-pys[p])-y; }
+  else     { ys = pys[p]+0; yd = pys[p]-y; ysz = (pye[p]-pys[p])+y; }
+  ydiff = yd - ys;
+  xdiff = xd - xs;
+
+  for(ctr=0; ctr<nextsprite; ctr++)  {
+    if(sprites[ctr] != NULL && sprites[ctr]->pan == p) {
+      if(sprites[ctr]->drawn) LiftSprite(sprites[ctr]);
+      sprites[ctr]->xpos += xdiff;
+      sprites[ctr]->ypos += ydiff;
+      if(sprites[ctr]->drawn) DropSprite(sprites[ctr]);
+      }
+    }
+
+  if(yd <= ys) {
+    for(ctr=ys; ctr<ys+ysz; ++ctr) {
+      if(depth == 8) {
+	memmove(image[ctr+ydiff].uc + xd, image[ctr].uc + xs, xsz);
+	memmove(backg[ctr+ydiff].uc + xd, backg[ctr].uc + xs, xsz);
+	}
+      else if(depth == 32) {
+	memmove(image[ctr+ydiff].ul + xd, image[ctr].uc + xs, xsz);
+	memmove(backg[ctr+ydiff].ul + xd, backg[ctr].uc + xs, xsz);
+	}
+      else if(depth == 16) {
+	memmove(image[ctr+ydiff].us + xd, image[ctr].uc + xs, xsz);
+	memmove(backg[ctr+ydiff].us + xd, backg[ctr].uc + xs, xsz);
+	}
+      }
+    }
+  else {
+    for(ctr=ys+ysz-1; ctr>=ys; --ctr) {
+      if(depth == 8) {
+	memmove(image[ctr+ydiff].uc + xd, image[ctr].uc + xs, xsz);
+	memmove(backg[ctr+ydiff].uc + xd, backg[ctr].uc + xs, xsz);
+	}
+      else if(depth == 32) {
+	memmove(image[ctr+ydiff].ul + xd, image[ctr].uc + xs, xsz);
+	memmove(backg[ctr+ydiff].ul + xd, backg[ctr].uc + xs, xsz);
+	}
+      else if(depth == 16) {
+	memmove(image[ctr+ydiff].us + xd, image[ctr].uc + xs, xsz);
+	memmove(backg[ctr+ydiff].us + xd, backg[ctr].uc + xs, xsz);
+	}
+      }
+    }
+
+  switch(vtype)  {  
+    #ifdef X_WINDOWS
+    #ifdef XF86_DGA
+    #ifdef X_DGA2
+    case(VIDEO_XDGA2): {
+      if(DGAFlags & XDGABlitRect) {
+	XDGACopyArea(_Xdisplay, _Xscreen, xs, ys, xsz, ysz, xd, yd);
+	if(!(DGAFlags & XDGAConcurrentAccess)) XDGASync(_Xdisplay, _Xscreen);
+	break;
+	}
+      }	// No "break;" - passes through to "default:"
+    #endif
+    #endif
+    #endif
+    default: {
+      InvalidateRectangle(pxs[p], pys[p], pxe[p]-pxs[p], pye[p]-pys[p]);
+      }break;
+    }
   }
 
 Palette &Screen::GetPalette() {
@@ -2133,11 +2739,11 @@ int Screen::DefaultYSize() {
  }
 
 void Screen::DropSprite(Sprite *s) {
-  Debug("Screen::DropSprite(s) Begin");
+  UserDebug("Screen::DropSprite(s) Begin");
   if((!bins) || (!lbins)) Exit(1, "No bins in Dropsprite!\n");
   Sprite *sp;
   if(s->Flag(SPRITE_HUGE)) {
-    Debug("Screen::DropSprite(s) In large");
+    UserDebug("Screen::DropSprite(s) In large");
     if(huges==NULL) { huges=s; s->prev = &huges; }
     else {
       for(sp=huges; sp->next != NULL; sp=sp->next);
@@ -2145,11 +2751,12 @@ void Screen::DropSprite(Sprite *s) {
       }
     }
   else if(s->Flag(SPRITE_LARGE)) {
-    Debug("Screen::DropSprite(s) In lbin");
-    int x=(s->xpos)>>LARGE_BIN_FACTOR, y=(s->ypos)>>LARGE_BIN_FACTOR;
+    UserDebug("Screen::DropSprite(s) In lbin");
+    int x=(s->xpos)>>LARGE_BIN_FACTOR;
+    int y=(s->ypos)>>LARGE_BIN_FACTOR;
     if(x<0) x=0; if(y<0) y=0;
-    if(x>=(xsize>>LARGE_BIN_FACTOR)) x=(xsize>>LARGE_BIN_FACTOR)-1;
-    if(y>=(ysize>>LARGE_BIN_FACTOR)) y=(ysize>>LARGE_BIN_FACTOR)-1;
+    if(x>=xlbins) x=xlbins-1;
+    if(y>=ylbins) y=ylbins-1;
     if(lbins[x][y]==NULL) { lbins[x][y]=s; s->prev = &lbins[x][y]; }
     else {
       for(sp=(lbins[x][y]); sp->next != NULL; sp=sp->next);
@@ -2157,25 +2764,30 @@ void Screen::DropSprite(Sprite *s) {
       }
     }
   else {
-    Debug("Screen::DropSprite(s) In bin");
-    int x=(s->xpos)>>BIN_FACTOR, y=(s->ypos)>>BIN_FACTOR;
+    UserDebug("Screen::DropSprite(s) In bin");
+    int x=(s->xpos)>>BIN_FACTOR;
+    int y=(s->ypos)>>BIN_FACTOR;
     if(x<0) x=0; if(y<0) y=0;
-    if(x>=(xsize>>BIN_FACTOR)) x=(xsize>>BIN_FACTOR)-1;
-    if(y>=(ysize>>BIN_FACTOR)) y=(ysize>>BIN_FACTOR)-1;
+    if(x>=xbins) x=xbins-1;
+    if(y>=ybins) y=ybins-1;
     if(bins[x][y]==NULL) { bins[x][y]=s; s->prev = &bins[x][y]; }
     else {
       for(sp=(bins[x][y]); sp->next != NULL; sp=sp->next);
       sp->next = s; s->prev = &(sp->next);
       }
     }
-  Debug("Screen::DropSprite(s) End");
+  UserDebug("Screen::DropSprite(s) End");
   }
 
 void Screen::LiftSprite(Sprite *s) {
-  Debug("Screen::LiftSprite(s) Begin");
+  UserDebug("Screen::LiftSprite(s) Begin");
   if(!s->prev) Exit(1, "Lifting non-placed Sprite (%d)!!\n", s->drawn);
   if(s->next) s->next->prev = s->prev;
   *(s->prev) = s->next; s->next = NULL; s->prev=NULL;
-  Debug("Screen::LiftSprite(s) End");
+  UserDebug("Screen::LiftSprite(s) End");
   }
 
+void Screen::SetApparentDepth(int ad) {
+  appdepth = ad;
+  pal->depth = ad;
+  }

@@ -47,7 +47,6 @@ class Clickey : public Control {
   Sound *dsnd, *usnd;
   };
 
-//class Stickey : public Control {
 class Stickey : public Clickey {
   public:
   Stickey();
@@ -65,8 +64,7 @@ class Stickey : public Clickey {
   void SetSound(Sound *, Sound *, Sound *, Sound *);
 
   protected:
-  char state, lastb;
-  Sound *dsnd, *dsnd2, *usnd, *usnd2;
+  Sound *dsnd2, *usnd2;
   };
 
 class Movable : public Control {

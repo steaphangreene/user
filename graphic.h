@@ -19,6 +19,7 @@
 
 #include "mfmt.h"
 #include "palette.h"
+#include "chunk.h"
 
 typedef unsigned long color;
 
@@ -26,7 +27,6 @@ class Graphic {
   public:
   Graphic();
   Graphic(int, int);
-  Graphic(int, int, int);
   Graphic(const Graphic &);
   Graphic(char *);
   Graphic(char *, Palette &);
@@ -42,20 +42,19 @@ class Graphic {
   void PasteGraphic(Graphic *g, int x=0, int y=0);
   void PasteTransparentGraphic(Graphic &g, int x=0, int y=0);
   void PasteTransparentGraphic(Graphic *g, int x=0, int y=0);
-  Graphic HalfSize() {return Scaled(xsize>>1, ysize>>1);};
-  Graphic DoubleSize() {return Scaled(xsize<<1, ysize<<1);};
-  Graphic Hashed(); 
-  Graphic OffHashed(); 
   void SetRotated(Graphic &, int);
   void SetScaled(Graphic &, double);
   void SetScaled(Graphic &, int, int);
+  void SetPixel(int, color);
   void SetLine(int, int, int, color);
   void SetRect(int, int, int, color);
   void SetFillRect(int, int, int, color);
+  void DrawPixel(int, int, int, color);
   void DrawLine(int, int, int, int, int, color);
   void DrawRect(int, int, int, int, int, color);
   void DrawFillRect(int, int, int, int, int, color);
   void ClearArea(int, int, int, int);
+  void Clear();
   Graphic Rotated(int);
   Graphic Rotated(int, int);
   Graphic Rotated(double, int, int, int);
@@ -75,13 +74,17 @@ class Graphic {
   void YFlip();
   void SetCenter(int, int);
   void DefSize(int, int);
-  void DefSize(int, int, int);
   void DefLin(char*);
   void DefLinH(char*);
-  long xsize, ysize, zsize, depth;
-  int xcenter, ycenter, zcenter;
+  Graphic HalfSize() {return Scaled(xsize>>1, ysize>>1);};
+  Graphic DoubleSize() {return Scaled(xsize<<1, ysize<<1);};
+  Graphic Hashed(color);
+  Graphic OffHashed(color); 
+  Graphic DoubleX();
+  Graphic DoubleY();
+  long xsize, ysize, depth;
+  int xcenter, ycenter;
   mfmt * image;
-  mfmt ** image3d;
   unsigned long tcolor;
 
   private:
@@ -89,7 +92,8 @@ class Graphic {
   void Init24(char *, Palette &);
   void InitTGA32(char *);
   int linedef;
-  long xdef, ydef, zdef;
+  long xdef, ydef;
+  Chunk chunk;
   };
 
 #endif

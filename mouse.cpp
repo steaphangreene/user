@@ -26,12 +26,17 @@ extern Keyboard *__Da_Keyboard;
 extern InputQueue *__Da_InputQueue;
 
 Mouse::Mouse() {
-  int ctr;
+  int ctr, ctr2;
   cvis = 1;
   crit = 0;
   cursor = NULL;
+  selector = NULL;
+  selg = NULL;
+  selcolor = 0;
   curcont = NULL;
   mtype = MOUSE_NONE;
+  bdown = -1;
+  pin = 0;
   xpos = -666; ypos = -666;
   if(__Da_Screen == NULL) Exit(-1, "Need to create Screen before Mouse!\n");
   memset(butt_stat, 0, MAX_MBUTTONS);
@@ -56,6 +61,11 @@ Mouse::Mouse() {
       mtype=MOUSE_XWINDOWS;
       }break;
     #ifdef XF86_DGA
+    #ifdef X_DGA2
+    case(VIDEO_XDGA2): {
+      mtype=MOUSE_XDGA2;
+      }break;
+    #endif
     case(VIDEO_XF86DGA): {
       mtype=MOUSE_XF86DGA;
       }break;
@@ -63,7 +73,19 @@ Mouse::Mouse() {
     #endif
     }
   SetRange(0, 0, __Da_Screen->XSize(), __Da_Screen->YSize());
+  
+  for(ctr=0; ctr<MAX_MBUTTONS; ++ctr) {
+    for(ctr2=0; ctr2<MAX_PANELS; ++ctr2) {
+      pb[ctr2][ctr] = MB_CLICK;
+      }
+    }
   __Da_Mouse = this;
+  cursor = new Sprite;
+  cursor->SetPriority(-10000);
+  cursor->DisableCollisions();
+  selector = new Sprite;
+  selector->SetPriority(-10000);
+  selector->DisableCollisions();
   }
 
 Mouse::~Mouse() {
@@ -100,6 +122,33 @@ void Mouse::Update() {
 
 #ifdef X_WINDOWS
 #ifdef XF86_DGA
+#ifdef X_DGA2
+    case(MOUSE_XDGA2): {
+      int xp=xpos, yp=ypos;
+      XEvent e;
+      XFlush(__Da_Screen->_Xdisplay);
+      while(XCheckMaskEvent(__Da_Screen->_Xdisplay,
+		PointerMotionMask|ButtonPressMask|ButtonReleaseMask, &e))  {
+	if(e.type == ButtonPress) {
+//	  xp+=e.xbutton.x; yp+=e.xbutton.y;
+	  Pressed(e.xbutton.button, xp, yp);
+	  }
+	else if(e.type == ButtonRelease) {
+//	  xp+=e.xbutton.x; yp+=e.xbutton.y;
+	  Released(e.xbutton.button, xp, yp);
+	  }
+	else  {
+	  xp+=e.xmotion.x; yp+=e.xmotion.y;
+	  if(xp<rngxs) xp=rngxs;
+	  if(yp<rngys) yp=rngys;
+	  if(xp>=rngxe) xp=rngxe-1;
+	  if(yp>=rngye) yp=rngye-1;
+	  }
+	XFlush(__Da_Screen->_Xdisplay);
+	}
+      Moved(xp, yp);
+      }break;
+#endif
     case(MOUSE_XF86DGA): {
       int xp=xpos, yp=ypos;
       XEvent e;
@@ -156,7 +205,7 @@ void Mouse::SetCursor(Graphic *g) {
   }
 
 void Mouse::SetCursor(Graphic &g) {
-  Debug("User:Mouse:SetCursor() Begin");
+  UserDebug("User:Mouse:SetCursor() Begin");
 #ifdef X_WINDOWS
   if(mtype == MOUSE_XWINDOWS)  {
     XColor fgc, bgc;
@@ -173,11 +222,9 @@ void Mouse::SetCursor(Graphic &g) {
 
     }
 #endif
-  if(cursor != NULL) delete cursor;
-  Debug("User:Mouse:SetCursor() Middle");
-  cursor = new Sprite(g);
-  cursor->SetPriority(-10000);
-  Debug("User:Mouse:SetCursor() End");
+  UserDebug("User:Mouse:SetCursor() Middle");
+  cursor->SetImage(g);
+  UserDebug("User:Mouse:SetCursor() End");
   }
 
 void Mouse::ShowCursor() {
@@ -227,17 +274,49 @@ void Mouse::Pressed(int b, int x, int y) {
       }
     }
   if(__Da_InputQueue == NULL) return;
-  InputAction a;
-  a.g.type = INPUTACTION_MOUSEDOWN;
-  a.m.button = b;
-  a.m.x = x;
-  a.m.xs = 1;
-  a.m.y = y;
-  a.m.ys = 1;
-  a.m.panel = __Da_Screen->WhichPanel(x, y);
-  if(__Da_Keyboard != NULL) a.m.modkeys = __Da_Keyboard->ModKeys();
-  else a.m.modkeys = 0;
-  __Da_InputQueue->ActionOccurs(&a);
+  Panel p = __Da_Screen->WhichPanel(x, y);
+  switch(pb[p][b]) {
+    case(MB_IGNORE): break;
+    case(MB_CLICKDRAW):
+    case(MB_DRAW): {
+      if(bdown < 0) bdown = b;
+      startx = x; starty = y; pin = p;
+      if(pb[p][b] != MB_CLICKDRAW) break;
+      }
+    case(MB_CLICK): {
+      InputAction a;
+      a.g.type = INPUTACTION_MOUSEDOWN;
+      a.m.button = b;
+      a.m.x = x;
+      a.m.y = y;
+      a.m.xs = 1;
+      a.m.ys = 1;
+      a.m.panel = __Da_Screen->WhichPanel(x, y);
+      if(__Da_Keyboard != NULL) a.m.modkeys = __Da_Keyboard->ModKeys();
+      else a.m.modkeys = 0;
+      __Da_InputQueue->ActionOccurs(&a);
+      }break;
+    case(MB_LINE): {
+      if(bdown < 0) bdown = b;
+      startx = x; starty = y; pin = p;
+      if(selg == NULL) selg = new Graphic;
+      selg->SetFillRect(1, 1, __Da_Screen->GetApparentDepth(), selcolor);
+      if(selector == NULL) selector = new Sprite;
+      selector->Erase();
+      selector->UseImage(selg);
+      selector->Draw(x, y);
+      }break;
+    case(MB_BOX): {
+      if(bdown < 0) bdown = b;
+      startx = x; starty = y; pin = p;
+      if(selg == NULL) selg = new Graphic;
+      selg->SetFillRect(1, 1, __Da_Screen->GetApparentDepth(), selcolor);
+      if(selector == NULL) selector = new Sprite;
+      selector->Erase();
+      selector->UseImage(selg);
+      selector->Draw(x, y);
+      }break;
+    }
   }
 
 void Mouse::Released(int b, int x, int y) {
@@ -247,15 +326,64 @@ void Mouse::Released(int b, int x, int y) {
     if(b == contb) curcont = NULL;
     }
   if(__Da_InputQueue == NULL) return;
-  InputAction a;
-  a.g.type = INPUTACTION_MOUSEUP;
-  a.m.button = b;
-  a.m.x = x;
-  a.m.y = y;
-  a.m.panel = __Da_Screen->WhichPanel(x, y);
-  if(__Da_Keyboard != NULL) a.m.modkeys = __Da_Keyboard->ModKeys();
-  else a.m.modkeys = 0;
-  __Da_InputQueue->ActionOccurs(&a);
+  if(x < __Da_Screen->PanelXStart(pin)) x = __Da_Screen->PanelXStart(pin);
+  if(y < __Da_Screen->PanelYStart(pin)) y = __Da_Screen->PanelYStart(pin);
+  if(x >= __Da_Screen->PanelXEnd(pin)) x = __Da_Screen->PanelXEnd(pin)-1;
+  if(y >= __Da_Screen->PanelYEnd(pin)) y = __Da_Screen->PanelYEnd(pin)-1;
+  switch(pb[pin][bdown]) {
+    case(MB_IGNORE): break;
+    case(MB_DRAW):
+    case(MB_CLICKDRAW): {
+      pin = 0; bdown = -1;
+      }break;
+    case(MB_CLICK): {
+      InputAction a;
+      a.g.type = INPUTACTION_MOUSEUP;
+      a.m.button = b;
+      a.m.x = x;
+      a.m.y = y;
+      a.m.xs = 1;
+      a.m.ys = 1;
+      a.m.panel = __Da_Screen->WhichPanel(x, y);
+      if(__Da_Keyboard != NULL) a.m.modkeys = __Da_Keyboard->ModKeys();
+      else a.m.modkeys = 0;
+      __Da_InputQueue->ActionOccurs(&a);
+      }break;
+    case(MB_LINE): {
+      if(b == bdown) {
+	bdown = -1;
+	InputAction a;
+	a.g.type = INPUTACTION_MOUSEDOWN;
+	a.m.button = b;
+	a.m.x = startx;
+	a.m.y = starty;
+	a.m.xs = x-startx;
+	a.m.ys = y-starty;
+	a.m.panel = __Da_Screen->WhichPanel(x, y);
+	if(__Da_Keyboard != NULL) a.m.modkeys = __Da_Keyboard->ModKeys();
+	else a.m.modkeys = 0;
+	__Da_InputQueue->ActionOccurs(&a);
+	if(selector != NULL) selector->Erase();
+	}
+      }break;
+    case(MB_BOX): {
+      if(b == bdown) {
+	bdown = -1;
+	InputAction a;
+	a.g.type = INPUTACTION_MOUSEDOWN;
+	a.m.button = b;
+	a.m.x = x <? startx;
+	a.m.y = y <? starty;
+	a.m.xs = abs(x-startx)+1;
+	a.m.ys = abs(y-starty)+1;
+	a.m.panel = __Da_Screen->WhichPanel(x, y);
+	if(__Da_Keyboard != NULL) a.m.modkeys = __Da_Keyboard->ModKeys();
+	else a.m.modkeys = 0;
+	__Da_InputQueue->ActionOccurs(&a);
+	if(selector != NULL) selector->Erase();
+	}
+      }break;
+    }
   }
 
 void Mouse::Moved(int x, int y) {
@@ -263,6 +391,48 @@ void Mouse::Moved(int x, int y) {
   xpos = x; ypos = y;
   if(curcont != NULL) curcont->Drag(contb, x-contx, y-conty);
   contx = x; conty = y;
+  if(bdown >= 0) {
+    if(x < __Da_Screen->PanelXStart(pin)) x = __Da_Screen->PanelXStart(pin);
+    if(y < __Da_Screen->PanelYStart(pin)) y = __Da_Screen->PanelYStart(pin);
+    if(x >= __Da_Screen->PanelXEnd(pin)) x = __Da_Screen->PanelXEnd(pin)-1;
+    if(y >= __Da_Screen->PanelYEnd(pin)) y = __Da_Screen->PanelYEnd(pin)-1;
+    xpos = x; ypos = y;
+    switch(pb[pin][bdown]) {
+      case(MB_IGNORE): break;
+      case(MB_DRAW):
+      case(MB_CLICKDRAW): {
+	InputAction a;
+	a.g.type = INPUTACTION_MOUSEDOWN;
+	a.m.button = bdown;
+	a.m.x = x;
+	a.m.y = y;
+	a.m.xs = startx;
+	a.m.ys = starty;
+	a.m.panel = pin;
+	if(__Da_Keyboard != NULL) a.m.modkeys = __Da_Keyboard->ModKeys();
+	else a.m.modkeys = 0;
+	__Da_InputQueue->ActionOccurs(&a);
+	}break;
+      case(MB_LINE): {
+	if(selg == NULL) selg = new Graphic;
+	selector->Erase();
+	selg->SetLine(x-startx, y-starty,
+		__Da_Screen->GetApparentDepth(), selcolor);
+	if(selector == NULL) selector = new Sprite;
+	selector->UseImage(selg);
+	selector->Draw(startx, starty);
+	}break;
+      case(MB_BOX): {
+	if(selg == NULL) selg = new Graphic;
+	selector->Erase();
+	selg->SetRect(abs(x-startx)+1, abs(y-starty)+1,
+		__Da_Screen->GetApparentDepth(), selcolor);
+	if(selector == NULL) selector = new Sprite;
+	selector->UseImage(selg);
+	selector->Draw(x <? startx, y <? starty);
+	}break;
+      }
+    }
   if(cvis && cursor != NULL && xpos != -666 && ypos != -666)  {
     cursor->Move(xpos, ypos);
     }
@@ -270,4 +440,12 @@ void Mouse::Moved(int x, int y) {
 
 void Mouse::SetBehavior(Panel p, int butt, int mb) {
   pb[p][butt] = mb;
+  }
+
+void Mouse::SetSelColor(color c) {
+  selcolor = c;
+  }
+
+int Mouse::DrawingSelector() {
+  return (bdown >= 0);
   }

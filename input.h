@@ -2,6 +2,7 @@
 #define INSOMNIA_USER_INPUT_H
 
 #include "config.h"
+#include "control.h"
 
 #define INPUTACTION_NONE		0
 #define INPUTACTION_KEYDOWN		1
@@ -47,6 +48,12 @@ union InputAction {
   ControlAction c;
   };
 
+struct RemapedKey {
+  int k;
+  Control *c;
+  RemapedKey *next;
+  };
+
 class InputQueue {
   public:
   InputQueue();
@@ -57,9 +64,17 @@ class InputQueue {
   InputAction *PeekNextAction();
   InputAction *WaitForNextAction();
 
+  void MapKeyToControl(int, Control &);
+  void MapKeyToControl(int, Control *);
+  void MapKeyToControl(int, int);
+  void UnmapKey(int);
+  void UnmapControl(Control &);
+  void UnmapControl(Control *);
+
   private:
   InputAction queue[1024];
   int head, tail;
+  RemapedKey *keymap[256];
   };
 
 #endif

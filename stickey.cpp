@@ -20,7 +20,7 @@ Stickey::~Stickey() {
   }
 
 void Stickey::Click(int b) {
-  if(state) Clickey::UnClick(b);
+  if(state) { lastb=b; Clickey::UnClick(b); }
   else Clickey::Click(b);
   }
 
