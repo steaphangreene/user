@@ -1,0 +1,2 @@
+#!/bin/sh
+echo -O3 -s -ffast-math -fomit-frame-pointer

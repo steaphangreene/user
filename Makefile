@@ -1,63 +1,65 @@
-CC:=	gcc -O2 -ffast-math -s -Wall
-ALL:=	Makefile graphic.h screen.h user.h
-LIBS:=	-L/usr/X11/lib -lm -lX11 -lXxf86dga -lXxf86vm -lXext
-OBJS:=	graphic.o engine.o sound.o screen.o sprite.o user.o mouse.o net.o resfile.o palette.o bag.o
-USER:=	libuser.a
-TSTR:=	$(shell date +"%Y%m%d%H%M")
+CC:=	gcc -O3 -s `User-CFlags`
+OBJS:=	screen.o engine.o graphic.o palette.o sound.o speaker.o sprite.o input.o keyboard.o mouse.o resfile.o bag.o
+ALL:=	*.h Makefile
+LIBS:=	`User-Libs`
+CCC:=	$(CC)
+TSTR:=  $(shell date +"%Y%m%d%H%M")
 
-all:	user vb tst
+all:	stest mtest $(ALL)
+#all:	libuser.a
 
-tar:    screen.h
-	cd .. ; tar czhvf ~/c/archive/user.$(TSTR).tar.gz \
-	  user/*.cpp user/*.[hc] user/Makefile user/*.bmp user.h
-#	  user/*.cpp user/*.[hc] user/Makefile user/*.bmp user/*.wav user.h
+stest:	libuser.a stest.o $(ALL)
+	$(CC) -o stest stest.o $(LIBS)
 
-tst:	test.cpp $(ALL) $(USER)
-	$(CC) -o tst test.cpp $(USER) $(LIBS)
+stest.o:	stest.cpp $(ALL)
+	$(CC) -c stest.cpp
 
-user:	$(USER)
-	@echo -n
+mtest:	libuser.a mtest.o $(ALL)
+	$(CC) -o mtest mtest.o $(LIBS)
 
-$(USER):	$(ALL) $(OBJS)
-	ar rcs $(USER) $(OBJS)
+mtest.o:	mtest.cpp $(ALL)
+	$(CC) -c mtest.cpp
 
-vb:	$(OBJS) vb.o $(ALL)
-	$(CC) -o vb vb.o $(OBJS) $(LIBS)
-
-vb.o:	vb.cpp $(ALL)
-	$(CC) -c vb.cpp
-
-bag.o:	bag.cpp $(ALL)
-	$(CC) -c bag.cpp
-
-net.o:	net.cpp $(ALL)
-	$(CC) -c net.cpp
-
-resfile.o:	resfile.cpp $(ALL)
-	$(CC) -c resfile.cpp
-
-engine.o:	engine.cpp $(ALL)
-	$(CC) -c engine.cpp
-
-sound.o:	sound.cpp $(ALL)
-	$(CC) -c sound.cpp
-
-sprite.o:	sprite.cpp $(ALL)
-	$(CC) -c sprite.cpp
+libuser.a:	$(OBJS) $(ALL)
+	ar rcs libuser.a $(OBJS)
 
 screen.o:	screen.cpp $(ALL)
 	$(CC) -c screen.cpp
 
+engine.o:	engine.cpp $(ALL)
+	$(CC) -c engine.cpp
+
 graphic.o:	graphic.cpp $(ALL)
 	$(CC) -c graphic.cpp
-
-user.o:	user.cpp $(ALL)
-	$(CC) -c user.cpp
-
-mouse.o:	mouse.cpp $(ALL)
-	$(CC) -c mouse.cpp
 
 palette.o:	palette.cpp $(ALL)
 	$(CC) -c palette.cpp
 
+sound.o:	sound.cpp $(ALL)
+	$(CC) -c sound.cpp
 
+speaker.o:	speaker.cpp $(ALL)
+	$(CC) -c speaker.cpp
+
+sprite.o:	sprite.cpp $(ALL)
+	$(CC) -c sprite.cpp
+
+input.o:	input.cpp $(ALL)
+	$(CC) -c input.cpp
+
+keyboard.o:	keyboard.cpp $(ALL)
+	$(CC) -c keyboard.cpp
+
+mouse.o:	mouse.cpp $(ALL)
+	$(CC) -c mouse.cpp
+
+bag.o:	bag.cpp $(ALL)
+	$(CC) -c bag.cpp
+
+resfile.o:	resfile.cpp $(ALL)
+	$(CC) -c resfile.cpp
+
+tar:	screen.h
+	cd .. ; tar czhvf ~/c/archive/user-2.0-pre$(TSTR).tar.gz \
+	user/*.cpp user/*.[hc] user/Makefile user/*.bmp user/*.wav user.h \
+	user/User-*
