@@ -230,9 +230,11 @@ char Keyboard::KeyToChar(int key) {
     case(KEY_LALT):
     case(KEY_RALT):  ret = 0; break;
     default:  {
-      ret = XKeysymToString(key)[0];
       if(key_stat[KEY_LSHIFT]  || key_stat[KEY_RSHIFT])  {
-	ret = toupper(ret);
+        ret = toupper(XKeysymToString(key)[0]);
+	}
+      else {
+        ret = XKeysymToString(key)[0];
 	}
       }break;
 #endif

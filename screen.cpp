@@ -722,11 +722,28 @@ void Screen::FadeOut(int n)  {
 
 void Screen::DrawRectangle(int x, int y, int xs, int ys, int c)  {
   int ctrx, ctry;
+  if(depth==8) {
+    for(ctry=y; ctry<(y+ys); ctry++)  {
+      memset(&(image[ctry].uc[x]), c, xs);
+      memset(&(backg[ctry].uc[x]), c, xs);
+      }
+    }
+  else if(depth==32) {
+    for(ctry=y; ctry<(y+ys); ctry++)  {
+      for(ctrx=x; ctrx<(x+xs); ctrx++)  {
+	image[ctry].ul[ctrx] = c;
+	backg[ctry].ul[ctrx] = c;
+	}
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d)\n", depth);
+/*
   for(ctrx=x; ctrx<(x+xs); ctrx++)  {
     for(ctry=y; ctry<(y+ys); ctry++)  {
       SetPoint(ctrx, ctry, c);
       }
     }
+*/
   }
 
 void Screen::DrawRectangleFG(int x, int y, int xs, int ys, int c)  {
@@ -892,9 +909,9 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
 	  unsigned long r2 = g.image[ctry].uc[(ctrx<<2)];
 	  unsigned long g2 = g.image[ctry].uc[(ctrx<<2)+1];
 	  unsigned long b2 = g.image[ctry].uc[(ctrx<<2)+2];
-          r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
-          g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
-          b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
+          r1 *= (255-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
+          g1 *= (255-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
+          b1 *= (255-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
 	  image[ctry+y].uc[((ctrx+x)<<2)] = r1;
 	  image[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
 	  image[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
@@ -987,31 +1004,24 @@ void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
     Debug("User:Screen:DrawTransparentGraphicFG Depth 32");
     for(ctry=(0>?(pys[p]-y)); ctry<((pye[p]-y)<?g.ysize); ctry++)  {
       for(ctrx=(0>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?g.xsize); ctrx++)  {
-	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
+	if(g.image[ctry].uc[(ctrx<<2)+3] == 255)  {
 	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
 	  backg[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
 	  }
 	else if(g.image[ctry].uc[(ctrx<<2)+3])  {
-	  int alpha = g.image[ctry].uc[(ctrx<<2)+3];
-	  unsigned long r1 = image[ctry+y].uc[((ctrx+x)<<2)];
-	  unsigned long g1 = image[ctry+y].uc[((ctrx+x)<<2)+1];
-	  unsigned long b1 = image[ctry+y].uc[((ctrx+x)<<2)+2];
+	  unsigned long alpha = g.image[ctry].uc[(ctrx<<2)+3];
+	  unsigned long r1 = backg[ctry+y].uc[((ctrx+x)<<2)];
+	  unsigned long g1 = backg[ctry+y].uc[((ctrx+x)<<2)+1];
+	  unsigned long b1 = backg[ctry+y].uc[((ctrx+x)<<2)+2];
 	  unsigned long r2 = g.image[ctry].uc[(ctrx<<2)];
 	  unsigned long g2 = g.image[ctry].uc[(ctrx<<2)+1];
 	  unsigned long b2 = g.image[ctry].uc[(ctrx<<2)+2];
-          r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
-          g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
-          b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
+	  r2 *= alpha; r1 *= (255-alpha); r1 += r2; r1 /= 255;
+	  g2 *= alpha; g1 *= (255-alpha); g1 += g2; g1 /= 255;
+	  b2 *= alpha; b1 *= (255-alpha); b1 += b2; b1 /= 255;
 	  image[ctry+y].uc[((ctrx+x)<<2)] = r1;
 	  image[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
 	  image[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
-
-	  r1 = backg[ctry+y].uc[((ctrx+x)<<2)];
-	  g1 = backg[ctry+y].uc[((ctrx+x)<<2)+1];
-	  b1 = backg[ctry+y].uc[((ctrx+x)<<2)+2];
-          r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
-          g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
-          b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
 	  backg[ctry+y].uc[((ctrx+x)<<2)] = r1;
 	  backg[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
 	  backg[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
@@ -1623,13 +1633,34 @@ int Screen::Print(long cb, long cf, const char *text)  {
         }
       int ctrx, ctry;
       Graphic let(*font[*ind]);
-      for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
-        for(ctry=0; ctry<(int)let.ysize; ctry++)  {
-          if(let.image[ctry].uc[ctrx] == 0) let.image[ctry].uc[ctrx] = cb;
-          else let.image[ctry].uc[ctrx] = cf;
-          }
-        }
-      DrawGraphic(let, tcx-let.xcenter, tcy-let.ycenter);
+      Graphic res;
+      res.depth=depth;
+      res.DefSize(let.xsize, let.ysize);
+      if(depth==8) {
+	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
+	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
+	     if(let.image[ctry].uc[ctrx] == 0) res.image[ctry].uc[ctrx] = cb;
+	     else res.image[ctry].uc[ctrx] = cf;
+	     }
+	  }
+	DrawGraphic(res, tcx-let.xcenter, tcy-let.ycenter);
+	}
+      else if(depth==32) {
+	unsigned long alpha;
+	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
+	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
+	    alpha=let.image[ctry].uc[ctrx];
+	    if(alpha) {
+	      res.image[ctry].ul[ctrx] = cf;
+	      alpha*=((unsigned char*)&cf)[3]; alpha/=255;
+	      res.image[ctry].uc[(ctrx<<2)+3] = alpha;
+	      }
+	    else res.image[ctry].ul[ctrx]=0;
+	    }
+	  }
+	DrawTransparentGraphic(res, tcx-let.xcenter, tcy-let.ycenter);
+	}
+      else Exit(-1, "Unknown depth error (%d)\n", depth);
       tcx+=font[*ind]->xsize+1;
       AlignCursor();
       }
