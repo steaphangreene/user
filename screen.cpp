@@ -780,6 +780,29 @@ void Screen::FadeOut(int n)  {
   n=n;
   }
 
+void Screen::ClearArea(int x, int y, int xs, int ys)  {
+  int ctry;
+  if(depth==8) {
+    for(ctry=y; ctry<(y+ys); ctry++)  {
+      memset(&(image[ctry].uc[x]), 0, xs);
+      memset(&(backg[ctry].uc[x]), 0, xs);
+      }
+    }
+  else if(depth==16) {
+    for(ctry=y; ctry<(y+ys); ctry++)  {
+      memset(&(image[ctry].us[x]), 0, xs<<1);
+      memset(&(backg[ctry].us[x]), 0, xs<<1);
+      }
+    }
+  else if(depth==32) {
+    for(ctry=y; ctry<(y+ys); ctry++)  {
+      memset(&(image[ctry].ul[x]), 0, xs<<2);
+      memset(&(backg[ctry].ul[x]), 0, xs<<2);
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  }
+
 void Screen::DrawRectangle(int x, int y, int xs, int ys, color c)  {
   ConvertColor(c, appdepth, depth);
   InvalidateRectangle(x, y, xs, ys);

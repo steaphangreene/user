@@ -129,6 +129,7 @@ class Screen  {
   void SetLine(int, int, int, int, int, int, int);
   void DrawRectangle(int, int, int, int, color);
   void DrawRectangleFG(int, int, int, int, color);
+  void ClearArea(int, int, int, int);
   int VideoType() { return vtype; };
   int SetFont(const char *);
   int SetFont(const char *, const char *);
