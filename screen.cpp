@@ -1824,8 +1824,8 @@ int Screen::Printf(color cb, color cf, const char *text, ...)  {
 int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
 	const char *text)  {
   if(g==NULL) return 0;
-  ConvertColor(cb, appdepth, g->depth);
-  ConvertColor(cf, appdepth, g->depth);
+  ConvertColor(cb, appdepth, (int)g->depth);
+  ConvertColor(cf, appdepth, (int)g->depth);
   Debug("User::Screen::Print(...) Begin");
   if(font[' '] == NULL)  Exit(-1, "Must Screen.SetFont before Screen.Print!\n");
   unsigned char *ind = (unsigned char *)text;
@@ -2136,27 +2136,33 @@ void Screen::DropSprite(Sprite *s) {
   if((!bins) || (!lbins)) Exit(1, "No bins in Dropsprite!\n");
   Sprite *sp;
   if(s->Flag(SPRITE_HUGE)) {
+    Debug("Screen::DropSprite(s) In large");
     if(huges==NULL) { huges=s; s->prev = &huges; }
     else {
-      Debug("Screen::DropSprite(s) In large");
       for(sp=huges; sp->next != NULL; sp=sp->next);
       sp->next = s; s->prev = &(sp->next);
       }
     }
   else if(s->Flag(SPRITE_LARGE)) {
+    Debug("Screen::DropSprite(s) In lbin");
     int x=(s->xpos)>>LARGE_BIN_FACTOR, y=(s->ypos)>>LARGE_BIN_FACTOR;
+    if(x<0) x=0; if(y<0) y=0;
+    if(x>=(xsize>>LARGE_BIN_FACTOR)) x=(xsize>>LARGE_BIN_FACTOR)-1;
+    if(y>=(ysize>>LARGE_BIN_FACTOR)) y=(ysize>>LARGE_BIN_FACTOR)-1;
     if(lbins[x][y]==NULL) { lbins[x][y]=s; s->prev = &lbins[x][y]; }
     else {
-      Debug("Screen::DropSprite(s) In bin");
       for(sp=(lbins[x][y]); sp->next != NULL; sp=sp->next);
       sp->next = s; s->prev = &(sp->next);
       }
     }
   else {
+    Debug("Screen::DropSprite(s) In bin");
     int x=(s->xpos)>>BIN_FACTOR, y=(s->ypos)>>BIN_FACTOR;
+    if(x<0) x=0; if(y<0) y=0;
+    if(x>=(xsize>>BIN_FACTOR)) x=(xsize>>BIN_FACTOR)-1;
+    if(y>=(ysize>>BIN_FACTOR)) y=(ysize>>BIN_FACTOR)-1;
     if(bins[x][y]==NULL) { bins[x][y]=s; s->prev = &bins[x][y]; }
     else {
-      Debug("Screen::DropSprite(s) In bin");
       for(sp=(bins[x][y]); sp->next != NULL; sp=sp->next);
       sp->next = s; s->prev = &(sp->next);
       }
