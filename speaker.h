@@ -19,7 +19,7 @@ class Sound;
 //class Music;
 
 struct Playing {
-  unsigned char *pos; 
+  mfmt pos; 
   int left; 
   };
 
@@ -52,6 +52,10 @@ class Speaker {
 
 #ifdef OSS_SOUND
   int dsp;
+#else
+#ifdef ESD_SOUND
+  int dsp;
+#endif
 #endif
 
 #ifdef DOS_SOUND

@@ -8,14 +8,14 @@
 #include "vesa.h"
 #endif
 
-#define MAX_SPRITES	16384
-#define MAX_LG_SPRITES	1024
-#define MAX_BIN_SPRITES	1024
-#define REDRAW_RECTS	8
-//#define BIN_SIZE	32  // Must Agree
-//#define BIN_FACTOR	5   // (eg: 2^BIN_FACTOR = BIN_SIZE)
-#define BIN_SIZE	8  // Must Agree
-#define BIN_FACTOR	3   // (eg: 2^BIN_FACTOR = BIN_SIZE)
+#define MAX_SPRITES		16384
+#define MAX_LG_SPRITES		1024
+#define MAX_BIN_SPRITES		1024
+#define REDRAW_RECTS		8
+#define BIN_SIZE		8  // Must Agree
+#define BIN_FACTOR		3   // (eg: 2^BIN_FACTOR = BIN_SIZE)
+#define LARGE_BIN_SIZE		32  // Must Agree
+#define LARGE_BIN_FACTOR	5   // (eg: 2^LARGE_BIN_FACTOR = LARGE_BIN_SIZE)
 
 #define VIDEO_NONE	0
 #define VIDEO_XWINDOWS	1
@@ -185,7 +185,7 @@ class Screen  {
   Palette *pal;
   IntList CollideRectangle(int, int, int, int, int);
   Sprite *sprites[MAX_SPRITES], *spbuf[MAX_SPRITES];
-  Sprite *larges, ***bins;
+  Sprite *huges, ***bins, ***lbins;
   int xlong, ylong;
   int nextsprite;
   int RegisterSprite(Sprite *);

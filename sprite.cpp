@@ -61,6 +61,9 @@ void Sprite::SetImage(const Graphic &g) {
   if(image->xsize>(BIN_SIZE+1) || image->ysize>(BIN_SIZE+1))
     SetFlag(SPRITE_LARGE);
   else ClearFlag(SPRITE_LARGE);
+  if(image->xsize>(LARGE_BIN_SIZE+1) || image->ysize>(LARGE_BIN_SIZE+1))
+    SetFlag(SPRITE_HUGE);
+  else ClearFlag(SPRITE_HUGE);
   Debug("User:Sprite:SetImage() End");
   }
 
@@ -81,6 +84,9 @@ void Sprite::UseImage(const Graphic *g) {
   if(image->xsize>(BIN_SIZE+1) || image->ysize>(BIN_SIZE+1))
     SetFlag(SPRITE_LARGE);
   else ClearFlag(SPRITE_LARGE);
+  if(image->xsize>(LARGE_BIN_SIZE+1) || image->ysize>(LARGE_BIN_SIZE+1))
+    SetFlag(SPRITE_HUGE);
+  else ClearFlag(SPRITE_HUGE);
   }
 
 IntList Sprite::CMove(int x, int y) {
@@ -383,4 +389,7 @@ void Sprite::SetLine(int x, int y, int d, color c) {
   if(image->xsize>(BIN_SIZE+1) || image->ysize>(BIN_SIZE+1))
     SetFlag(SPRITE_LARGE);
   else ClearFlag(SPRITE_LARGE);
+  if(image->xsize>(LARGE_BIN_SIZE+1) || image->ysize>(LARGE_BIN_SIZE+1))
+    SetFlag(SPRITE_HUGE);
+  else ClearFlag(SPRITE_HUGE);
   }

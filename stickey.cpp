@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "graphic.h"
 #include "sprite.h"
 #include "control.h"

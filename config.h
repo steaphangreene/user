@@ -19,7 +19,7 @@
 	#define X_WINDOWS
 	#define XF86_DGA // Must also define X_WINDOWS (above)
 
-	//#define SVGALIB
+	//#define SVGALIB // Not yet implemented
 #endif
 
 /*************************************
@@ -29,8 +29,8 @@
 #ifdef __DJGPP__
 	#define DOS_SOUND
 #else
-	#define OSS_SOUND
-//	#define ESD_SOUND
+//	#define OSS_SOUND
+	#define ESD_SOUND
 #endif
 
 /*************************************

@@ -77,6 +77,10 @@ void InitUserEngine(int argc, char **argv)  {
 extern Display *___mydisplay;
 #endif
 
+#ifndef DOS
+  extern "C" { int strsignal(int); }
+#endif
+
 void SigHand(int sn)  {
 #ifdef USER_DEBUG
   StopUserEngine();

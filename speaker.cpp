@@ -54,6 +54,9 @@ const int IRQ_INT[16] = {0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF,
 #define SOUND_BUF_SIZE 16384 // Must
 #define SOUND_BUF_POWER 14 // Agree
 
+//#define SOUND_BUF_SIZE 8192 // Must
+//#define SOUND_BUF_POWER 13 // Agree
+
 //#define SOUND_BUF_SIZE 4096 // Must
 //#define SOUND_BUF_POWER 12 // Agree
 
@@ -89,7 +92,7 @@ int Speaker::Configure(int stro, int bts, int fr)  {
   loop = new int[SOUND_NUM];
   cur_num = 0; cur_alloc = SOUND_NUM;
   for(ctr=0; ctr<SOUND_NUM; ctr++)
-    { samp[ctr].v=NULL; cur[ctr].left=-1; cur[ctr].pos=NULL; loop[ctr]=0; }
+    { samp[ctr].v=NULL; cur[ctr].left=-1; cur[ctr].pos.v=NULL; loop[ctr]=0; }
   ambient = -1;
 
   stereo=stro; bits=bts; freq=fr;
@@ -352,15 +355,14 @@ int Speaker::Configure(int stro, int bts, int fr)  {
       stype = SOUND_NONE; return 0;
       }
     return 1;
-    }
 #else
     perror("User::Speaker Error on /dev/dsp");
     fprintf(stderr, "Sound will not be played.\n");
     stype = SOUND_NONE; return 0;
-    }
 #endif
 
 #ifdef OSS_SOUND
+    }
   int tmp = 0x00020000+SOUND_BUF_POWER; //1024 frags
   if(ioctl(dsp, SNDCTL_DSP_SETFRAGMENT, &tmp)==-1) {
     perror("User");
@@ -431,7 +433,7 @@ void Speaker::FinishQueue() {
 #ifdef OSS_SOUND
   if(stype == SOUND_OSS) ioctl(dsp, SNDCTL_DSP_SYNC);
 #endif
-#ifdef OSS_SOUND
+#ifdef ESD_SOUND
   if(stype == SOUND_ESD) fcntl(dsp, F_SETFL, O_SYNC);
 #endif
   }
@@ -446,7 +448,7 @@ int Speaker::Play(Sound &smp) {
 //  write(dsp, smp.data, smp.len);
   for(ctr=0; ctr<cur_alloc && cur[ctr].left>=0; ctr++);
   if(ctr>=cur_alloc) /* ExpandCur(); */ return -1; 
-  cur[ctr].left = smp.len;  cur[ctr].pos = smp.data.uc;
+  cur[ctr].left = smp.len;  cur[ctr].pos.uc = smp.data.uc;
   loop[ctr] = 0; samp[ctr].uc = smp.data.uc;
 
 #ifdef DOS_SOUND
@@ -465,7 +467,7 @@ int Speaker::Loop(Sound &smp) {
 //  write(dsp, smp.data, smp.len);
   for(ctr=0; ctr<cur_alloc && cur[ctr].left>=0; ctr++);
   if(ctr>=cur_alloc) /* ExpandCur(); */ return -1; 
-  cur[ctr].left = smp.len;  cur[ctr].pos = smp.data.uc;
+  cur[ctr].left = smp.len;  cur[ctr].pos.uc = smp.data.uc;
   loop[ctr] = 1; samp[ctr].uc = smp.data.uc;
 
 #ifdef DOS_SOUND
@@ -484,7 +486,7 @@ void Speaker::SetAsAmbient(Sound &smp) {
 //  write(dsp, smp.data, smp.len);
   for(ctr=0; ctr<cur_alloc && cur[ctr].left>=0; ctr++);
   if(ctr>=cur_alloc) /* ExpandCur(); */ return; 
-  cur[ctr].left = smp.len;  cur[ctr].pos = smp.data.uc;
+  cur[ctr].left = smp.len;  cur[ctr].pos.uc = smp.data.uc;
   ambient = ctr; samp[ctr].uc = smp.data.uc;
   loop[ctr] = 1;
 
@@ -533,53 +535,37 @@ void Speaker::Update() {
 #endif
 
 //  if(bits==8) memset(buf.uc, 128, SOUND_BUF_SIZE);
-  if(bits==16) memset(buf.s, 0, SOUND_BUF_SIZE);
+//  if(bits==16) memset(buf.s, 0, SOUND_BUF_SIZE);
   if(bits==8)  {
     register int smp;
     for(ctr2=0; ctr2 < SOUND_BUF_SIZE; ctr2++) {
       smp = 128;
       for(ctr=0; ctr<cur_alloc; ctr++)  {
-	if(ctr2 < cur[ctr].left) { smp += cur[ctr].pos[ctr2]; smp -= 128; }
+	if(ctr2 < cur[ctr].left) { smp += cur[ctr].pos.uc[ctr2]; smp -= 128; }
 	}
-      if(smp<0) smp=0; if(smp>255) smp=255;
+      if(smp<0) smp=0; else if(smp>255) smp=255;
       buf.uc[ctr2] = smp;
       }
     }
-  else for(ctr=0; ctr<cur_alloc; ctr++)  {
-    if(cur[ctr].left>=0)  {
-      memcpy(buf.uc, cur[ctr].pos, SOUND_BUF_SIZE <? cur[ctr].left);
-      if(bits==8) {
-//	for(ctr2=0; ctr2<(SOUND_BUF_SIZE <? cur[ctr].left); ctr2++) {
-//	  unsigned char ob = buf.uc[ctr2];
-//	  buf.uc[ctr2]+=cur[ctr].pos[ctr2]; buf.uc[ctr2] ^= 128;
-//	  if(buf.uc[ctr2] < cur[ctr].pos[ctr2] && ob > 128) buf.uc[ctr] = 255;
-//	  if(buf.uc[ctr2] > cur[ctr].pos[ctr2] && ob < 128) buf.uc[ctr] = 0;
-//	  }
+  else if(bits==16) for(ctr=0; ctr<cur_alloc; ctr++)  {
+    register int smp;
+    for(ctr2=0; ctr2 < (SOUND_BUF_SIZE>>1); ctr2++) {
+      smp = 0;
+      for(ctr=0; ctr<cur_alloc; ctr++)  {
+	if(ctr2 < ((cur[ctr].left)>>1)) { smp += cur[ctr].pos.s[ctr2]; }
 	}
-      else {
-//	if(!mix) {
-//	  memcpy(buf, cur[ctr].pos, SOUND_BUF_SIZE <? cur[ctr].left);
-//	  mix=1;
-//	  }
-//	else {
-	  for(ctr2=0; ctr2<((SOUND_BUF_SIZE <? cur[ctr].left)>>1); ctr2++)  {
-	    short ob = buf.s[ctr2];
-	    buf.s[ctr2] += ((short*)(cur[ctr].pos))[ctr2];
-	    if(buf.s[ctr2] < ((short*)(cur[ctr].pos))[ctr2] && ob > 0)
-		buf.s[ctr2] = 32767;
-	    if(buf.s[ctr2] > ((short*)(cur[ctr].pos))[ctr2] && ob < 0)
-		buf.s[ctr2] = -32768;
-//	    }
-	  }
-	}
+      if(smp<-32768) smp=-32768; else if(smp>32767) smp=32767;
+      buf.s[ctr2] = smp;
       }
     }
+  else Exit(1, "Unknown sound depth error!\n");
+
   for(ctr=0; ctr<cur_alloc; ctr++)  {
     if(cur[ctr].left>=0)  {
       if(cur[ctr].left <= SOUND_BUF_SIZE) {
 	if(loop[ctr])  {
-	  cur[ctr].left += cur[ctr].pos-samp[ctr].uc;
-	  cur[ctr].pos = samp[ctr].uc;
+	  cur[ctr].left += cur[ctr].pos.uc-samp[ctr].uc;
+	  cur[ctr].pos.uc = samp[ctr].uc;
 	  }
 	else {
 	  cur[ctr].left = -1;
@@ -587,7 +573,7 @@ void Speaker::Update() {
 	}
       else  {
 	cur[ctr].left -= SOUND_BUF_SIZE;
-	cur[ctr].pos += SOUND_BUF_SIZE;
+	cur[ctr].pos.uc += SOUND_BUF_SIZE;
 	}
       }
     }
@@ -602,7 +588,7 @@ void Speaker::Update() {
 #endif
 #ifdef ESD_SOUND
   if(stype == SOUND_ESD) write(dsp, buf.uc, SOUND_BUF_SIZE);
-  if(stype == SOUND_ESD) fcntl(dsp, F_SETFL, O_SYNC);
+//  if(stype == SOUND_ESD) fcntl(dsp, F_SETFL, O_SYNC);
 #endif
 
   Debug("User:Speaker:Update End");
@@ -620,7 +606,7 @@ void Speaker::Stop(int s)  {
 void Speaker::StopByBuffer(mfmt ptr, int sz)  {
   int ctr;
   for(ctr=0; ctr<cur_alloc; ctr++)  {
-    if(cur[ctr].pos >= ptr.uc && cur[ctr].pos < (ptr.uc+sz))  {
+    if(cur[ctr].pos.uc >= ptr.uc && cur[ctr].pos.uc < (ptr.uc+sz))  {
       cur[ctr].left = -1;
       loop[ctr] = 0;
       samp[ctr].v = NULL;
@@ -648,7 +634,7 @@ void Speaker::ExpandCur()  {
      }
   for(; ctr<cur_alloc; ctr++) {
     cur[ctr].left=-1;
-    cur[ctr].pos=NULL;
+    cur[ctr].pos.v=NULL;
     loop[ctr]=0;
     }
   delete oldcur;

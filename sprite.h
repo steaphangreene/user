@@ -8,6 +8,7 @@
 #define SPRITE_SOLID		4
 #define SPRITE_RECTANGLE	8
 #define SPRITE_LARGE		16
+#define SPRITE_HUGE		32
 
 class Screen;
 class Graphic;

@@ -99,8 +99,9 @@ void Screen::Init()  {
   memset(pxe, -1, sizeof(pxe));
   memset(pye, -1, sizeof(pye));
   nextsprite = 0;
-  larges = NULL;
+  huges = NULL;
   bins = NULL;
+  lbins = NULL;
   frame.v = NULL;
   shown = 0;
   fullscreen = 0;
@@ -180,6 +181,12 @@ int Screen::SetSize(int x, int y)  {
       }
     delete bins;
     }
+  if(lbins!=NULL) {
+    for(ctr=0; ctr<xsize>>LARGE_BIN_FACTOR; ++ctr) {
+      delete lbins[ctr];
+      }
+    delete lbins;
+    }
   xsize = x; ysize = y;
   pxs[0] = 0; pys[0] = 0;
   pxe[0] = x; pye[0] = y;
@@ -190,6 +197,15 @@ int Screen::SetSize(int x, int y)  {
     if(!bins[ctr]) Exit(1, "Insufficient memory!\n");
     for(ctr2=0; ctr2<ysize>>BIN_FACTOR; ++ctr2) {
       bins[ctr][ctr2] = NULL;
+      }
+    }
+  lbins = new (Sprite**)[xsize>>LARGE_BIN_FACTOR];
+  if(!lbins) Exit(1, "Insufficient memory!\n");
+  for(ctr=0; ctr<xsize>>LARGE_BIN_FACTOR; ++ctr) {
+    lbins[ctr] = new (Sprite*)[ysize>>LARGE_BIN_FACTOR];
+    if(!lbins[ctr]) Exit(1, "Insufficient memory!\n");
+    for(ctr2=0; ctr2<ysize>>LARGE_BIN_FACTOR; ++ctr2) {
+      lbins[ctr][ctr2] = NULL;
       }
     }
 
@@ -1567,26 +1583,7 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
 
   Debug("Screen:RestoreRectangle() Before Selection");
   Sprite **spp = spbuf;
-/*
-  if(xs>(BIN_SIZE+1) || ys>(BIN_SIZE+1)) {
-    Debug("Screen:RestoreRectangle() Large");
-    register Sprite **tmpsp;
-    for(tmpsp=sprites; tmpsp<sprites+MAX_SPRITES; ++tmpsp)  {
-      if((*tmpsp) != NULL && (*tmpsp)->drawn
-	  && (y+ys) > (*tmpsp)->ypos
-	  && (x+xs) > (*tmpsp)->xpos
-	  && (*tmpsp)->image != NULL
-	  && x < ((*tmpsp)->xpos + (*tmpsp)->image->xsize)
-	  && y < ((*tmpsp)->ypos + (*tmpsp)->image->ysize))  {
-	*spp = *tmpsp; ++spp;
-	}
-      }
-    }
-  else {
-*/
   Debug("Screen:RestoreRectangle() Small 1");
-
-//  for(tmps=bins[xb][yb]; tmps!=NULL; tmps=tmps->next) {
 
 #define snag(bxy) \
     for(tmps=bxy; tmps!=NULL; tmps=tmps->next) {			\
@@ -1610,7 +1607,21 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
       snag(bins[ctrx][ctry]);
       }
     }
-  snag(larges);
+  snag(huges);
+
+  xb=(x>>LARGE_BIN_FACTOR)-1; yb=(y>>LARGE_BIN_FACTOR)-1;
+  xe=(x+xs+LARGE_BIN_SIZE-1)>>LARGE_BIN_FACTOR;
+  ye=(y+ys+LARGE_BIN_SIZE-1)>>LARGE_BIN_FACTOR;
+  if(xb<0) xb=0;
+  if(yb<0) yb=0;
+  if(xe>=(xsize>>LARGE_BIN_FACTOR)) xe=(xsize>>LARGE_BIN_FACTOR)-1;
+  if(ye>=(ysize>>LARGE_BIN_FACTOR)) ye=(ysize>>LARGE_BIN_FACTOR)-1;
+  for(ctrx=xb; ctrx<xe; ++ctrx) {
+    for(ctry=yb; ctry<ye; ++ctry) {
+      snag(lbins[ctrx][ctry]);
+      }
+    }
+  snag(huges);
 #undef snag(bxy)
 
   Debug("Screen:RestoreRectangle() Before Sort");
@@ -2122,16 +2133,24 @@ int Screen::DefaultYSize() {
 
 void Screen::DropSprite(Sprite *s) {
   Debug("Screen::DropSprite(s) Begin");
-  if(!bins) Exit(1, "No bins in Dropsprite!\n");
+  if((!bins) || (!lbins)) Exit(1, "No bins in Dropsprite!\n");
   Sprite *sp;
-  if(s->Flag(SPRITE_LARGE)) {
-    if(larges==NULL) { larges=s; s->prev = &larges; }
+  if(s->Flag(SPRITE_HUGE)) {
+    if(huges==NULL) { huges=s; s->prev = &huges; }
     else {
       Debug("Screen::DropSprite(s) In large");
-      for(sp=larges; sp->next != NULL; sp=sp->next);
+      for(sp=huges; sp->next != NULL; sp=sp->next);
       sp->next = s; s->prev = &(sp->next);
       }
-//    for(sp=larges; *sp != NULL; ++sp); *sp = s; (s->list[0])=sp;
+    }
+  else if(s->Flag(SPRITE_LARGE)) {
+    int x=(s->xpos)>>LARGE_BIN_FACTOR, y=(s->ypos)>>LARGE_BIN_FACTOR;
+    if(lbins[x][y]==NULL) { lbins[x][y]=s; s->prev = &lbins[x][y]; }
+    else {
+      Debug("Screen::DropSprite(s) In bin");
+      for(sp=(lbins[x][y]); sp->next != NULL; sp=sp->next);
+      sp->next = s; s->prev = &(sp->next);
+      }
     }
   else {
     int x=(s->xpos)>>BIN_FACTOR, y=(s->ypos)>>BIN_FACTOR;
@@ -2150,18 +2169,6 @@ void Screen::LiftSprite(Sprite *s) {
   if(!s->prev) Exit(1, "Lifting non-placed Sprite (%d)!!\n", s->drawn);
   if(s->next) s->next->prev = s->prev;
   *(s->prev) = s->next; s->next = NULL; s->prev=NULL;
-
-/*
-  if(s->Flag(SPRITE_LARGE)) {
-    if(s->list[0]) { (*(s->list[0])) = NULL; s->list[0] = NULL; }
-    }
-  else {
-    if(s->list[0]) { (*(s->list[0])) = NULL; s->list[0] = NULL; }
-    if(s->list[1]) { (*(s->list[1])) = NULL; s->list[1] = NULL; }
-    if(s->list[2]) { (*(s->list[2])) = NULL; s->list[2] = NULL; }
-    if(s->list[3]) { (*(s->list[3])) = NULL; s->list[3] = NULL; }
-    }
-*/
   Debug("Screen::LiftSprite(s) End");
   }
 
