@@ -402,7 +402,7 @@ void Graphic::SetLine(int xs, int ys, int d, unsigned long c) {
   else ycenter=0;
   }
 
-void Graphic::SetBox(int xs, int ys, int d, unsigned long c) {
+void Graphic::SetRect(int xs, int ys, int d, unsigned long c) {
   if(xs<1 || ys<1) return;
   tcolor=0; if(depth==8 && tcolor==c) ++tcolor;
   depth=d; DefSize(xs,ys);
@@ -432,7 +432,7 @@ void Graphic::SetBox(int xs, int ys, int d, unsigned long c) {
   else Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
   }
 
-void Graphic::SetFillBox(int xs, int ys, int d, unsigned long c) {
+void Graphic::SetFillRect(int xs, int ys, int d, unsigned long c) {
   if(xs<1 || ys<1) return;
   tcolor=0; if(depth==8 && tcolor==c) ++tcolor;
   depth=d; DefSize(xs,ys);
@@ -448,6 +448,34 @@ void Graphic::SetFillBox(int xs, int ys, int d, unsigned long c) {
       }
     }
   else Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
+  }
+
+void Graphic::ClearArea(int x, int y, int xs, int ys) {
+  int ctr;
+  for(ctr=y; ctr<y+ys; ++ctr) {
+    memset(image[ctr].uc+(x*(depth>>3)), 0, xs*(depth>>3));
+    }
+  }
+
+void Graphic::DrawLine(int x, int y, int xs, int ys, int d, unsigned long c) {
+  Graphic *g = new Graphic;
+  g->SetLine(xs, ys, d, c);
+  PasteTransparentGraphic(g, x, y);
+  delete g;
+  }
+
+void Graphic::DrawRect(int x, int y, int xs, int ys, int d, unsigned long c) {
+  Graphic *g = new Graphic;
+  g->SetRect(xs, ys, d, c);
+  PasteTransparentGraphic(g, x, y);
+  delete g;
+  }
+
+void Graphic::DrawFillRect(int x, int y, int xs, int ys, int d, unsigned long c) {
+  Graphic *g = new Graphic;
+  g->SetFillRect(xs, ys, d, c);
+  PasteTransparentGraphic(g, x, y);
+  delete g;
   }
 
 void Graphic::SetRotated(Graphic &in, int angle) {
@@ -1187,6 +1215,52 @@ void Graphic::PasteGraphic(Graphic *g, int x, int y) {
   else if(depth == 16) {
     for(ctry=0; ctry<g->ysize; ++ctry) {
       memcpy(image[ctry+y].us+x, g->image[ctry].us, (g->xsize)<<1);
+      }   
+    }
+  }
+
+void Graphic::PasteTransparentGraphic(Graphic &g, int x, int y) {
+  PasteTransparentGraphic(&g, x, y);
+  }
+
+void Graphic::PasteTransparentGraphic(Graphic *gr, int x, int y) {
+  if(gr==NULL) return;
+  if(gr->depth != depth)
+    Exit(1, "Depth mismatch in %s\n", __PRETTY_FUNCTION__);
+  int ctry, ctrx;
+  if(x<0 || y<0 || x+gr->xsize > xsize || y+gr->ysize > ysize)
+    Exit(1, "Out of bounds error in %s\n", __PRETTY_FUNCTION__);
+  if(depth == 8) {
+    for(ctry=0; ctry<gr->ysize; ++ctry) {
+      for(ctrx=0; ctrx<gr->xsize; ++ctrx) {
+	if(gr->image[ctry].uc[ctrx] != tcolor)
+	  image[ctry+y].uc[ctrx+x] = gr->image[ctry].uc[ctrx];
+	}
+      }   
+    }
+  else if(depth == 32) {
+    for(ctry=0; ctry<gr->ysize; ++ctry) {
+      for(ctrx=0; ctrx<gr->xsize; ++ctrx) {
+	unsigned long alpha=gr->image[ctry].uc[(ctrx<<2)+3];
+	unsigned long cr = image[ctry+y].uc[((ctrx+x)<<2)]*(255-alpha);
+	unsigned long cg = image[ctry+y].uc[((ctrx+x)<<2)+1]*(255-alpha);
+	unsigned long cb = image[ctry+y].uc[((ctrx+x)<<2)+2]*(255-alpha);
+	cr += gr->image[ctry].uc[(ctrx<<2)]*alpha;   cr/=255;
+	cg += gr->image[ctry].uc[(ctrx<<2)+1]*alpha; cg/=255;
+	cb += gr->image[ctry].uc[(ctrx<<2)+2]*alpha; cb/=255;
+	image[ctry+y].uc[((ctrx+x)<<2)] = cr;
+	image[ctry+y].uc[((ctrx+x)<<2)+1] = cg;
+	image[ctry+y].uc[((ctrx+x)<<2)+2] = cb;
+	image[ctry+y].uc[((ctrx+x)<<2)+3] = 255;
+	}
+      }   
+    }
+  else if(depth == 16) {
+    for(ctry=0; ctry<gr->ysize; ++ctry) {
+      for(ctrx=0; ctrx<gr->xsize; ++ctrx) {
+	if(gr->image[ctry].us[ctrx] != tcolor)
+	  image[ctry+y].us[ctrx+x] = gr->image[ctry].us[ctrx];
+	}
       }   
     }
   }

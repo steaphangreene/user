@@ -8,7 +8,7 @@
 #include "vesa.h"
 #endif
 
-#define MAX_SPRITES	4096
+#define MAX_SPRITES	16384
 #define REDRAW_RECTS	8
 
 #define VIDEO_NONE	0
@@ -91,6 +91,7 @@ class Screen  {
   void Clear();
   void InvalidateRectangle(int, int, int, int);
   void RestoreRectangle(int, int, int, int);
+  void RestoreInvalidRectangles();
   void FullScreenBMP(const char *);
 
   void FullScreenGraphic(Graphic &);
@@ -134,6 +135,9 @@ class Screen  {
   int Print(int, int, color, color, const char *);
   int Printf(int, int, color, color, const char *, ...)
 	__attribute__ ((format (printf, 6, 7)));
+  int GPrint(Graphic *g, int, int, color, color, const char *);
+  int GPrintf(Graphic *g, int, int, color, color, const char *, ...)
+	__attribute__ ((format (printf, 7, 8)));
 
   Panel NewPanel(int, int, int, int);
   void RemovePanel(Panel);

@@ -810,7 +810,7 @@ void Screen::SetLine(int xs, int ys, int xe, int ye, color c)  {
   Graphic tmpg;
   ConvertColor(c, appdepth, depth);
   tmpg.SetLine(xe-xs, ye-ys, depth, c);
-  DrawTransparentGraphic(tmpg, xs, ys);
+  DrawTransparentGraphic(tmpg, xs-tmpg.xcenter, ys-tmpg.ycenter);
   }
 
 void Screen::SetLineFG(int xs, int ys, int xe, int ye, color c)  {
@@ -1433,6 +1433,13 @@ void Screen::MakeFriendly(Graphic *g)  {
   if(g->depth != depth) g->DepthConvert(depth, *pal);
   }
 
+void Screen::RestoreInvalidRectangles()  {
+  int ctr;
+  for(ctr=0; ctr<REDRAW_RECTS; ctr++) {
+    RestoreRectangle(rxs[ctr], rxe[ctr]-rxs[ctr], rys[ctr], rye[ctr]-rys[ctr]);
+    }
+  }
+
 void Screen::InvalidateRectangle(int x, int y, int xs, int ys)  {
   if(x<0) { xs+=x; x=0; }
   if(y<0) { ys+=y; y=0; }
@@ -1620,14 +1627,17 @@ void Screen::WaitForNextFrame()  {
 #else
   time_t dest; long udest;
   timeval tv;
-  dest = 0; udest = framedelay;
-  dest += lasttime; udest += ulasttime;
+  dest = lasttime; udest = ulasttime;
+  udest += framedelay;
   if(udest > 1000000) { udest -= 1000000; dest += 1; }
+  gettimeofday(&tv, NULL);
   while(tv.tv_sec<dest || (tv.tv_sec==dest && tv.tv_usec<udest)) {
     __Da_Screen->RefreshFast(); gettimeofday(&tv, NULL);
     }
-  lasttime = dest;
-  ulasttime = udest;
+//  lasttime = dest;
+//  ulasttime = udest;
+  lasttime = tv.tv_sec;
+  ulasttime = tv.tv_usec;
 #endif
   }
 
@@ -1676,6 +1686,22 @@ void Screen::SetCursor(Graphic &g)  {
   TCursor->Move(tcx, tcy);
   }
 
+int Screen::GPrintf(Graphic *g, int x, int y, color cb, color cf,
+	const char *text, ...) {
+  Debug("User::Screen::Printf(g, x, y, ...) Begin");
+  if(g==NULL) return 0;
+  int ret;
+  va_list stuff;
+  va_start(stuff, text);
+  char buf[4096];
+  bzero(buf, 4096);
+  vsprintf(buf, text, stuff);
+  ret = GPrint(g, x, y, cb, cf, buf);
+  va_end(stuff);
+  Debug("User::Screen::Printf(g, x, y, ...) End");
+  return ret;
+  }
+
 int Screen::Printf(int x, int y, color cb, color cf, const char *text, ...) {
   Debug("User::Screen::Printf(x, y, ...) Begin");
   TGotoXY(x, y);
@@ -1703,6 +1729,114 @@ int Screen::Printf(color cb, color cf, const char *text, ...)  {
   va_end(stuff);
   Debug("User::Screen::Printf(...) End");
   return ret;
+  }
+
+int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
+	const char *text)  {
+  if(g==NULL) return 0;
+  ConvertColor(cb, appdepth, g->depth);
+  ConvertColor(cf, appdepth, g->depth);
+  Debug("User::Screen::Print(...) Begin");
+  if(font[' '] == NULL)  Exit(-1, "Must Screen.SetFont before Screen.Print!\n");
+  unsigned char *ind = (unsigned char *)text;
+//  printf("%s\n", text);
+  for(;(*ind) != 0; ind++)  {
+//    printf("%d,%d:%d: ", TXPos(), TYPos(), *ind); fflush(stdout);
+
+    if((*ind) == (unsigned char)'\t') (*ind)=' ';
+    if((*ind) == (unsigned char)CHAR_LEFT)  {
+      x-=font[' ']->xsize;
+      AlignCursor();
+      }
+    else if((*ind) == (unsigned char)CHAR_RIGHT)  {
+      x+=font[' ']->xsize;
+      AlignCursor();
+      }
+    else if((*ind) == (unsigned char)CHAR_UP)  {
+      y-=(font[' ']->ysize+2);
+      AlignCursor();
+      }
+    else if((*ind) == (unsigned char)CHAR_DOWN)  {
+      y+=(font[' ']->ysize+2);
+      AlignCursor();
+      }
+    else if((*ind) == (unsigned char)'\n')  {
+      x=1;
+      y+=(font[' ']->ysize+2);
+      AlignCursor();
+      }
+    else if((*ind) == (unsigned char)'\r')  {
+      x=1;
+      AlignCursor();
+      }
+    else if(font[*ind] != NULL)  {
+      if(((int)x + (int)font[*ind]->xsize + (int)font[*ind]->xcenter)
+                >= xsize)  {
+        x=1;
+        y+=(font[' ']->ysize+2);
+        AlignCursor();
+        }
+      int ctrx, ctry;
+      Graphic let(*font[*ind]);
+      Graphic res;
+      res.depth=depth;
+      res.DefSize(let.xsize, let.ysize);
+      if(depth==8) {
+	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
+	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
+	     if(let.image[ctry].uc[ctrx] == 0) res.image[ctry].uc[ctrx] = cb;
+	     else res.image[ctry].uc[ctrx] = cf;
+	     }
+	  }
+	g->PasteTransparentGraphic(res, x-let.xcenter, y-let.ycenter);
+	}
+      else if(depth==32) {
+	unsigned long alpha;
+	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
+	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
+	    alpha=let.image[ctry].uc[ctrx];
+	    if(alpha) {
+	      res.image[ctry].ul[ctrx] = cf;
+	      alpha*=((unsigned char*)&cf)[3]; alpha/=255;
+	      res.image[ctry].uc[(ctrx<<2)+3] = alpha;
+	      }
+	    else res.image[ctry].ul[ctrx]=0;
+	    }
+	  }
+	g->PasteTransparentGraphic(res, x-let.xcenter, y-let.ycenter);
+	}
+      else if(depth==16) {
+	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
+	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
+	    color cl, clf = cf, clb = cb;
+	    unsigned long alpha = let.image[ctry].uc[ctrx];
+	    ConvertColor(clf, 16, 32);
+	    ConvertColor(clb, 16, 32);
+	    ((unsigned char*)&cl)[0] =
+	      (((unsigned char*)&clf)[0]*alpha 
+		+ ((unsigned char*)&clb)[0]*(255-alpha))/255;
+	    ((unsigned char*)&cl)[1] =
+	      (((unsigned char*)&clf)[1]*alpha 
+		+ ((unsigned char*)&clb)[1]*(255-alpha))/255;
+	    ((unsigned char*)&cl)[2] =
+	      (((unsigned char*)&clf)[2]*alpha 
+		+ ((unsigned char*)&clb)[2]*(255-alpha))/255;
+	    ((unsigned char*)&cl)[3] = 255;
+	    ConvertColor(cl, 32, 16);
+	    res.image[ctry].us[ctrx] = cl;
+	    }
+	  }
+	g->PasteGraphic(res, x-let.xcenter, y-let.ycenter);
+//	DrawTransparentGraphic(res, x-let.xcenter, y-let.ycenter);
+	}
+      else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+
+      x+=font[*ind]->xsize+1;
+      AlignCursor();
+      }
+    }
+  Debug("User::Screen::Print(...) End");
+  return x;
   }
 
 int Screen::Print(int x, int y, color cb, color cf, const char *text)  {

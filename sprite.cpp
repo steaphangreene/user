@@ -129,21 +129,40 @@ IntList Sprite::CDraw() {
 void Sprite::Move(int x, int y) {
   Debug("User:Sprite:Move(x,y) Begin");
   if(image == NULL) return;
+/*
   Debug("User:Sprite:Move(x,y) Before Erase");
   Erase();
   Debug("User:Sprite:Move(x,y) Before Draw");
   Draw(x, y);
   Debug("User:Sprite:Move(x,y) End");
+*/
+  if(drawn) {
+    x-=image->xcenter; y-=image->ycenter;
+    int xs=image->xsize+abs(x-xpos), ys=image->ysize+abs(y-ypos);
+    int xp=x<?xpos, yp=y<?ypos;
+    xpos = x; ypos = y; drawn=1;
+    if(__Da_Screen != NULL) __Da_Screen->RestoreRectangle(xp, yp, xs, ys);
+    }
+  else {
+    xpos = x; ypos = y; drawn=1;
+    xpos-=image->xcenter; ypos-=image->ycenter;
+    if(__Da_Screen != NULL)
+      __Da_Screen->RestoreRectangle(xpos, ypos, image->xsize, image->ysize);
+    }
   }
 
 void Sprite::Position(int x, int y) {
   Debug("User:Sprite:Position(x,y) Begin");
   if(image == NULL) return;
-  Debug("User:Sprite:Position(x,y) Before Erase");
-  Erase();
+  Debug("User:Sprite:Position(x,y) Before First Invalid");
+//  if(drawn && __Da_Screen != NULL)
+//    __Da_Screen->InvalidateRectangle(xpos, ypos, image->xsize, image->ysize);
   Debug("User:Sprite:Position(x,y) Before x,y");
   x-=image->xcenter; y-=image->ycenter;
-  xpos = x; ypos = y;
+  xpos = x; ypos = y; drawn=1;
+  Debug("User:Sprite:Position(x,y) Before Second Invalid");
+//  if(__Da_Screen != NULL)
+//    __Da_Screen->InvalidateRectangle(xpos, ypos, image->xsize, image->ysize);
   Debug("User:Sprite:Position(x,y) End");
   }
 

@@ -5,7 +5,7 @@
 * Debugging Options *
 ********************/
 
-#define USER_DEBUG
+//#define USER_DEBUG
 
 /****************************************
 * Operating System Defines for Graphics *

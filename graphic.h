@@ -40,6 +40,8 @@ class Graphic {
   Graphic operator -(const Graphic &from);
   void PasteGraphic(Graphic &g, int x=0, int y=0);
   void PasteGraphic(Graphic *g, int x=0, int y=0);
+  void PasteTransparentGraphic(Graphic &g, int x=0, int y=0);
+  void PasteTransparentGraphic(Graphic *g, int x=0, int y=0);
   Graphic HalfSize() {return Scaled(xsize>>1, ysize>>1);};
   Graphic DoubleSize() {return Scaled(xsize<<1, ysize<<1);};
   Graphic Hashed(); 
@@ -48,8 +50,12 @@ class Graphic {
   void SetScaled(Graphic &, double);
   void SetScaled(Graphic &, int, int);
   void SetLine(int, int, int, color);
-  void SetBox(int, int, int, color);
-  void SetFillBox(int, int, int, color);
+  void SetRect(int, int, int, color);
+  void SetFillRect(int, int, int, color);
+  void DrawLine(int, int, int, int, int, color);
+  void DrawRect(int, int, int, int, int, color);
+  void DrawFillRect(int, int, int, int, int, color);
+  void ClearArea(int, int, int, int);
   Graphic Rotated(int);
   Graphic Rotated(int, int);
   Graphic Rotated(double, int, int, int);
