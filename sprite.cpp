@@ -95,7 +95,6 @@ Sprite::Sprite()  {
   collisions = 1;
   scrolls = 1;
   spnum = __Da_Screen->AddSpriteToList(this);
-  tcol = __Da_Screen->deftran;
   }
 
 Sprite::Sprite(int xsz, int ysz) {
@@ -210,6 +209,10 @@ void Sprite::SetImage(const Graphic *img)  {
     }
   angle = 0;
   }
+
+void Button::Stick()  { mouseinter = SPRITE_SBUTTON; };
+
+void Button::NoStick()  { mouseinter = SPRITE_BUTTON; };
 
 void Button::StealthClick()  {
   if(mouseinter != SPRITE_BUTTON && mouseinter != SPRITE_SBUTTON) return;
@@ -347,7 +350,7 @@ IntList Sprite::Move(int X, int Y, int A) return ret; {
 //    if((image != trueimage) && (image != NULL))  delete image;
 //    image = NULL;
 //    trueimage = NULL;
-//    SetImage(tmpg->Rotated(-A));
+//    SetImage(tmpg->Rotated(-A, tcol));
 //    trueimage = tmpg;
 //    angle = A;
 //    ownimage = oi;
@@ -439,6 +442,7 @@ void Screen::Redraw(int X, int Y)  {
 void Sprite::DrawBlock(int X, int Y)  {
   int ctr;
   if(image != NULL)  {
+    int tcol = image->tcolor;
     int BX = X<<5;
     int xb = xpos-BX;
     if(xb<0)  xb=0;
@@ -460,7 +464,7 @@ void Sprite::DrawBlock(int X, int Y)  {
   }
 
 IntList Sprite::PutBlock(int X, int Y) return ret; {
-  int ctr;
+  int ctr, tcol = image->tcolor;
   unsigned long cblock = 0;
   DrawBlock(X, Y);
   __Da_Screen->InvalidateRectangle(X<<5, Y, (X<<5)+31, Y);
@@ -586,6 +590,7 @@ void Sprite::SetColormap(char *cm)  {
 
 void Sprite::SetTransparentColor(int tc)  {
   Erase();
-  tcol = tc;
+  if(image != NULL) image->tcolor = tc;
+  if(trueimage != NULL) trueimage->tcolor = tc;
   }
 

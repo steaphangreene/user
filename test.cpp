@@ -5,11 +5,11 @@
 
 int main(int argc, char **argv)  {
   unsigned long ang = 0;
-  Screen screen(MODE_1280x1024);
+  Screen screen(MODE_1024x768);
   User user;
   screen.ClearScreen();
   screen.FullScreenBMP("test.bmp");
-  screen.GetBMPPalette("test.bmp");
+  screen.GetPalette("test.bmp");
   screen.RefreshFull();
   Graphic guy("test.bmp");
   guy.Trim();

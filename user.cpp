@@ -393,7 +393,8 @@ void User::Update()  {
       if(keyboard_buf[ctr] & 128)  {
         keyboard_buf[ctr] &= 127;
 	if(KeyRemap[keyboard_buf[ctr]])  {
-	  if(((Button *)KeyRemap[keyboard_buf[ctr]])->IsPressed())
+	  if(KeyRemap[keyboard_buf[ctr]]->MouseInteraction() == SPRITE_BUTTON
+	  	&& ((Button *)KeyRemap[keyboard_buf[ctr]])->IsPressed())
 	    ((Button *)KeyRemap[keyboard_buf[ctr]])->Click();
 	  }
 	else
@@ -401,7 +402,8 @@ void User::Update()  {
 	}
       else  {
 	if(KeyRemap[keyboard_buf[ctr]])  {
-	  if(!(((Button *)KeyRemap[keyboard_buf[ctr]])->IsPressed()))
+	  if(KeyRemap[keyboard_buf[ctr]]->MouseInteraction() == SPRITE_SBUTTON
+	  	|| (!((Button *)KeyRemap[keyboard_buf[ctr]])->IsPressed()))
 	    ((Button *)KeyRemap[keyboard_buf[ctr]])->Click();
 	  }
 	else

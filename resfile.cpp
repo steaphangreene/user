@@ -8,6 +8,9 @@
 #define FILE_HEADER	"INSOMNIA'S RESOURCE FILE!\n\0"
 #define GRAPHIC_TAG	"GRAP"
 #define SOUND_TAG	"DIGS"
+#define LONGBAG_TAG	"LBAG"
+#define SHORTBAG_TAG	"SBAG"
+#define CHARBAG_TAG	"CBAG"
 #define NULL_TAG	"NULL"
 #define TAG_SIZE	4
 
@@ -100,6 +103,36 @@ void *ResFile::Get()  {
     }
   }
 
+LongBag *ResFile::GetLongBag()  {
+  char buf[TAG_SIZE];
+  Read(buf, TAG_SIZE);
+  if(strncmp(buf, LONGBAG_TAG, TAG_SIZE))  {
+    if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
+    Exit(1, "Bad ResFile order, attempt to get LongBag on non-LongBag");
+    }
+  return GrabLongBag();
+  }
+
+ShortBag *ResFile::GetShortBag()  {
+  char buf[TAG_SIZE];
+  Read(buf, TAG_SIZE);
+  if(strncmp(buf, SHORTBAG_TAG, TAG_SIZE))  {
+    if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
+    Exit(1, "Bad ResFile order, attempt to get ShortBag on non-ShortBag");
+    }
+  return GrabShortBag();
+  }
+
+CharBag *ResFile::GetCharBag()  {
+  char buf[TAG_SIZE];
+  Read(buf, TAG_SIZE);
+  if(strncmp(buf, CHARBAG_TAG, TAG_SIZE))  {
+    if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
+    Exit(1, "Bad ResFile order, attempt to get CharBag on non-CharBag");
+    }
+  return GrabCharBag();
+  }
+
 Graphic *ResFile::GetGraphic()  {
   char buf[TAG_SIZE];
   Read(buf, TAG_SIZE);
@@ -107,7 +140,6 @@ Graphic *ResFile::GetGraphic()  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
     Exit(1, "Bad ResFile order, attempt to get Graphic on non-Graphic");
     }
-
   return GrabGraphic();
   }
 
@@ -119,6 +151,39 @@ DigSample *ResFile::GetSound()  {
     Exit(1, "Bad ResFile order, attempt to get Sound on non-Sound");
     }
   return GrabSound();
+  }
+
+LongBag *ResFile::GrabLongBag()  {
+  LongBag *ret;
+  int sz, ctr;
+  sz = ReadInt();
+  ret = new LongBag(sz);
+  for(ctr=0; ctr<sz; ctr++)  {
+    (*(LongBag*)ret)[ctr] = ReadInt();
+    }
+  return ret;
+  }
+
+ShortBag *ResFile::GrabShortBag()  {
+  ShortBag *ret;
+  int sz, ctr;
+  sz = ReadInt();
+  ret = new ShortBag(sz);
+  for(ctr=0; ctr<sz; ctr++)  {
+    (*(ShortBag*)ret)[ctr] = ReadShort();
+    }
+  return ret;
+  }
+
+CharBag *ResFile::GrabCharBag()  {
+  CharBag *ret;
+  int sz, ctr;
+  sz = ReadInt();
+  ret = new CharBag(sz);
+  for(ctr=0; ctr<sz; ctr++)  {
+    (*(CharBag*)ret)[ctr] = ReadChar();
+    }
+  return ret;
   }
 
 Graphic *ResFile::GrabGraphic()  {
@@ -133,6 +198,7 @@ Graphic *ResFile::GrabGraphic()  {
     Exit(1, "Out of Memory for Graphic!\r\n");
     }
   ret->xcenter=xc;	ret->ycenter=yc;
+  ret->tcolor = ReadInt();
   unsigned char buff[xs+2];
   for(ctr=0; ctr<ys; ctr++)  {
     Read(buff, xs);
@@ -169,6 +235,19 @@ int ResFile::ReadInt()  {
   return((tmp4<<24)+(tmp3<<16)+(tmp2<<8)+tmp1);
   }
 
+short ResFile::ReadShort()  {
+  unsigned char tmp1, tmp2;
+  if(read(fileno(rf), &tmp1, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(read(fileno(rf), &tmp2, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  return((tmp2<<8)+tmp1);
+  }
+
+char ResFile::ReadChar()  {
+  unsigned char ret;
+  if(read(fileno(rf), &ret, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  return ret;
+  }
+
 ResFile::~ResFile()  {
   delete fn;
   fclose(rf);
@@ -187,6 +266,45 @@ NewResFile::NewResFile(const char *filen)  {
     }
   }
 
+void NewResFile::Add(const LongBag *in)  {
+  if(in == NULL)  {
+    Write(NULL_TAG, TAG_SIZE);
+    return;
+    }
+  int ctr;
+  Write(LONGBAG_TAG, TAG_SIZE);
+  WriteInt(in->Size());
+  for(ctr=0; ctr<in->Size(); ctr++)  {
+    WriteInt((*(LongBag*)in)[ctr]);
+    }
+  }
+
+void NewResFile::Add(const ShortBag *in)  {
+  if(in == NULL)  {
+    Write(NULL_TAG, TAG_SIZE);
+    return;
+    }
+  int ctr;
+  Write(SHORTBAG_TAG, TAG_SIZE);
+  WriteInt(in->Size());
+  for(ctr=0; ctr<in->Size(); ctr++)  {
+    WriteShort((*(ShortBag*)in)[ctr]);
+    }
+  }
+
+void NewResFile::Add(const CharBag *in)  {
+  if(in == NULL)  {
+    Write(NULL_TAG, TAG_SIZE);
+    return;
+    }
+  int ctr;
+  Write(CHARBAG_TAG, TAG_SIZE);
+  WriteInt(in->Size());
+  for(ctr=0; ctr<in->Size(); ctr++)  {
+    WriteChar((*(CharBag*)in)[ctr]);
+    }
+  }
+
 void NewResFile::Add(const Graphic *in)  {
   if(in == NULL)  {
     Write(NULL_TAG, TAG_SIZE);
@@ -198,6 +316,7 @@ void NewResFile::Add(const Graphic *in)  {
   WriteInt(in->ycenter);
   WriteInt(in->xsize);
   WriteInt(in->ysize);
+  WriteInt(in->tcolor);
   for(ctr=0; ctr<(long)in->ysize; ctr++)  {
     Write(in->image[ctr], in->xsize);
     }
@@ -231,10 +350,22 @@ void NewResFile::WriteInt(int data)  {
   tmp3 = (data>>16) & 255;
   tmp2 = (data>>8) & 255;
   tmp1 = data & 255;
-  if(write(fileno(rf), &tmp1, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(write(fileno(rf), &tmp2, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(write(fileno(rf), &tmp3, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(write(fileno(rf), &tmp4, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp1, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp2, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp3, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp4, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
+  }
+
+void NewResFile::WriteShort(short data)  {
+  unsigned char tmp1, tmp2;
+  tmp2 = (data>>8) & 255;
+  tmp1 = data & 255;
+  if(write(fileno(rf), &tmp1, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp2, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
+  }
+
+void NewResFile::WriteChar(char data)  {
+  if(write(fileno(rf), &data, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
   }
 
 int Screen::SetFont(char *fn)  {

@@ -37,15 +37,18 @@
 Graphic::Graphic() {
   image = NULL;  image3d = NULL;
   xdef = 0;  ydef = 0;  zdef = 0;
+  depth = 8; tcolor=-1;
   }
 
 Graphic::Graphic(int xsz, int ysz) {
   xdef = 0;  ydef = 0;  zdef = 0;
+  depth = 8; tcolor=-1;
   DefSize(xsz, ysz);
   }
 
 Graphic::Graphic(int xsz, int ysz, int zsz) {
   xdef = 0;  ydef = 0;  zdef = 0;
+  depth = 8; tcolor=-1;
   DefSize(xsz, ysz, zsz);
   }
 
@@ -161,11 +164,13 @@ Graphic Graphic::Scaled(unsigned xsz, unsigned ysz)  {
     }
   ret.xcenter = (xcenter * ret.xsize) / xsize;
   ret.ycenter = (ycenter * ret.ysize) / ysize;
+  ret.tcolor = tcolor;
   return ret;
   }
 
 Graphic Graphic::Rotated(double sc, int xa, int ya, int za)  {
   Graphic ret;
+  ret.tcolor = tcolor;
   int sz, xsz, ysz;
   sz = (int)(sc*zsize*(1.75)+1.5);
   xsz = (int)(sc*xsize*(1.75)+1.5);
@@ -228,18 +233,18 @@ Graphic Graphic::Rotated(double sc, int xa, int ya, int za)  {
 
   for(ctr=0; ctr<(int)ret.ysize; ctr++)  {
 //    ret.image[ctr] = new unsigned char[ret.xsize];
-    memset(ret.image[ctr], 0, ret.xsize);
+    memset(ret.image[ctr], tcolor, ret.xsize);
     }
   for(ctr=0; ctr<(int)ret.ysize; ctr++)  {
     curline = ret.image[ctr];
     b2x = b1x;  b2y = b1y;  b2z = b1z;
     for(ctr2=0; ctr2<(int)ret.xsize; ctr2++)  {
-      cx = b2x;  cy = b2y;  cz = b2z;  point=0;
+      cx = b2x;  cy = b2y;  cz = b2z;  point=tcolor;
       int ctr3 = -(int)(sz/sc);
-      for(; point==0 && ctr3<=(sz/sc); ctr3++)  {
+      for(; point==tcolor && ctr3<=(sz/sc); ctr3++)  {
 	if(cz>=0 && cz<zsize && cy>=0 && cy<ysize && cx>=0 && cx<xsize)  {
 	  point = image3d[(int)cz][(int)cy][(int)cx];
-	  if(point != 0) curline[ctr2] = point;
+	  if(point != tcolor) curline[ctr2] = point;
 	  }
 	cx += (incz_x*sc);  cy += (incz_y*sc);  cz += (incz_z*sc);
 	}
@@ -268,6 +273,34 @@ Graphic Graphic::Rotated(double sc, int xa, int ya, int za)  {
   return ret;
   }
 
+Graphic Graphic::RotatedCounterClock()  {
+  int ctr1, ctr2;
+  Graphic ret(ysize, xsize);
+  char tmpb[ret.xsize+2];
+  for(ctr1=0; ctr1<(int)ret.ysize; ctr1++)  {
+    ret.DefLin(tmpb);
+    for(ctr2=0; ctr2<(int)ret.xsize; ctr2++)  {
+      ret.image[ctr1][ctr2] = image[ctr2][(xsize-1)-ctr1];
+      }
+    }
+  ret.tcolor = tcolor;
+  return ret;
+  }
+
+Graphic Graphic::RotatedClock()  {
+  int ctr1, ctr2;
+  Graphic ret(ysize, xsize);
+  char tmpb[ret.xsize+2];
+  for(ctr1=0; ctr1<(int)ret.ysize; ctr1++)  {
+    ret.DefLin(tmpb);
+    for(ctr2=0; ctr2<(int)ret.xsize; ctr2++)  {
+      ret.image[ctr1][ctr2] = image[(ysize-1)-ctr2][ctr1];
+      }
+    }
+  ret.tcolor = tcolor;
+  return ret;
+  }
+
 Graphic Graphic::Rotated(int angle)  {
   Graphic ret;
   ret.SetRotated(*this, angle);
@@ -275,6 +308,7 @@ Graphic Graphic::Rotated(int angle)  {
   }
 
 void Graphic::SetRotated(Graphic &in, int angle) {
+  tcolor = in.tcolor;
   int dx, dy, size;
   if((in.xcenter) > (((long)in.xsize - in.xcenter) - 1))  dx = in.xcenter;
   else  dx = (in.xsize - in.xcenter) - 1;
@@ -317,7 +351,7 @@ void Graphic::SetRotated(Graphic &in, int angle) {
 	*curpt = in.image[dy][dx];
 	}
       else  {
-	*curpt = 0;
+	*curpt = tcolor;
 	}
       curpt++;
       curx+=incxx;
@@ -350,6 +384,7 @@ Graphic::Graphic(const Graphic &from) {
   xcenter = from.xcenter;
   ycenter = from.ycenter;
   zcenter = from.zcenter;
+  tcolor = from.tcolor;
   }
 
 void Graphic::operator =(const Graphic &from) {
@@ -382,6 +417,7 @@ void Graphic::operator =(const Graphic &from) {
   xcenter = from.xcenter;
   ycenter = from.ycenter;
   zcenter = from.zcenter;
+  tcolor = from.tcolor;
   }
 
 Graphic Graphic::operator +(const Graphic &from)  {
@@ -615,7 +651,40 @@ void Graphic::DefLinH(char *data)  {
   if(linedef >= (long)ysize)  linedef = 0;
   }
 
+Graphic::Graphic(char *fn, Palette &p)  {
+  int depth; char buffer[16];
+  FILE *bmp = fopen(fn, "rb");
+  if(bmp == NULL)  {
+    Exit(1, "\"%s\" Not Found!\n", fn);
+    }
+  read(fileno(bmp), buffer, 16);
+  if((buffer[0] != 'B') || (buffer[1] != 'M'))  {
+    Exit(1, "\"%s\" is Not A Bitmap file!\n", fn);
+    }
+  read(fileno(bmp), buffer, 16);
+  fclose(bmp);
+  depth = buffer[12]+256*(buffer[13]);
+  if(depth == 8)  {
+    Init(fn);
+    Palette po;
+    po.GetPalette(fn);
+    PaletteConvert(po, p);
+    }
+  else if(depth == 24)  {
+    Init24(fn, p);
+    }
+  else  {
+    Exit(1, "I only support 8 and 24 bit Bitmap files, \"%s\" is %d-bit!\n",
+	fn, depth);
+    }
+  tcolor = image[0][0];
+  }
+
 Graphic::Graphic(char *fn)  {
+  Init(fn);
+  }
+
+void Graphic::Init(char *fn)  {
  xdef = 0;  ydef = 0;  zdef = 0;
  int bmp, colused;
  unsigned size2, width, height, off = 0;
@@ -643,10 +712,10 @@ Graphic::Graphic(char *fn)  {
     Exit(1, "I only suport 1 plane Bitmap files, \"%s\" is %d-plane!\n",
         fn, detect);
     }
-  detect = buffer[12]+256*(buffer[13]);
-  if(detect != 8)  {
-    Exit(1, "I only support 8 bit Bitmap files, \"%s\" is %d-bit!\n",
-        fn, detect);
+  depth = buffer[12]+256*(buffer[13]);
+  if(depth != 8)  {
+    Exit(1, "\"%s\" is %d-bit, Only 8-bit BMPs supported w/o palette!\n",
+	fn, depth);
     }
   detect = buffer[14]+256*(buffer[15]);
   if(detect != 0)  {
@@ -673,12 +742,12 @@ Graphic::Graphic(char *fn)  {
       }
     }
   linedef = height;
+  tcolor = image[0][0];
   close(bmp);
   }
  }
 
-#define fpint(f, i) \
-	fprintf(f, "%c%c%c%c", i&255, (i>>8)&255, (i>>16)&255, (i>>24)&255)
+#define fpint(f, i) fprintf(f, "%c%c%c%c", i&255, (i>>8)&255, (i>>16)&255, (i>>24)&255)
 
 void Graphic::SaveBMP(char *fn, const Palette &pal)  {
  FILE *bmp;
@@ -723,3 +792,53 @@ void Graphic::SaveBMP(char *fn, const Palette &pal)  {
   }
  }
 
+void Graphic::Init24(char *fn, Palette &p)  {
+  xdef = 0;  ydef = 0;  zdef = 0;
+  FILE *bmp;
+  unsigned size2, width, height;
+  unsigned char buffer[4096];
+  unsigned detect;
+  int ctr, ctr2;
+
+  bmp = fopen(fn, "rb");
+
+  read(fileno(bmp), buffer, 16);
+  if((buffer[0] != 'B') || (buffer[1] != 'M'))
+	Exit(1, "\"%s\" Not Found, or Not A Bitmap file!\n", fn);
+  size2 = buffer[14]+256*(buffer[15]);
+
+  read(fileno(bmp), buffer, (size2 - 2));
+  width = buffer[2]+256*(buffer[3]);
+  height = buffer[6]+256*(buffer[7]);
+  detect = buffer[10]+256*(buffer[11]);
+  if(detect != 1)  {
+    Exit(1, "I only suport 1 plane Bitmap files, \"%s\" is %d-plane!\n",
+        fn, detect);
+    }
+  depth = buffer[12]+256*(buffer[13]);
+  if(depth != 24)  {
+    Exit(1, "\"%s\" is a %d-bit file that detected as 24-bit!?!\n", depth);
+    }
+  detect = buffer[14]+256*(buffer[15]);
+  if(detect != 0)  {
+    Exit(1, "I do not support compressed Bitmap files, \"%s\" is compressed!\n",
+        fn);
+    }
+  DefSize(width, height);
+
+  int off = (4-((width*3) & 3)) & 3;
+  for(ctr = height; ctr > 0; ctr--)  {
+    int tmp = read(fileno(bmp), buffer, width*3+off);
+    if(tmp != (long)width*3+off)  {
+      Exit(1, "Read error in file \"%s\"\n", fn);
+      }
+    for(ctr2 = 0; ctr2 < (int)width; ctr2++)  {
+      image[ctr-1][ctr2] = p.GetClosestColor(buffer[ctr2*3+2],
+		buffer[ctr2*3+1], buffer[ctr2*3]);
+      }
+    }
+
+  linedef = height;
+  tcolor = image[0][0];
+  fclose(bmp);
+  }

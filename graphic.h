@@ -27,6 +27,7 @@ class Graphic {
   Graphic(int, int, int);
   Graphic(const Graphic &);
   Graphic(char *);
+  Graphic(char *, Palette &);
   void SaveBMP(char *);
   void SaveBMP(char *, const Palette &);
   ~Graphic();
@@ -43,7 +44,12 @@ class Graphic {
   void SetScaled(Graphic &, double);
   void SetScaled(Graphic &, int, int);
   Graphic Rotated(int);
+  Graphic Rotated(int, int);
   Graphic Rotated(double, int, int, int);
+  Graphic Rotated(double, int, int, int, int);
+  Graphic RotatedClock();
+  Graphic RotatedCounterClock();
+  Graphic RotatedFull();
   Graphic Scaled(double);
   Graphic Scaled(unsigned, unsigned);
   Graphic Partial(int, int, int, int);
@@ -57,12 +63,15 @@ class Graphic {
   void DefSize(int, int, int);
   void DefLin(char*);
   void DefLinH(char*);
-  unsigned xsize, ysize, zsize;
+  unsigned xsize, ysize, zsize, depth;
   int xcenter, ycenter, zcenter;
   unsigned char ** image;
   unsigned char *** image3d;
+  int tcolor;
 
   private:
+  void Init(char *);
+  void Init24(char *, Palette &);
   int linedef;
   unsigned xdef, ydef, zdef;
   };

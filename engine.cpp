@@ -26,7 +26,7 @@ int Main(int argc, char **argv);
 
 int main(int argc, char **argv)  {
   ARGV_0 = argv[0];
-  Main(argc, argv);
+  Exit(Main(argc, argv), "");
   }
 #define main Main
 
@@ -75,8 +75,8 @@ void Exit(int code)  {
 
 void Exit(int code, const char *out, ...)  {
   ___DID_WE_EXIT = 1;
-  if(__Da_Screen != NULL)  delete __Da_Screen;
   if(__Da_User != NULL)  delete __Da_User;
+  if(__Da_Screen != NULL)  delete __Da_Screen;
 #ifdef DOS
   if(__Da_SoundCard != NULL)  delete __Da_SoundCard;
   if(__Da_Network != NULL)  delete __Da_Network;

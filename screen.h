@@ -46,6 +46,9 @@
 #define MODE_1024x768	0x105
 #define MODE_1280x1024	0x107
 
+#define MODE_800x600x24		0x115
+#define MODE_1024x768x24	0x118
+
 #include "engine.h"
 
 typedef int Panel;
@@ -68,6 +71,7 @@ class Sprite {
   void UseImage(const Graphic &);
   void SetPriority(int);
   void SetMouseInteraction(unsigned long inp)  { mouseinter = inp; };
+  int MouseInteraction()  {  return mouseinter; };
   void DefSize(int, int);
   void Trim()  {image->Trim();};
   void FindTrueCenter()  {image->FindTrueCenter();};
@@ -110,7 +114,6 @@ class Sprite {
   char scrolls;
   char visible;
   char panel;
-  unsigned char tcol;
   int spnum;
   unsigned long mouseinter;
   unsigned xsize, ysize;
@@ -132,6 +135,8 @@ class Button : public Sprite {
   void UseImage(const Graphic *, const Graphic *);
   void Click();
   void StealthClick();
+  void Stick();
+  void NoStick();
   void Disable()  { disabled = 1; };
   void Enable()  { disabled = 0; };
   int IsEnabled()  { return (1-disabled); };
@@ -196,8 +201,8 @@ class Screen {
   Screen(const char *);
   Screen(int);
   Screen(const char *, int);
-  Screen(int, int);
-  Screen(const char *, int, int);
+  Screen(int, int, int bpp=8);
+  Screen(const char *, int, int, int bpp=8);
   ~Screen();
   Sprite *SpriteList[MAX_SPRITES];
   void ScrollPanel32(Panel, int, int);
@@ -218,8 +223,7 @@ class Screen {
   void PasteGraphic(const Graphic &, int, int);
   void FullScreenGraphic(const Graphic &);
   void FullScreenBMP(char *);
-  void GetBMPPalette(char *);
-  void GetPSPPalette(char *);
+  void GetPalette(char *);
   Palette &GetPalette() { return palette; };
   void PasteBMP(char *, int, int);
   void ClearScreen();
@@ -267,7 +271,7 @@ class Screen {
   int PanelYStart(Panel pan)  { return pystart[pan]; };
   int PanelXEnd(Panel pan)  { return pxend[pan]; };
   int PanelYEnd(Panel pan)  { return pyend[pan]; };
-  void SetSize(int, int);
+  void SetSize(int, int, int bpp=8);
   void SetFrameRate(int);
   int ModeSupported(int);
   int SetFont(char *);
@@ -296,8 +300,6 @@ class Screen {
   Button *GetButtonByNumber(int n)  {
     return (Button*)SpriteList[n];
     }
-  void SetDefaultTransparentColor(int);
-  int deftran;
   void ClipToPanel(int &x, int &y, Panel w);
   int DefaultXSize();
   int DefaultYSize();

@@ -110,6 +110,16 @@ void Mouse::InitMouse()  {
   if(outregs.w.ax != 0xFFFF)  {
     Exit(1, "Mouse Driver Not installed!\n");
     }
+  inregs.w.ax = 0x0021;  //Software Reset
+  int86(0x33, &inregs, &outregs);
+  if(outregs.w.ax != 0xFFFF)  {
+    Exit(1, "Mouse Driver Not installed (Software = %.4X)!\n", outregs.w.ax);
+    }
+  inregs.w.ax = 0x002F;  //Hardware Reset
+  int86(0x33, &inregs, &outregs);
+  if(outregs.w.ax != 0x002F && outregs.w.ax != 0xFFFF)  {
+    Exit(1, "Mouse Driver Not installed (Hardware = %.4X)!\n", outregs.w.ax);
+    }
   numbuttons = outregs.w.bx;
   if((outregs.w.bx > 3) || (outregs.w.bx < 2))  numbuttons = 2;
 #endif
@@ -124,6 +134,7 @@ void Mouse::InitMouse()  {
   Dot->DefLinH("FFFFFFFFFFFFFFFF");
   Dot->DefLinH("FFFFFFFFFFFFFFFF");
   Dot->DefLinH("FFFFFFFFFFFFFFFF");
+  Dot->tcolor = 0;
   Box[0].DisableCollisions();
   Box[0].SetPriority(1);
   Box[1].DisableCollisions();
@@ -153,6 +164,8 @@ void Mouse::InitMouse()  {
       GrabModeAsync, GrabModeAsync, None,  None, CurrentTime);
     }
 #endif
+  UpdatePos();
+  UpdatePos();
   }
 
 void Mouse::SetPanelBehavior(Panel p, int l, int m, int r)  {
@@ -227,6 +240,23 @@ void Mouse::ShowCursor()  {
     Cursor->DefLinH("--------FF------FFFEFF--");
     Cursor->DefLinH("------------------FFFEFF");
     Cursor->DefLinH("--------------------FFFF");
+    Palette p;
+    p = __Da_Screen->GetPalette();
+    Color c1=1, c2=2, b=0;
+    c1 = p.GetClosestColor(255, 255, 255);
+    c2 = p.GetClosestColor(0, 0, 0);
+    if(c1==0 || c2==0)  { b=1; if(c1==1 || c2==1) b=2; }
+    Cursor->SetTransparentColor(b);
+    int ctrx, ctry;
+    for(ctry=0; ctry<12; ctry++)  {
+      for(ctrx=0; ctrx<12; ctrx++)  {
+	if(Cursor->image->image[ctry][ctrx] == 0xFF)
+	  Cursor->image->image[ctry][ctrx] = c1;
+	else if(Cursor->image->image[ctry][ctrx] == 0xFE)
+	  Cursor->image->image[ctry][ctrx] = c2;
+	else Cursor->image->image[ctry][ctrx] = b;
+	}
+      }
     }
 #ifdef X_WINDOWS
    }
@@ -271,6 +301,7 @@ void Mouse::Update()  {
       char tmpc[xs+1];
       bzero(tmpc, xs+1);
       Graphic lng(xs, ys);
+      lng.tcolor = 0;
       int ctr, xp, nxp;
       if(quad)  {
 	xp=xs-1;
@@ -548,8 +579,9 @@ void Mouse::UpdatePos()  {
     bstart = 0;
     ystart = -1;
     xstart = -1;
-    if(curbutt != NULL && curbutt->mouseinter == SPRITE_BUTTON)
+    if(curbutt != NULL && curbutt->mouseinter == SPRITE_BUTTON)  {
 	((Button *)curbutt)->Click();
+	}
     curbutt = NULL;
     }
   }

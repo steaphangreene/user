@@ -27,6 +27,8 @@ unsigned char *Frame = NULL;
 
 #ifdef X_DGA
 #include <X11/extensions/xf86dga.h>
+#include <X11/extensions/xf86vmode.h>
+XF86VidModeModeInfo oldv;
 #endif
 
 #undef Screen
@@ -76,17 +78,17 @@ Screen::Screen()  {
   InitScreen();
   }
 
-Screen::Screen(const char *nm, int xs, int ys)  {
+Screen::Screen(const char *nm, int xs, int ys, int bpp)  {
   Name = new char[strlen(nm)+2];
   strcpy(Name, (char *)nm);
   InitScreen();
-  SetSize(xs, ys);
+  SetSize(xs, ys, bpp);
   }
 
-Screen::Screen(int xs, int ys)  {
+Screen::Screen(int xs, int ys, int bpp)  {
   Name = "USER";
   InitScreen();
-  SetSize(xs, ys);
+  SetSize(xs, ys, bpp);
   }
 
 Screen::Screen(int md)  {
@@ -105,12 +107,12 @@ Screen::Screen(int md)  {
 #endif
 
 #ifdef X_WINDOWS
-    case(MODE_320x200):  SetSize(320, 200);  break;
-    case(MODE_640x400):  SetSize(640, 400);  break;
-    case(MODE_640x480):  SetSize(640, 480);  break;
-    case(MODE_800x600):  SetSize(800, 600);  break;
-    case(MODE_1024x768):  SetSize(1024, 768);  break;
-    case(MODE_1280x1024):  SetSize(1280, 1024);  break;
+    case(MODE_320x200):  SetSize(320, 200, 8);  break;
+    case(MODE_640x400):  SetSize(640, 400, 8);  break;
+    case(MODE_640x480):  SetSize(640, 480, 8);  break;
+    case(MODE_800x600):  SetSize(800, 600, 8);  break;
+    case(MODE_1024x768):  SetSize(1024, 768, 8);  break;
+    case(MODE_1280x1024):  SetSize(1280, 1024, 8);  break;
     default:	Exit(0, "Unknown Mode %d", md);
 #endif
     }
@@ -149,7 +151,6 @@ void Screen::InitScreen()  {
     Exit(1, "Two Screens At Once!?  You must be rich.\n");
     }
 
-  deftran = 0;
   Cursor = NULL;
   framedelay = 0;
 #ifdef DOS
@@ -242,17 +243,20 @@ void Screen::InitScreen()  {
     if(geteuid() == 0)  {
       int M, m;
       if(XF86DGAQueryVersion(___mydisplay, &M, &m))  {
-	fprintf(stderr, "Got DGA version %d.%d\n", M, m);
+//	fprintf(stderr, "Got DGA version %d.%d\n", M, m);
  	int Xbank, Xmem, Flags;
 	XF86DGAQueryDirectVideo(___mydisplay, ___myscreen, &Flags);
 	if(!(Flags & XF86DGADirectPresent)) Exit(0, "Failed Query\n");
 	XF86DGAGetVideo(___mydisplay, ___myscreen,
 	  (char **)&Frame, &Xlen, &Xbank, &Xmem);
-	fprintf(stderr, "Width %d, Bank %d, Mem %d\n",  Xlen, Xbank, Xmem);
+//	fprintf(stderr, "Width %d, Bank %d, Mem %d\n",  Xlen, Xbank, Xmem);
 	IN_X = 0;
 	}
-      else
-      fprintf(stderr, "No DGA\n");
+      else fprintf(stderr, "No DGA support.\n");
+      if(XF86VidModeQueryVersion(___mydisplay, &M, &m))  {
+//	fprintf(stderr, "Got VidMode version %d.%d\n", M, m);
+	}
+      else fprintf(stderr, "No VidMode support.\n");
       }
 #endif
     }
@@ -309,7 +313,7 @@ int Screen::ModeSupported(int md)  {
 
   }
 
-void Screen::SetSize(int xs, int ys)  {
+void Screen::SetSize(int xs, int ys, int bpp)  {
 #ifdef DOS
   if(xs>1280 || ys>1024)  {
     Exit(0, "Size %dx%d out of range!\r\n", xs, ys);
@@ -321,7 +325,12 @@ void Screen::SetSize(int xs, int ys)  {
     SetMode(MODE_1024x768);
     }
   else if(xs>640 || ys>480)  {
-    SetMode(MODE_800x600);
+    if(bpp == 8)  {
+      SetMode(MODE_800x600);
+      }
+    else  {
+      SetMode(MODE_800x600x24);
+      }
     }
   else if(xs>640 || ys>400)  {
     SetMode(MODE_640x480);
@@ -516,6 +525,19 @@ void Screen::SetSize(int xs, int ys)  {
 
       XF86DGADirectVideo(___mydisplay, ___myscreen,
       XF86DGADirectGraphics | XF86DGADirectMouse); // | XF86DGADirectKeyb);
+      {
+	int ctr, n;
+	XF86VidModeModeInfo curv, **allv;
+	XF86VidModeGetAllModeLines(___mydisplay, ___myscreen, &n, &allv);
+	oldv = *(allv[0]);
+	curv = oldv;
+	for(ctr=0; ctr<n; ctr++)  {
+	  if(allv[ctr]->hdisplay == xs && allv[ctr]->vdisplay == ys)
+		curv = *(allv[ctr]);
+	  }
+	delete(allv);
+	XF86VidModeSwitchToMode(___mydisplay, ___myscreen, &curv);
+	}
       XF86DGASetViewPort(___mydisplay, ___myscreen, 0, 0);
 //      XF86DGADirectVideo(___mydisplay, ___myscreen, 0);
       memset(Frame, 0, 1280*1024);
@@ -651,7 +673,12 @@ Screen::~Screen()  {
 #endif
 #ifdef X_WINDOWS
   if(!IN_X)  {
-    if(Frame != NULL)  XF86DGADirectVideo(___mydisplay, ___myscreen, 0);
+#ifdef X_DGA
+    if(Frame != NULL)  {
+      XF86VidModeSwitchToMode(___mydisplay, ___myscreen, &oldv);
+      XF86DGADirectVideo(___mydisplay, ___myscreen, 0);
+      }
+#endif
 #ifdef SVGALIB
     else  vga_setmode(TEXT);
 #endif
@@ -1749,49 +1776,8 @@ void Screen::FullScreenBMP(char *fn)  {
   FullScreenGraphic(tmpg);
   }
 
-void Screen::GetPSPPalette(char *fn)  {
-  int r, g, b, ctr;
-  FILE *palfl = fopen(fn, "r");
-  if(palfl==NULL)  {
-    Exit(1, "Palette File \"%s\"Not Found!\n", fn);
-    }
-  fscanf(palfl, "%*[^\n]\n%*[^\n]\n%*[^\n]\n");
-  for(ctr=0; ctr<256; ctr++)  {
-    fscanf(palfl, "%d %d %d\n", &r, &g, &b);
-    SetPaletteEntry(ctr, r, g, b);
-    }
-  }
-
-void Screen::GetBMPPalette(char *fn)  {
-  int bmp, colused;
-  unsigned size2, width, height;
-  unsigned char buffer[1280];
-  int ctr;
-
-#ifdef O_BINARY
-  bmp = open(fn, O_RDONLY|O_BINARY);
-#else
-  bmp = open(fn, O_RDONLY);
-#endif
-
-  if(bmp == -1)  {
-    Exit(1, "\"%s\" Not Found!\n", fn);
-    }
-  read(bmp, buffer, 16);
-  if((buffer[0] != 'B') || (buffer[1] != 'M'))  {
-    Exit(1, "\"%s\" is Not A Bitmap file!\n", fn);
-    }
-  size2 = buffer[14]+(buffer[15]<<8);
-  read(bmp, buffer, (size2 - 2));
-  width = buffer[2]+(buffer[3]<<8);
-  height = buffer[6]+(buffer[7]<<8);
-  colused = buffer[30]+(buffer[31]<<8);
-  if(colused == 0)  colused = 256;
-  read(bmp, buffer, colused<<2);
-  for(ctr = 0; ctr < (colused<<2); ctr+=4)  {
-    SetPaletteEntry(ctr>>2, buffer[ctr+2], buffer[ctr+1], buffer[ctr]);
-    }
-  close(bmp);
+void Screen::GetPalette(char *fn)  {
+  palette.GetPalette(fn);
   }
 
 void Screen::PasteBMP(char *fn, int X, int Y)  {
@@ -1860,17 +1846,13 @@ void Screen::WaitForNextFrame()  {
 #endif
 
 #ifdef X_WINDOWS
-//  while((clock() - lasttime) < framedelay)  {
+  while((clock() - lasttime) < framedelay)  {
     RefreshFast();
 //    fprintf(stdout, "Waiting from %d to %d for %d!\r\n", clock(), lasttime,
 //	framedelay);
-//    }
+    }
   lasttime = clock();
 #endif
-  }
-
-void Screen::SetDefaultTransparentColor(int dt)  {
-  deftran = dt;
   }
 
 void Screen::ClipToPanel(int &x, int &y, Panel w)  {

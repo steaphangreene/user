@@ -26,6 +26,42 @@
 #include <io.h>
 #endif
 
+void Palette::GetPalette(const char *fn)  {
+  FILE *palfl = fopen(fn, "rb");
+  if(palfl==NULL)  {
+    printf("Palette File Not Found!\n");
+    exit(1);
+    }
+  char header[24];
+  read(fileno(palfl), header, 4);
+  fclose(palfl);
+  if(!memcmp(header, "JASC", 4))  GetPSPPalette(fn);
+  else if(!memcmp(header, "BM", 2))  GetBMPPalette(fn);
+  else if(!memcmp(header, "RIFF", 4))  GetMSPalette(fn);
+  else  {
+    printf("No palette in \"%s\"\n", fn);
+    exit(1);
+    }
+  }
+
+void Palette::GetMSPalette(const char *fn)  {
+  int r, g, b, ctr, c;
+  FILE *palfl = fopen(fn, "rb");
+  if(palfl==NULL)  {
+    printf("Palette File Not Found!\n");
+    exit(1);
+    }
+  for(ctr=0; ctr<24; ctr++)  c = fgetc(palfl);
+  for(ctr=0; ctr<256; ctr++)  {
+    r = fgetc(palfl);
+    g = fgetc(palfl);
+    b = fgetc(palfl);
+    c = fgetc(palfl);
+    SetPaletteEntry(ctr, r, g, b);
+    }
+  }
+
+
 void Palette::GetPSPPalette(const char *fn)  {
   int r, g, b, ctr;
   FILE *palfl = fopen(fn, "r");
@@ -41,32 +77,33 @@ void Palette::GetPSPPalette(const char *fn)  {
   }
 
 void Palette::GetBMPPalette(const char *fn)  {
- int bmp, colused;
+ int colused;
+ FILE *bmp;
  unsigned size2, width, height;
  unsigned char buffer[1280];
  int ctr;
  {
-  bmp = open(fn, O_RDONLY);
-  if(bmp == -1)  {
+  bmp = fopen(fn, "rb");
+  if(fileno(bmp) == -1)  {
     printf("\"%s\" Not Found!\n", fn);
     exit(1);
     }
-  read(bmp, buffer, 16);
+  read(fileno(bmp), buffer, 16);
   if((buffer[0] != 'B') || (buffer[1] != 'M'))  {
     printf("\"%s\" is Not A Bitmap file!\n", fn);
     exit(1);
     }
   size2 = buffer[14]+(buffer[15]<<8);
-  read(bmp, buffer, (size2 - 2));
+  read(fileno(bmp), buffer, (size2 - 2));
   width = buffer[2]+(buffer[3]<<8);
   height = buffer[6]+(buffer[7]<<8);
   colused = buffer[30]+(buffer[31]<<8);
   if(colused == 0)  colused = 256;
-  read(bmp, buffer, colused<<2);
+  read(fileno(bmp), buffer, colused<<2);
   for(ctr = 0; ctr < (colused<<2); ctr+=4)  {
     SetPaletteEntry(ctr>>2, buffer[ctr+2], buffer[ctr+1], buffer[ctr]);
     }
-  close(bmp);
+  fclose(bmp);
   }
  }
 
