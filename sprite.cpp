@@ -242,8 +242,8 @@ int Sprite::Hits(int x, int y, int xs, int ys) {
   if(image == NULL) Exit(-1, "Hitting Nothing!\n");
 
   if(image->depth == 8)  {
-    for(ctry=ypos; ctry < ((ypos+image->ysize) <? (y+ys)); ctry++)  {
-      for(ctrx=xpos; ctrx < ((xpos+image->xsize) <? (x+xs)); ctrx++)  {
+    for(ctry=ypos>?y; ctry < ((ypos+image->ysize) <? (y+ys)); ctry++)  {
+      for(ctrx=xpos>?x; ctrx < ((xpos+image->xsize) <? (x+xs)); ctrx++)  {
 	if(image->image[ctry-ypos].uc[ctrx-xpos] != image->tcolor) {
 	  return 1;
 	  }
@@ -251,8 +251,8 @@ int Sprite::Hits(int x, int y, int xs, int ys) {
       }
     }
   else if(image->depth == 16)  {
-    for(ctry=ypos; ctry < ((ypos+image->ysize) <? (y+ys)); ctry++)  {
-      for(ctrx=xpos; ctrx < ((xpos+image->xsize) <? (x+xs)); ctrx++)  {
+    for(ctry=ypos>?y; ctry < ((ypos+image->ysize) <? (y+ys)); ctry++)  {
+      for(ctrx=xpos>?x; ctrx < ((xpos+image->xsize) <? (x+xs)); ctrx++)  {
 	if(image->image[ctry-ypos].us[ctrx-xpos] != image->tcolor) {
 	  return 1;
 	  }
@@ -260,10 +260,10 @@ int Sprite::Hits(int x, int y, int xs, int ys) {
       }
     }
   else if(image->depth == 32)  {
-    for(ctry=ypos; ctry < ((ypos+image->ysize) <? (y+ys)); ctry++)  {
-      for(ctrx=xpos; ctrx < ((xpos+image->xsize) <? (x+xs)); ctrx++)  {
+    for(ctry=ypos>?y; ctry < ((ypos+image->ysize) <? (y+ys)); ctry++)  {
+      for(ctrx=xpos>?x; ctrx < ((xpos+image->xsize) <? (x+xs)); ctrx++)  {
 	Debug("User:Sprite:Hits2 0600");
-	if(image->image[ctry-ypos].uc[(ctrx-xpos)*4+3])  {
+	if(image->image[ctry-ypos].uc[((ctrx-xpos)<<2)+3]) {
 	  return 1;
 	  }
 	Debug("User:Sprite:Hits2 0605");

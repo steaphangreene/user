@@ -30,7 +30,9 @@
 #include	<io.h>
 #endif
 
-//#define		M_PI 3.1415926535
+#ifndef		M_PI
+#define		M_PI 3.1415926535
+#endif
 
 #include        "config.h"
 #include        "graphic.h"
@@ -1229,7 +1231,8 @@ void Graphic::PasteTransparentGraphic(Graphic *gr, int x, int y) {
     Exit(1, "Depth mismatch in %s\n", __PRETTY_FUNCTION__);
   int ctry, ctrx;
   if(x<0 || y<0 || x+gr->xsize > xsize || y+gr->ysize > ysize)
-    Exit(1, "Out of bounds error in %s\n", __PRETTY_FUNCTION__);
+    Exit(1, "Out of bounds error (%d->%d, %d->%d)->(%dx%d) in %s\n",
+	x, x+gr->xsize, y, y+gr->ysize, xsize, ysize, __PRETTY_FUNCTION__);
   if(depth == 8) {
     for(ctry=0; ctry<gr->ysize; ++ctry) {
       for(ctrx=0; ctrx<gr->xsize; ++ctrx) {
@@ -1342,4 +1345,24 @@ void Graphic::DepthConvert(int d, const Palette &p) {
     }
   else Exit(-1, "Unimplemented Graphic depth convert from %d to %d\n", depth, d);
   Debug("User::Graphic::DepthConvert End");
+  }
+
+void Graphic::Undo3ds() {
+  int ctrx, ctry;
+  for(ctry=0; ctry<ysize; ++ctry) {
+    for(ctrx=0; ctrx<xsize; ++ctrx) {
+      unsigned long cr, cg, cb, a;
+      a = image[ctry].uc[(ctrx<<2)+3];
+      if(a) {
+        cb = image[ctry].uc[(ctrx<<2)+2];
+        cg = image[ctry].uc[(ctrx<<2)+1];
+        cr = image[ctry].uc[(ctrx<<2)+0];
+        cb*=255; cg*=255; cr*=255;
+        cb/=a; cg/=a; cr/=a;
+        image[ctry].uc[(ctrx<<2)+2] = cb;
+        image[ctry].uc[(ctrx<<2)+1] = cg;
+        image[ctry].uc[(ctrx<<2)+0] = cr;
+        }
+      }  
+    }    
   }

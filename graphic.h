@@ -66,6 +66,7 @@ class Graphic {
   Graphic Scaled(double);
   Graphic Scaled(int, int);
   Graphic Partial(int, int, int, int);
+  void Undo3ds();
   void PaletteConvert(const Palette &, const Palette &);
   void DepthConvert(int, const Palette &);
   void FindTrueCenter();

@@ -8,7 +8,7 @@
 #include "vesa.h"
 #endif
 
-#define MAX_SPRITES	16384
+#define MAX_SPRITES	65536
 #define REDRAW_RECTS	8
 
 #define VIDEO_NONE	0
