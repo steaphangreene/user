@@ -175,7 +175,7 @@ void U2_Exit(int code, const char *out, ...)  {
   va_start(stuff, out);
   vprintf(out, stuff);
   va_end(stuff);
-  _exit(0);
+  exit(0);
   }
 
 FILE *U2_FOpenRead(const char *fn)  {

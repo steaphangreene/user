@@ -4,10 +4,15 @@
 #include "config.h"
 #include "mfmt.h"
 
+#ifdef OSS_MMAP_SOUND
+#include <pthread.h>
+#endif
+
 #define SOUND_NONE	0
-#define SOUND_OSS	1
-#define SOUND_ESD	2
-#define SOUND_DOS	3
+#define SOUND_DOS	1
+#define SOUND_OSS	2
+#define SOUND_OSS_MMAP	3
+#define SOUND_ESD	4
 
 #define SOUND_NUM 16
 
@@ -52,6 +57,12 @@ class Speaker {
 
 #ifdef OSS_SOUND
   int dsp;
+#ifdef OSS_MMAP_SOUND
+  void *dma_buf;
+  pthread_t mmap_thread;
+  friend void *__do_dma(void *);
+  long writenow;
+#endif
 #else
 #ifdef ESD_SOUND
   int dsp;
