@@ -1,11 +1,8 @@
-CC:=	gcc -O2 -mpentium -ffast-math -s -Wall
+CC:=	gcc -O2 -ffast-math -s -Wall
 ALL:=	Makefile graphic.h screen.h user.h
-#LIBS:=	-lm -lX11
-#LIBS:=	-lm -lX11 -lvga
-#LIBS:=	-lm -lX11 -lXxf86dga -lXext
-LIBS:=	-luser
-OBJS:=	graphic.o engine.o sound.o screen.o sprite.o user.o mouse.o net.o resfile.o palette.o inter.o bag.o
-USER:=	/djgpp/include/user/libuser.a
+LIBS:=	-L/usr/X11/lib -lm -lX11 -lXxf86dga -lXxf86vm -lXext
+OBJS:=	graphic.o engine.o sound.o screen.o sprite.o user.o mouse.o net.o resfile.o palette.o bag.o
+USER:=	libuser.a
 TSTR:=	$(shell date +"%Y%m%d%H%M")
 
 all:	user vb tst
@@ -23,7 +20,6 @@ user:	$(USER)
 
 $(USER):	$(ALL) $(OBJS)
 	ar rcs $(USER) $(OBJS)
-	cp libuser.a /djgpp/lib
 
 vb:	$(OBJS) vb.o $(ALL)
 	$(CC) -o vb vb.o $(OBJS) $(LIBS)
@@ -57,9 +53,6 @@ graphic.o:	graphic.cpp $(ALL)
 
 user.o:	user.cpp $(ALL)
 	$(CC) -c user.cpp
-
-inter.o:	inter.cpp $(ALL)
-	$(CC) -fno-omit-frame-pointer -c inter.cpp
 
 mouse.o:	mouse.cpp $(ALL)
 	$(CC) -c mouse.cpp

@@ -1,1 +1,1 @@
-#include <user/screen.h>
+/dosd/djgpp/include/user/user.h
