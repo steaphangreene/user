@@ -8,8 +8,14 @@
 #include "vesa.h"
 #endif
 
-#define MAX_SPRITES	65536
+#define MAX_SPRITES	16384
+#define MAX_LG_SPRITES	1024
+#define MAX_BIN_SPRITES	1024
 #define REDRAW_RECTS	8
+//#define BIN_SIZE	32  // Must Agree
+//#define BIN_FACTOR	5   // (eg: 2^BIN_FACTOR = BIN_SIZE)
+#define BIN_SIZE	8  // Must Agree
+#define BIN_FACTOR	3   // (eg: 2^BIN_FACTOR = BIN_SIZE)
 
 #define VIDEO_NONE	0
 #define VIDEO_XWINDOWS	1
@@ -107,6 +113,8 @@ class Screen  {
   void DrawPartialTransparentGraphicFG(Graphic &, int, int, int, int, int, int, Panel p=0);
   void DrawPartialGraphicFG(Graphic &, int, int, int, int, int, int, Panel p=0);
 
+  void DropSprite(Sprite *sp);
+  void LiftSprite(Sprite *sp);
   IntList CollideRectangle(int, int, int, int);
   Sprite *GetSpriteByNumber(int);
   void MakeFriendly(Graphic *);
@@ -176,6 +184,8 @@ class Screen  {
   Palette *pal;
   IntList CollideRectangle(int, int, int, int, int);
   Sprite *sprites[MAX_SPRITES], *spbuf[MAX_SPRITES];
+  Sprite *larges, ***bins;
+  int xlong, ylong;
   int nextsprite;
   int RegisterSprite(Sprite *);
   void RemoveSprite(int, Sprite *);

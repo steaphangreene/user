@@ -17,6 +17,8 @@ Sprite::Sprite() {
   angle = 0;
   inum = 0;
   priority = 0;
+  next = NULL;
+  prev = NULL;
   remap = NULL;
   image = NULL;
   trueimage = NULL;
@@ -32,6 +34,8 @@ Sprite::Sprite(const Graphic &g) {
   angle = 0;
   inum = 0;
   priority = 0;
+  next = NULL;
+  prev = NULL;
   remap = NULL;
   image = NULL;
   trueimage = NULL;
@@ -54,6 +58,9 @@ void Sprite::SetImage(const Graphic &g) {
   inum = 1;
   trueimage = image;
 //  if(dr) Draw();
+  if(image->xsize>(BIN_SIZE+1) || image->ysize>(BIN_SIZE+1))
+    SetFlag(SPRITE_LARGE);
+  else ClearFlag(SPRITE_LARGE);
   Debug("User:Sprite:SetImage() End");
   }
 
@@ -71,6 +78,9 @@ void Sprite::UseImage(const Graphic *g) {
   inum = 1;
   trueimage = image;
 //  if(dr) Draw();
+  if(image->xsize>(BIN_SIZE+1) || image->ysize>(BIN_SIZE+1))
+    SetFlag(SPRITE_LARGE);
+  else ClearFlag(SPRITE_LARGE);
   }
 
 IntList Sprite::CMove(int x, int y) {
@@ -104,7 +114,7 @@ IntList Sprite::CDraw(int x, int y, int a) {
 //    __Da_Screen->DrawTransparentGraphicFG(*image, x, y, pan);
   else
     __Da_Screen->DrawTransparentGraphicFG(*image, x, y, pan);
-  xpos = x; ypos = y; drawn = 1;
+  xpos = x; ypos = y; drawn = 1; __Da_Screen->DropSprite(this); 
   return __Da_Screen->CollideRectangle(snum,
 	xpos, ypos, image->xsize, image->ysize);
   }
@@ -113,7 +123,7 @@ IntList Sprite::CDraw(int x, int y) {
   if(drawn || image == NULL) { IntList ret; return ret; }
   x-=image->xcenter; y-=image->ycenter;
   __Da_Screen->DrawTransparentGraphicFG(*image, x, y, pan);
-  xpos = x; ypos = y; drawn = 1;
+  xpos = x; ypos = y; drawn = 1; __Da_Screen->DropSprite(this);
   return __Da_Screen->CollideRectangle(snum,
 	xpos, ypos, image->xsize, image->ysize);
   }
@@ -121,7 +131,7 @@ IntList Sprite::CDraw(int x, int y) {
 IntList Sprite::CDraw() {
   if(drawn || image == NULL) { IntList ret; return ret; }
   __Da_Screen->DrawTransparentGraphicFG(*image, xpos, ypos, pan);
-  drawn = 1;
+  drawn = 1; __Da_Screen->DropSprite(this);
   return __Da_Screen->CollideRectangle(snum,
 	xpos, ypos, image->xsize, image->ysize);
   }
@@ -129,26 +139,27 @@ IntList Sprite::CDraw() {
 void Sprite::Move(int x, int y) {
   Debug("User:Sprite:Move(x,y) Begin");
   if(image == NULL) return;
-/*
   Debug("User:Sprite:Move(x,y) Before Erase");
   Erase();
   Debug("User:Sprite:Move(x,y) Before Draw");
   Draw(x, y);
   Debug("User:Sprite:Move(x,y) End");
-*/
+/*
   if(drawn) {
     x-=image->xcenter; y-=image->ycenter;
     int xs=image->xsize+abs(x-xpos), ys=image->ysize+abs(y-ypos);
     int xp=x<?xpos, yp=y<?ypos;
-    xpos = x; ypos = y; drawn=1;
+    __Da_Screen->LiftSprite(this);
+    xpos = x; ypos = y; drawn=1; __Da_Screen->DropSprite(this);
     if(__Da_Screen != NULL) __Da_Screen->RestoreRectangle(xp, yp, xs, ys);
     }
   else {
-    xpos = x; ypos = y; drawn=1;
+    xpos = x; ypos = y; drawn=1; __Da_Screen->DropSprite(this);
     xpos-=image->xcenter; ypos-=image->ycenter;
     if(__Da_Screen != NULL)
       __Da_Screen->RestoreRectangle(xpos, ypos, image->xsize, image->ysize);
     }
+*/
   }
 
 void Sprite::Position(int x, int y) {
@@ -159,7 +170,8 @@ void Sprite::Position(int x, int y) {
 //    __Da_Screen->InvalidateRectangle(xpos, ypos, image->xsize, image->ysize);
   Debug("User:Sprite:Position(x,y) Before x,y");
   x-=image->xcenter; y-=image->ycenter;
-  xpos = x; ypos = y; drawn=1;
+  if(drawn) __Da_Screen->LiftSprite(this);
+  xpos = x; ypos = y; drawn=1; __Da_Screen->DropSprite(this);
   Debug("User:Sprite:Position(x,y) Before Second Invalid");
 //  if(__Da_Screen != NULL)
 //    __Da_Screen->InvalidateRectangle(xpos, ypos, image->xsize, image->ysize);
@@ -174,7 +186,7 @@ void Sprite::Draw(int x, int y, int a) {
     }
   x-=image->xcenter; y-=image->ycenter;
   __Da_Screen->DrawTransparentGraphicFG(*image, x, y, pan);
-  xpos = x; ypos = y; drawn = 1;
+  xpos = x; ypos = y; drawn = 1; __Da_Screen->DropSprite(this);
   if(image != NULL && __Da_Screen != NULL)
     __Da_Screen->RestoreRectangle(xpos, ypos, image->xsize, image->ysize);
   }
@@ -185,7 +197,7 @@ void Sprite::Draw(int x, int y) {
   x-=image->xcenter; y-=image->ycenter;
 //  __Da_Screen->DrawTransparentGraphicFG(*image, x, y, pan);
   Debug("User:Sprite:Draw(x,y) Middle");
-  xpos = x; ypos = y; drawn = 1;
+  xpos = x; ypos = y; drawn = 1; __Da_Screen->DropSprite(this);
   if(image != NULL && __Da_Screen != NULL)
     __Da_Screen->RestoreRectangle(xpos, ypos, image->xsize, image->ysize);
   Debug("User:Sprite:Draw(x,y) End");
@@ -194,7 +206,7 @@ void Sprite::Draw(int x, int y) {
 void Sprite::Draw() {
   if(drawn || image == NULL) return;
 //  __Da_Screen->DrawTransparentGraphicFG(*image, xpos, ypos, pan);
-  drawn = 1;
+  drawn = 1; __Da_Screen->DropSprite(this);
   if(image != NULL && __Da_Screen != NULL)
     __Da_Screen->RestoreRectangle(xpos, ypos, image->xsize, image->ysize);
   }
@@ -202,19 +214,19 @@ void Sprite::Draw() {
 void Sprite::Position() {
   Debug("User:Sprite:Position() Begin");
   if(image == NULL) return;
-  Debug("User:Sprite:Position() Before Erase");
-  Erase();
-  drawn=1;
+  if(drawn) __Da_Screen->LiftSprite(this);
+  drawn=1; __Da_Screen->DropSprite(this);
   Debug("User:Sprite:Position() End");
   }
 
 void Sprite::Remove() {
+  if(drawn) __Da_Screen->LiftSprite(this);
   drawn = 0;
   }
 
 void Sprite::Erase() {
   if(!drawn) return;
-  drawn = 0;
+  drawn = 0; __Da_Screen->LiftSprite(this);
   if(image != NULL && __Da_Screen != NULL)
     __Da_Screen->RestoreRectangle(xpos, ypos, image->xsize, image->ysize);
   }
@@ -368,4 +380,7 @@ void Sprite::SetLine(int x, int y, int d, color c) {
   Erase();
   if(image == NULL) image=new Graphic;
   image->SetLine(x, y, d, c);
+  if(image->xsize>(BIN_SIZE+1) || image->ysize>(BIN_SIZE+1))
+    SetFlag(SPRITE_LARGE);
+  else ClearFlag(SPRITE_LARGE);
   }

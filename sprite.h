@@ -7,6 +7,7 @@
 #define SPRITE_NOCOLLISIONS	2
 #define SPRITE_SOLID		4
 #define SPRITE_RECTANGLE	8
+#define SPRITE_LARGE		16
 
 class Screen;
 class Graphic;
@@ -15,6 +16,9 @@ typedef int Panel;
 typedef unsigned long color;
 
 class Sprite  {
+  private:
+  Sprite *next, **prev;
+
   public:
   Sprite();
   Sprite(const Graphic &);

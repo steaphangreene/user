@@ -99,9 +99,13 @@ void Screen::Init()  {
   memset(pxe, -1, sizeof(pxe));
   memset(pye, -1, sizeof(pye));
   nextsprite = 0;
+  larges = NULL;
+  bins = NULL;
   frame.v = NULL;
   shown = 0;
   fullscreen = 0;
+  xlong = 0;
+  ylong = 0;
 #ifdef DOS
   vbe2_info = NULL;
   vbe2_bank = NULL;
@@ -169,10 +173,26 @@ void Screen::Init()  {
 
 int Screen::SetSize(int x, int y)  {
   Debug("User::Screen::SetSize() Begin"); 
+  int ctr, ctr2;
+  if(bins!=NULL) {
+    for(ctr=0; ctr<xsize>>BIN_FACTOR; ++ctr) {
+      delete bins[ctr];
+      }
+    delete bins;
+    }
   xsize = x; ysize = y;
   pxs[0] = 0; pys[0] = 0;
   pxe[0] = x; pye[0] = y;
-  int ctr, ctr2;
+  bins = new (Sprite**)[xsize>>BIN_FACTOR];
+  if(!bins) Exit(1, "Insufficient memory!\n");
+  for(ctr=0; ctr<xsize>>BIN_FACTOR; ++ctr) {
+    bins[ctr] = new (Sprite*)[ysize>>BIN_FACTOR];
+    if(!bins[ctr]) Exit(1, "Insufficient memory!\n");
+    for(ctr2=0; ctr2<ysize>>BIN_FACTOR; ++ctr2) {
+      bins[ctr][ctr2] = NULL;
+      }
+    }
+
   if(depth==8)  {
     video_buffer.uc = new unsigned char[ysize*xsize];
     background_buffer.uc = new unsigned char[ysize*xsize];
@@ -394,15 +414,15 @@ int Screen::SetSize(int x, int y)  {
 	_Ximage = XCreateImage(_Xdisplay, None, 8, ZPixmap, 0,
 		video_buffer.c, xsize, ysize, 8, 0);
 	}
-      else if(depth==32)  {
-	_Ximage = XCreateImage(_Xdisplay, None,
-		DefaultDepth(_Xdisplay, _Xscreen), ZPixmap, 0,
-		video_buffer.c, xsize, ysize, 32, 0);
-	}
       else if(depth==16)  {
 	_Ximage = XCreateImage(_Xdisplay, None,
 		DefaultDepth(_Xdisplay, _Xscreen), ZPixmap, 0,
 		video_buffer.c, xsize, ysize, 16, 0);
+	}
+      else if(depth==32)  {
+	_Ximage = XCreateImage(_Xdisplay, None,
+		DefaultDepth(_Xdisplay, _Xscreen), ZPixmap, 0,
+		video_buffer.c, xsize, ysize, 32, 0);
 	}
       else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 
@@ -1503,7 +1523,7 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
   if(x+xs > xsize) xs = xsize-x;
   if(y+ys > ysize) ys = ysize-y;
   InvalidateRectangle(x, y, xs, ys);
-  int ctry;
+  int ctrx, ctry;
   Debug("Screen:RestoreRectangle() Before Write");
   if(depth == 8)  {
     for(ctry=y; ctry<y+ys; ctry++)  {
@@ -1521,19 +1541,55 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
       }
     }
   else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+
   Debug("Screen:RestoreRectangle() Before Selection");
   Sprite **spp = spbuf;
-  register Sprite **tmps;
-  for(tmps=sprites; tmps<sprites+MAX_SPRITES; tmps++)  {
-    if((*tmps) != NULL && (*tmps)->drawn
-	&& (y+ys) > (*tmps)->ypos
-	&& (x+xs) > (*tmps)->xpos
-	&& (*tmps)->image != NULL
-	&& x < ((*tmps)->xpos + (*tmps)->image->xsize)
-	&& y < ((*tmps)->ypos + (*tmps)->image->ysize))  {
-      *spp = *tmps; ++spp;
+/*
+  if(xs>(BIN_SIZE+1) || ys>(BIN_SIZE+1)) {
+    Debug("Screen:RestoreRectangle() Large");
+    register Sprite **tmpsp;
+    for(tmpsp=sprites; tmpsp<sprites+MAX_SPRITES; ++tmpsp)  {
+      if((*tmpsp) != NULL && (*tmpsp)->drawn
+	  && (y+ys) > (*tmpsp)->ypos
+	  && (x+xs) > (*tmpsp)->xpos
+	  && (*tmpsp)->image != NULL
+	  && x < ((*tmpsp)->xpos + (*tmpsp)->image->xsize)
+	  && y < ((*tmpsp)->ypos + (*tmpsp)->image->ysize))  {
+	*spp = *tmpsp; ++spp;
+	}
       }
     }
+  else {
+*/
+  Debug("Screen:RestoreRectangle() Small 1");
+
+//  for(tmps=bins[xb][yb]; tmps!=NULL; tmps=tmps->next) {
+
+#define snag(bxy) \
+    for(tmps=bxy; tmps!=NULL; tmps=tmps->next) {			\
+      if(tmps->drawn && (y+ys) > tmps->ypos && (x+xs) > tmps->xpos	\
+	  && tmps->image != NULL					\
+	  && x < (tmps->xpos + tmps->image->xsize)			\
+	  && y < (tmps->ypos + tmps->image->ysize))  {			\
+	*spp = tmps; ++spp;						\
+	}								\
+      }
+
+  int xb=(x>>BIN_FACTOR)-1, yb=(y>>BIN_FACTOR)-1;
+  int xe=(x+xs+BIN_SIZE-1)>>BIN_FACTOR, ye=(y+ys+BIN_SIZE-1)>>BIN_FACTOR;
+  register Sprite *tmps;
+  if(xb<0) xb=0;
+  if(yb<0) yb=0;
+  if(xe>=(xsize>>BIN_FACTOR)) xe=(xsize>>BIN_FACTOR)-1;
+  if(ye>=(ysize>>BIN_FACTOR)) ye=(ysize>>BIN_FACTOR)-1;
+  for(ctrx=xb; ctrx<xe; ++ctrx) {
+    for(ctry=yb; ctry<ye; ++ctry) {
+      snag(bins[ctrx][ctry]);
+      }
+    }
+  snag(larges);
+#undef snag(bxy)
+
   Debug("Screen:RestoreRectangle() Before Sort");
   *spp = NULL;
 
@@ -2040,4 +2096,49 @@ int Screen::DefaultYSize() {
     }
 #endif
  }
+
+void Screen::DropSprite(Sprite *s) {
+  Debug("Screen::DropSprite(s) Begin");
+  if(!bins) Exit(1, "No bins in Dropsprite!\n");
+  Sprite *sp;
+  if(s->Flag(SPRITE_LARGE)) {
+    if(larges==NULL) { larges=s; s->prev = &larges; }
+    else {
+      Debug("Screen::DropSprite(s) In large");
+      for(sp=larges; sp->next != NULL; sp=sp->next);
+      sp->next = s; s->prev = &(sp->next);
+      }
+//    for(sp=larges; *sp != NULL; ++sp); *sp = s; (s->list[0])=sp;
+    }
+  else {
+    int x=(s->xpos)>>BIN_FACTOR, y=(s->ypos)>>BIN_FACTOR;
+    if(bins[x][y]==NULL) { bins[x][y]=s; s->prev = &bins[x][y]; }
+    else {
+      Debug("Screen::DropSprite(s) In bin");
+      for(sp=(bins[x][y]); sp->next != NULL; sp=sp->next);
+      sp->next = s; s->prev = &(sp->next);
+      }
+    }
+  Debug("Screen::DropSprite(s) End");
+  }
+
+void Screen::LiftSprite(Sprite *s) {
+  Debug("Screen::LiftSprite(s) Begin");
+  if(!s->prev) Exit(1, "Lifting non-placed Sprite (%d)!!\n", s->drawn);
+  if(s->next) s->next->prev = s->prev;
+  *(s->prev) = s->next; s->next = NULL; s->prev=NULL;
+
+/*
+  if(s->Flag(SPRITE_LARGE)) {
+    if(s->list[0]) { (*(s->list[0])) = NULL; s->list[0] = NULL; }
+    }
+  else {
+    if(s->list[0]) { (*(s->list[0])) = NULL; s->list[0] = NULL; }
+    if(s->list[1]) { (*(s->list[1])) = NULL; s->list[1] = NULL; }
+    if(s->list[2]) { (*(s->list[2])) = NULL; s->list[2] = NULL; }
+    if(s->list[3]) { (*(s->list[3])) = NULL; s->list[3] = NULL; }
+    }
+*/
+  Debug("Screen::LiftSprite(s) End");
+  }
 
