@@ -845,9 +845,12 @@ void Graphic::InitTGA32(char *fn)  {
   unsigned char buf[256];
   FILE *tga=fopen(fn, "rb");
   if(tga != NULL) {
-    if(read(fileno(tga), buf, 18) == 18 && buf[1] == 0 && buf[2] == 2) {
+    int nr=read(fileno(tga), buf, 18);
+    if(nr == 18 && buf[1] == 0 && buf[2] == 2) {
       depth = 32; tcolor=0; int rev=(buf[17]&0x20);
       if(buf[17]&0x10) Exit(1, "%s is a backward TGA file!\n", fn);
+      if(buf[16] != 32)
+	Exit(1, "Depth of \"%s\" is %d, not 32!\n", fn, buf[16]);
       DefSize((buf[13]<<8) + buf[12], (buf[15]<<8) + buf[14]);
       read(fileno(tga), buf, (int)buf[0]);
       if(!rev) for(ctry=0; ctry<ysize; ++ctry) {
@@ -855,6 +858,46 @@ void Graphic::InitTGA32(char *fn)  {
 	}
       else for(ctry=0; ctry<ysize; ++ctry) {
 	read(fileno(tga), image[ctry].ul, xsize*4);
+	}
+      }
+    else if(nr == 18 && buf[1] == 0 && buf[2] == 10) {
+      depth = 32; tcolor=0; int rev=(buf[17]&0x20), ctr, x, y, yr, sz;
+      if(buf[17]&0x10) Exit(1, "%s is a backward TGA file!\n", fn);
+      if(buf[16] != 32)
+	Exit(1, "Depth of \"%s\" is %d, not 32!\n", fn, buf[16]);
+      DefSize((buf[13]<<8) + buf[12], (buf[15]<<8) + buf[14]);
+      read(fileno(tga), buf, (int)buf[0]);
+
+      x=0; y=0; yr=0; if(!rev) yr=ysize-1;
+      while(y<ysize) {
+	unsigned long tmpv;
+	read(fileno(tga), buf, 1);
+	sz=(buf[0]&0x7F)+1;
+	if(buf[0]&0x80) {
+	  printf("1, %d\n", sz);
+	  read(fileno(tga), &tmpv, 4);
+	  for(ctr=0; ctr<sz; ++ctr) {
+	    image[y].ul[x++] = tmpv;
+	    if(x==xsize) {
+	      fprintf(stderr, "\"%s\" breaks TGA rules!!!\n", fn);
+	      ++y; --yr; x=0;
+	      }
+	    }
+	  }
+	else {
+	  printf("2, %d\n", sz);
+	  while(x+sz>=xsize) {
+	    int sz2 = xsize-x; sz-=sz2;
+	    fprintf(stderr, "\"%s\" breaks TGA rules!!!\n", fn);
+	    read(fileno(tga), &image[y].ul[x], sz2<<2);
+	    ++y; --yr; x=0;
+	    }
+	  read(fileno(tga), &image[y].ul[x], sz<<2);
+	  x+=sz;
+	  }
+	if(x==xsize) { ++y; --yr; x=0; }
+	else if(x>xsize)
+	  Exit(1, "RLE Overrun (%d>%d) in \"%s\"\n", x, xsize, fn);
 	}
       }
     else {
@@ -1113,10 +1156,18 @@ void Graphic::DepthConvert(int d, const Palette &p) {
     depth = d; xsize>>=2;
     for(ctry=0; ctry<g.ysize; ctry++)  {
       for(ctrx=0; ctrx<g.xsize; ctrx++)  {
-        image[ctry].uc[(ctrx<<2)+3] = g.image[ctry].uc[ctrx];
-        image[ctry].uc[(ctrx<<2)+2] = p.GetRedEntry(g.image[ctry].uc[ctrx]);
-        image[ctry].uc[(ctrx<<2)+1] = p.GetGreenEntry(g.image[ctry].uc[ctrx]);
-        image[ctry].uc[(ctrx<<2)] = p.GetBlueEntry(g.image[ctry].uc[ctrx]);
+	if(g.image[ctry].uc[ctrx] == tcolor) {
+          image[ctry].uc[(ctrx<<2)+3] = 0;
+          image[ctry].uc[(ctrx<<2)+2] = 0;
+          image[ctry].uc[(ctrx<<2)+1] = 0;
+          image[ctry].uc[(ctrx<<2)] = 0;
+	  }
+	else {
+          image[ctry].uc[(ctrx<<2)+3] = 0xFF;
+          image[ctry].uc[(ctrx<<2)+2] = p.GetRedEntry(g.image[ctry].uc[ctrx]);
+          image[ctry].uc[(ctrx<<2)+1] = p.GetGreenEntry(g.image[ctry].uc[ctrx]);
+          image[ctry].uc[(ctrx<<2)] = p.GetBlueEntry(g.image[ctry].uc[ctrx]);
+	  }
 	}
       }
     }

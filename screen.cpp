@@ -738,6 +738,26 @@ void Screen::DrawRectangleFG(int x, int y, int xs, int ys, int c)  {
     }
   }
 
+void Screen::SetLine(int xs, int ys, int xe, int ye, int c)  {
+  Graphic tmpg;
+  tmpg.SetLine(xe-xs, ye-ys, 32, 0xFF000000);
+  DrawTransparentGraphic(tmpg, xs, ys);
+  }
+
+void Screen::SetLineFG(int xs, int ys, int xe, int ye, int c)  {
+  Graphic tmpg;
+  tmpg.SetLine(xe-xs, ye-ys, 32, 0xFF000000);
+  DrawTransparentGraphicFG(tmpg, xs, ys);
+  }
+
+void Screen::SetLine(int xs, int ys, int xe, int ye, int r, int g, int b)  {
+  InvalidateRectangle(xs, ys, xe-xs, ye-ys);
+  }
+
+void Screen::SetLineFG(int xs, int ys, int xe, int ye, int r, int g, int b)  {
+  InvalidateRectangle(xs, ys, xe-xs, ye-ys);
+  }
+
 void Screen::SetPoint(int x, int y, int c)  {
   InvalidateRectangle(x, y, 1, 1);
   if(depth==8)  {
@@ -756,10 +776,6 @@ void Screen::SetPoint(int x, int y, int c)  {
     }
   }
 
-void Screen::SetPointFG(int x, int y, int r, int g, int b)  {
-  InvalidateRectangle(x, y, 1, 1);
-  }
-
 void Screen::SetPointFG(int x, int y, int c)  {
   InvalidateRectangle(x, y, 1, 1);
   if(depth==8)  {
@@ -774,6 +790,10 @@ void Screen::SetPointFG(int x, int y, int c)  {
   }
 
 void Screen::SetPoint(int x, int y, int r, int g, int b)  {
+  InvalidateRectangle(x, y, 1, 1);
+  }
+
+void Screen::SetPointFG(int x, int y, int r, int g, int b)  {
   InvalidateRectangle(x, y, 1, 1);
   }
 

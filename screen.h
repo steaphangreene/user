@@ -102,6 +102,10 @@ class Screen  {
   void SetPointFG(int, int, int, int, int);
   void SetPoint(int, int, int);
   void SetPoint(int, int, int, int, int);
+  void SetLineFG(int, int, int, int, int);
+  void SetLineFG(int, int, int, int, int, int, int);
+  void SetLine(int, int, int, int, int);
+  void SetLine(int, int, int, int, int, int, int);
   void DrawRectangle(int, int, int, int, int);
   void DrawRectangleFG(int, int, int, int, int);
   int VideoType() { return vtype; };

@@ -30,6 +30,7 @@
 	#define DOS_SOUND
 #else
 	#define OSS_SOUND
+	#define ESD_SOUND
 #endif
 
 /*************************************

@@ -4,6 +4,11 @@
 #include "config.h"
 #include "mfmt.h"
 
+#define SOUND_NONE	0
+#define SOUND_OSS	1
+#define SOUND_ESD	2
+#define SOUND_DOS	3
+
 #define SOUND_NUM 16
 
 #ifdef DOS_SOUND
@@ -35,11 +40,12 @@ class Speaker {
   int Active();
 
   private:
+  int stype;
   int Configure(int, int, int);
   void ExpandCur();
   int bufsize, stereo, cur_num, cur_alloc, ambient;
   long writenext;
-  mfmt buf, ambientp;
+  mfmt buf, *samp;
   Playing *cur;
   int *loop;
   static volatile int freq;

@@ -1,2 +1,4 @@
 #!/bin/sh
 echo -ffast-math -fomit-frame-pointer
+#echo -ffast-math -pg
+
