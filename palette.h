@@ -18,7 +18,7 @@
 #define INSOMNIA_PALETTE_H
 
 typedef unsigned char cval;
-typedef unsigned char Color;
+typedef unsigned long color;
 typedef unsigned long TrueCol;
 
 class Palette  {
@@ -36,9 +36,10 @@ class Palette  {
   TrueCol GetTrueCol(cval el);
   void SetTrueCol(cval el, TrueCol tc);
   void Set(const char *fn);
-  cval GetClosestColor(cval r, cval g, cval b);
+  color GetClosestColor(cval r, cval g, cval b);
   cval colors[768];
   int coldec;
+  int depth;
 
   private:
   void SetMS(const char *fn);

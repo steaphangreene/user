@@ -30,6 +30,7 @@ struct MouseAction {
   int modkeys;
   int button;
   int x, y;
+  int xs, ys;
   int panel;
   };
 
@@ -53,6 +54,7 @@ class InputQueue {
   void Update();
   void ActionOccurs(InputAction *);
   InputAction *NextAction();
+  InputAction *PeekNextAction();
   InputAction *WaitForNextAction();
 
   private:

@@ -11,6 +11,7 @@
 #include "mouse.h"
 #include "keyboard.h"
 #include "input.h"
+#include "net.h"
 
 #ifdef DOS
 #include <time.h>
@@ -21,6 +22,7 @@ Speaker *__Da_Speaker = NULL;
 Mouse *__Da_Mouse = NULL;
 Keyboard *__Da_Keyboard = NULL;
 InputQueue *__Da_InputQueue = NULL;
+Network *__Da_Network = NULL;
 
 int USER_ARGC;
 char **USER_ARGV;

@@ -46,3 +46,8 @@ InputAction *InputQueue::WaitForNextAction() {
   ++head; head &= 1023;
   return &(queue[ohead]);
   }
+
+InputAction *InputQueue::PeekNextAction() {
+  if(tail == head) return NULL;
+  return &(queue[head]);
+  }

@@ -36,7 +36,7 @@ void ResFile::Open(const char *filen, const char *com)  {
   char buffer[256];
   rf = fopen(fn, "rb");
   if(rf == NULL)  {
-//    printf("Tried \"%s\"\n", fn);
+    printf("Tried \"%s\"\n", fn);
     delete fn;
     TryToOpen(filen, com);
     if(rf == NULL)  {

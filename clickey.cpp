@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "screen.h"
 #include "graphic.h"
 #include "sprite.h"
 #include "control.h"
@@ -7,6 +8,7 @@
 #include "keyboard.h"
 #include "sound.h"
 
+extern Screen *__Da_Screen;
 extern InputQueue *__Da_InputQueue;
 extern Keyboard *__Da_Keyboard;
 
@@ -25,6 +27,12 @@ Clickey::Clickey(Graphic *g1, Graphic *g2) {
   flags |= SPRITE_ISCONTROL;
   state = 0;
   SetImage(g1, g2);
+  }
+
+Clickey::Clickey(int x, int y,
+	const char *l, color ct, color cl, color cb, color cd) {
+  Clickey();
+  Create(x, y, l, ct, cl, cb, cd);
   }
 
 void Clickey::SetImage(Graphic g1, Graphic g2) {
@@ -113,4 +121,11 @@ void Clickey::SetState(int s) {
   state = s;
   }
 
-
+void Clickey::Create(int x, int y,
+	const char *l, color ct, color cl, color cb, color cd) {
+  image = new Graphic[2];
+  image[0].SetFillRect(x, y, 32, cl);
+  image[1].SetFillRect(x, y, 32, cd);
+  __Da_Screen->GPrintf(&image[0], 2, 2, cl, ct, l);
+  __Da_Screen->GPrintf(&image[1], 2, 2, cd, ct, l);
+  }

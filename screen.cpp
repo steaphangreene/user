@@ -168,6 +168,7 @@ void Screen::Init()  {
     #endif
     }
   appdepth = depth;
+  pal->depth = depth;
   Debug("User::Screen::Init() 1400");
   }
 

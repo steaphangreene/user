@@ -387,11 +387,13 @@ int Speaker::Configure(int stro, int bts, int fr)  {
     fprintf(stderr, "Error setting frequency\n");
     stype = SOUND_NONE; return 0;
     }
+/*
   if(ioctl(dsp, SNDCTL_DSP_NONBLOCK)==-1) {
     perror("User");
     fprintf(stderr, "Error setting non-blocking mode\n");
     stype = SOUND_NONE; return 0;
     }
+*/
 #endif
   return 1;
   }
@@ -523,10 +525,12 @@ void Speaker::Update() {
 #ifdef OSS_SOUND
   if(stype == SOUND_OSS) {
     count_info tmp;
+/*
     if(ioctl(dsp, SNDCTL_DSP_GETOPTR, &tmp)==-1) {
       perror("User");
       Exit(-1, "Error checking progress\n");
       }
+*/
 //    printf("Bytes = %d\n", writenext);
     if(tmp.bytes < writenext) return;
     writenext += SOUND_BUF_SIZE;

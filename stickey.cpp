@@ -9,6 +9,12 @@ Stickey::Stickey() {
   state = 0;
   }
 
+Stickey::Stickey(int x, int y,
+	const char *l, color ct, color cl, color cb, color cd) {
+  Stickey();
+  Create(x, y, l, ct, cl, cb, cd);
+  }
+
 Stickey::~Stickey() {
   }
 

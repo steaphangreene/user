@@ -28,6 +28,7 @@ class Clickey : public Control {
   Clickey();
   Clickey(Graphic *, Graphic *);
   Clickey(Graphic, Graphic);
+  Clickey(int, int, const char *, color, color, color, color);
   virtual ~Clickey();
   virtual void Click(int);
   virtual void UnClick(int);
@@ -41,13 +42,18 @@ class Clickey : public Control {
   void SetSound(Sound *, Sound *);
 
   protected:
+  void Create(int, int, const char *, color, color, color, color);
   char state, lastb;
   Sound *dsnd, *usnd;
   };
 
-class Stickey : public Control {
+//class Stickey : public Control {
+class Stickey : public Clickey {
   public:
   Stickey();
+  Stickey(Graphic *, Graphic *);
+  Stickey(Graphic, Graphic);
+  Stickey(int, int, const char *, color, color, color, color);
   virtual ~Stickey();
   virtual void Click(int);
   virtual void UnClick(int);

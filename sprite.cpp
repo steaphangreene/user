@@ -142,6 +142,12 @@ IntList Sprite::CDraw() {
 	xpos, ypos, image->xsize, image->ysize);
   }
 
+void Sprite::Move(int x, int y, int a) {
+  if(image == NULL) return;
+  Erase();
+  Draw(x, y, a);
+  }
+
 void Sprite::Move(int x, int y) {
   Debug("User:Sprite:Move(x,y) Begin");
   if(image == NULL) return;

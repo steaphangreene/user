@@ -21,6 +21,8 @@ libuser.a:	$(OBJS) $(ALL)
 	ar rcs libuser.a $(OBJS)
 	U2-Inst
 
+user:	libuser.a
+
 %.o:	%.cpp $(ALL)
 	$(CC) -c $<
 

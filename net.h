@@ -14,8 +14,8 @@
 #define PACKET_SIZE     1048576
 
 struct net_address  {                                                        
-  unsigned char net_address[4]   __attribute__((packed));  /* Network address */
-  unsigned char node_address[6]  __attribute__((packed));  /* Node address */
+  unsigned char net_addr[4]   __attribute__((packed));  /* Network address */
+  unsigned char node_addr[6]  __attribute__((packed));  /* Node address */
   unsigned short socket __attribute__((packed));  /* Big endian socket number */
   };
 

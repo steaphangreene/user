@@ -231,7 +231,9 @@ void Mouse::Pressed(int b, int x, int y) {
   a.g.type = INPUTACTION_MOUSEDOWN;
   a.m.button = b;
   a.m.x = x;
+  a.m.xs = 1;
   a.m.y = y;
+  a.m.ys = 1;
   a.m.panel = __Da_Screen->WhichPanel(x, y);
   if(__Da_Keyboard != NULL) a.m.modkeys = __Da_Keyboard->ModKeys();
   else a.m.modkeys = 0;
