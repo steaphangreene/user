@@ -17,6 +17,16 @@ MovableClickey::MovableClickey() {
   iscontrol = 1;
   }
 
+MovableClickey::MovableClickey(Graphic g1, Graphic g2) {
+  iscontrol = 1;
+  SetImage(&g1, &g2);
+  }
+
+MovableClickey::MovableClickey(Graphic *g1, Graphic *g2) {
+  iscontrol = 1;
+  SetImage(g1, g2);
+  }
+
 MovableClickey::~MovableClickey() {
   }
 

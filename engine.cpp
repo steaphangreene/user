@@ -10,6 +10,7 @@
 #include "speaker.h"
 #include "mouse.h"
 #include "keyboard.h"
+#include "input.h"
 
 #ifdef DOS
 #include <time.h>
@@ -19,6 +20,7 @@ Screen *__Da_Screen = NULL;
 Speaker *__Da_Speaker = NULL;
 Mouse *__Da_Mouse = NULL;
 Keyboard *__Da_Keyboard = NULL;
+InputQueue *__Da_InputQueue = NULL;
 
 int USER_ARGC;
 char **USER_ARGV;

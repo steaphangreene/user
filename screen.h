@@ -9,6 +9,7 @@
 #endif
 
 #define MAX_SPRITES	4096
+#define REDRAW_RECTS	8
 
 #define VIDEO_NONE	0
 #define VIDEO_XWINDOWS	1
@@ -42,6 +43,8 @@ class Palette;
 class Sprite;
 class IntList;
 
+typedef int Panel;
+
 class Screen  {
   public:
   Screen();
@@ -51,6 +54,8 @@ class Screen  {
   int SetSize(int, int);
   int XSize() { return xsize; };
   int YSize() { return ysize; };
+  int DefaultXSize();
+  int DefaultYSize();
   void Show();
   void Hide();
   void RefreshFast();
@@ -60,6 +65,7 @@ class Screen  {
   void FullScreenModeOff();
   void FullScreenModeToggle();
 
+  Palette &GetPalette();
   void SetPaletteEntry(int, int, int, int);
   void SetPalette(const char *);
   void SetPalette(Palette &);
@@ -67,22 +73,24 @@ class Screen  {
   void FadeOut();
   void FadeIn(int);
   void FadeOut(int);
+
   void Clear();
+  void InvalidateRectangle(int, int, int, int);
   void RestoreRectangle(int, int, int, int);
   void FullScreenBMP(const char *);
 
   void FullScreenGraphic(Graphic &);
   void FullScreenGraphicFG(Graphic &);
 
-  void DrawTransparentGraphic(Graphic &, int, int);
-  void DrawGraphic(Graphic &, int, int);
-  void DrawTransparentGraphicFG(Graphic &, int, int);
-  void DrawGraphicFG(Graphic &, int, int);
+  void DrawTransparentGraphic(Graphic &, int, int, Panel p=0);
+  void DrawGraphic(Graphic &, int, int, Panel p=0);
+  void DrawTransparentGraphicFG(Graphic &, int, int, Panel p=0);
+  void DrawGraphicFG(Graphic &, int, int, Panel p=0);
 
-  void DrawPartialTransparentGraphic(Graphic &, int, int, int, int, int, int);
-  void DrawPartialGraphic(Graphic &, int, int, int, int, int, int);
-  void DrawPartialTransparentGraphicFG(Graphic &, int, int, int, int, int, int);
-  void DrawPartialGraphicFG(Graphic &, int, int, int, int, int, int);
+  void DrawPartialTransparentGraphic(Graphic &, int, int, int, int, int, int, Panel p=0);
+  void DrawPartialGraphic(Graphic &, int, int, int, int, int, int, Panel p=0);
+  void DrawPartialTransparentGraphicFG(Graphic &, int, int, int, int, int, int, Panel p=0);
+  void DrawPartialGraphicFG(Graphic &, int, int, int, int, int, int, Panel p=0);
 
   IntList CollideRectangle(int, int, int, int);
   Sprite *GetSpriteByNumber(int);
@@ -105,6 +113,14 @@ class Screen  {
   int Print(long, long, const char *);
   int Printf(long, long, const char *, ...)
 	__attribute__ ((format (printf, 4, 5)));
+
+  Panel NewPanel(int, int, int, int);
+  void RemovePanel(Panel);
+  int PanelXStart(Panel p) { return pxs[p]; }
+  int PanelYStart(Panel p) { return pys[p]; }
+  int PanelXEnd(Panel p) { return pxe[p]; }
+  int PanelYEnd(Panel p) { return pye[p]; }
+  Panel WhichPanel(int, int);
 
 #ifdef X_WINDOWS
   Display *_Xdisplay;
@@ -141,12 +157,15 @@ class Screen  {
   void RemoveSprite(int, Sprite *);
   friend class Sprite;
   int vtype;
-  char updated;
   long framedelay, lasttime, ulasttime;
   Sprite *TCursor;
   Graphic *font[256];
   int tcx, tcy;
   int fullscreen;
+  int rxs[REDRAW_RECTS], rys[REDRAW_RECTS];
+  int rxe[REDRAW_RECTS], rye[REDRAW_RECTS];
+  int pxs[MAX_PANELS], pys[MAX_PANELS];
+  int pxe[MAX_PANELS], pye[MAX_PANELS];
 
 #ifdef DOS
   void SetBank(int);

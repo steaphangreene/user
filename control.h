@@ -3,6 +3,8 @@
 
 #include "sprite.h"
 
+class Sound;
+
 class Control : public Sprite {
   public:
   Control();
@@ -14,20 +16,33 @@ class Control : public Sprite {
   virtual void KeyReleased(int);
   virtual void RemappedKeyPressed();
   virtual void RemappedKeyReleased();
+  void Disable();
+  void Enable();
 
   protected:
+  char enabled;
   };
 
 class Clickey : public Control {
   public:
   Clickey();
+  Clickey(Graphic *, Graphic *);
+  Clickey(Graphic, Graphic);
   virtual ~Clickey();
   virtual void Click(int);
   virtual void UnClick(int);
   virtual void RemappedKeyPressed();
   virtual void RemappedKeyReleased();
+  void SetImage(Graphic *, Graphic *);
+  void SetImage(Graphic, Graphic);
+  int State() { return state; };
+  void SetState(int);
+  void SetSound(Sound *);
+  void SetSound(Sound *, Sound *);
 
   protected:
+  char state, lastb;
+  Sound *dsnd, *usnd;
   };
 
 class Stickey : public Control {
@@ -38,8 +53,14 @@ class Stickey : public Control {
   virtual void UnClick(int);
   virtual void RemappedKeyPressed();
   virtual void RemappedKeyReleased();
+  int State() { return state; };
+  void SetSound(Sound *);
+  void SetSound(Sound *, Sound *);
+  void SetSound(Sound *, Sound *, Sound *, Sound *);
 
   protected:
+  char state, lastb;
+  Sound *dsnd, *dsnd2, *usnd, *usnd2;
   };
 
 class Movable : public Control {
@@ -54,6 +75,8 @@ class Movable : public Control {
 class MovableClickey : public Clickey {
   public:
   MovableClickey();
+  MovableClickey(Graphic *, Graphic *);
+  MovableClickey(Graphic, Graphic);
   virtual ~MovableClickey();
   virtual void Drag(int, int, int);
 

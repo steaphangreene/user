@@ -66,9 +66,9 @@ class Graphic {
   void DefLinH(char*);
   long xsize, ysize, zsize, depth;
   int xcenter, ycenter, zcenter;
-  unsigned char ** image;
-  unsigned char *** image3d;
-  int tcolor;
+  mfmt * image;
+  mfmt ** image3d;
+  unsigned long tcolor;
 
   private:
   void Init(char *);

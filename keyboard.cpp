@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include "input.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -21,6 +23,7 @@
 
 extern Screen *__Da_Screen;
 extern Keyboard *__Da_Keyboard;
+extern InputQueue *__Da_InputQueue;
 
 #ifdef DOS
 const char *__Char_Lookup = "\0\E1234567890-=\b\tqwertyuiop[]\n\0asdfghjkl;'`\0\\zxcvbnm,./\0*\0 \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0-\0\0+\0\0\0\0\b\0\0";
@@ -31,7 +34,14 @@ Keyboard::Keyboard() {
   if(__Da_Screen == NULL) Exit(-1, "Must create Screen before Keyboard!\n");
   memset(KeyRemap, 0, KB_BUF_SIZE*(sizeof(Sprite *)));
   memset(KeyStats, 0, KB_BUF_SIZE);
-  memset((char *)key_stat, 0, KB_BUF_SIZE);
+  memset((char *)key_stat, 0, KEY_MAX);
+  memset((char *)modkey, 0, 32*sizeof(int));
+  modkey[0] = KEY_LSHIFT;
+  modkey[1] = KEY_RSHIFT;
+  modkey[2] = KEY_LCTRL;
+  modkey[3] = KEY_RCTRL;
+  modkey[4] = KEY_LALT;
+  modkey[5] = KEY_RALT;
 
 #ifdef DOS
   handler_area.handle = (unsigned long)_my_cs();
@@ -66,10 +76,9 @@ void Keyboard::Update() {
   XFlush(__Da_Screen->_Xdisplay);
   while(XCheckMaskEvent(__Da_Screen->_Xdisplay,
 	KeyPressMask|KeyReleaseMask, &e))  {
-    if(e.type == KeyPress) key_stat[XKeycodeToKeysym(
-	__Da_Screen->_Xdisplay, e.xkey.keycode, 0)] = 1;
-    else key_stat[XKeycodeToKeysym(
-	__Da_Screen->_Xdisplay, e.xkey.keycode, 0)] = 0;
+    if(e.type == KeyPress)
+	Down(XKeycodeToKeysym(__Da_Screen->_Xdisplay, e.xkey.keycode, 0));
+    else Up(XKeycodeToKeysym(__Da_Screen->_Xdisplay, e.xkey.keycode, 0));
     XFlush(__Da_Screen->_Xdisplay);
     }
 #endif
@@ -242,6 +251,71 @@ void Keyboard::EnableQueue()  {
   queue_keys=1;
   }
 
+void Keyboard::MapKeyToControl(int k, Control &c)  {
+  MapKeyToControl(k, &c);
+  }
+
+void Keyboard::MapKeyToControl(int k, Control *c)  {
+  KeyRemap[k] = c;
+  }
+
+void Keyboard::MapKeyToControl(int k, int c)  {
+  if(__Da_Screen != NULL)
+	MapKeyToControl(k, (Control *)__Da_Screen->GetSpriteByNumber(c));
+  }
+
+void Keyboard::Down(int k)  {
+  if(key_stat[k] == 1) return;
+  key_stat[k] = 1;
+  InputAction a;
+  a.k.type = INPUTACTION_KEYDOWN;
+  a.k.modkeys = ModKeys();
+  a.k.key = k;
+  a.k.chr = KeyToChar(k);
+  if(__Da_InputQueue != NULL) __Da_InputQueue->ActionOccurs(&a);
+  }
+
+void Keyboard::Up(int k)  {
+  if(key_stat[k] == 0) return;
+  key_stat[k] = 0;
+  InputAction a;
+  a.k.type = INPUTACTION_KEYUP;
+  a.k.modkeys = ModKeys();
+  a.k.key = k;
+  a.k.chr = 0;
+  if(__Da_InputQueue != NULL) __Da_InputQueue->ActionOccurs(&a);
+  }
+
+int Keyboard::ModKeys() {
+  int ctr, ret=0;
+  for(ctr=0; ctr<32; ctr++) {
+    if(modkey[ctr] > 0 && key_stat[modkey[ctr]]) ret |= (1<<ctr);
+    }
+  return ret;
+  }
+
+int Keyboard::ModKey(int k) {
+  int ctr;
+  for(ctr=0; ctr<32; ctr++) {
+    if(modkey[ctr] == k) return (1<<ctr);
+    }
+  return 0;
+  }
+
+void Keyboard::AddModKey(int k) {
+  int ctr;
+  for(ctr=0; ctr<32 && modkey[ctr] != 0; ctr++);
+  if(ctr >= 32) Exit(-1, "Too many ModKeys (max=32)\n");
+  modkey[ctr] = k;
+  }
+
+void Keyboard::RemoveModKey(int k) {
+  int ctr;
+  for(ctr=0; ctr<32 && modkey[ctr] != k; ctr++);
+  if(ctr >= 32) Exit(-1, "Tried to Remove Non-Existant ModKey (%d)\n", k);
+  modkey[ctr] = 0;
+  }
+
 #ifdef DOS
 
 volatile void Keyboard::keyboard_handler()  {
@@ -310,6 +384,7 @@ skip_to_end:
 volatile unsigned short Keyboard::ModKey[10];
 
 #endif
+volatile int Keyboard::modkey[32];
 volatile char Keyboard::key_stat[KEY_MAX];
 volatile char Keyboard::queue_keys = 1;
 #ifdef DOS

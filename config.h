@@ -11,6 +11,8 @@
 * Operating System Defines for Graphics *
 ****************************************/
 
+#define MAX_PANELS      64
+
 #ifdef __DJGPP__
 	#define DOS
 #else
@@ -38,4 +40,3 @@
 #define KEY_MAX		65536
 
 #endif
-

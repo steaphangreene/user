@@ -2,14 +2,14 @@ CFLAGS:=$(shell U2-CFlgs) -Wall
 LIBS:=	$(shell U2-Libs)
 CC:=	gcc -O3 -s $(CFLAGS)
 OBJS:=	screen.o engine.o graphic.o palette.o sound.o speaker.o sprite.o \
-	input.o keyboard.o mouse.o resfile.o bag.o control.o \
-	movable.o clickey.o stickey.o
+	input.o keyboard.o mouse.o resfile.o bag.o net.o \
+	control.o movable.o clickey.o stickey.o
 ALL:=	*.h Makefile
 CCC:=	$(CC)
 TSTR:=  $(shell date +"%Y%m%d%H%M")
 
 all:	stest mtest $(ALL)
-#all:	libuser.a
+#all:	stest $(ALL)
 
 stest:	libuser.a stest.o $(ALL)
 	$(CC) -o stest stest.o $(LIBS)
@@ -57,8 +57,11 @@ keyboard.o:	keyboard.cpp $(ALL)
 mouse.o:	mouse.cpp $(ALL)
 	$(CC) -c mouse.cpp
 
-bag.o:	bag.cpp $(ALL)
+bag.o: bag.cpp $(ALL) 
 	$(CC) -c bag.cpp
+
+net.o: net.cpp $(ALL) 
+	$(CC) -c net.cpp
 
 resfile.o:	resfile.cpp $(ALL)
 	$(CC) -c resfile.cpp

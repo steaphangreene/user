@@ -3,28 +3,47 @@
 
 #include "config.h"
 
-union InputAction;
+#define INPUTACTION_NONE		0
+#define INPUTACTION_KEYDOWN		1
+#define INPUTACTION_KEYUP		2
+#define INPUTACTION_MOUSEDOWN		3
+#define INPUTACTION_MOUSEUP		4
+#define INPUTACTION_CONTROLDOWN		5
+#define INPUTACTION_CONTROLUP		6
+#define INPUTACTION_CONTROLCHANGE	7
+#define INPUTACTION_SYSTEM_QUIT		8
 
 struct GeneralAction {
-  InputAction *next;
-  char type;
-  };
-
-struct MouseAction {
-  InputAction *next;
-  char type;
+  int type;
+  int modkeys;
   };
 
 struct KeyboardAction {
-  InputAction *next;
-  char type;
+  int type;
+  int modkeys;
+  int key;
+  int chr;
+  };
+
+struct MouseAction {
+  int type;
+  int modkeys;
+  int button;
+  int x, y;
+  int panel;
+  };
+
+struct ControlAction {
+  int type;
+  int modkeys;
+  int control;
   };
 
 union InputAction {
-  InputAction *next;
   GeneralAction g;
   KeyboardAction k;
   MouseAction m;
+  ControlAction c;
   };
 
 class InputQueue {
@@ -32,6 +51,13 @@ class InputQueue {
   InputQueue();
   ~InputQueue();
   void Update();
+  void ActionOccurs(InputAction *);
+  InputAction *NextAction();
+  InputAction *WaitForNextAction();
+
+  private:
+  InputAction queue[1024];
+  int head, tail;
   };
 
 #endif

@@ -17,11 +17,16 @@
 #include "sprite.h"
 #include "graphic.h"
 #include "control.h"
+#include "keyboard.h"
+#include "input.h"
 
-extern Screen *__Da_Screen;
 extern Mouse *__Da_Mouse;
+extern Screen *__Da_Screen;
+extern Keyboard *__Da_Keyboard;
+extern InputQueue *__Da_InputQueue;
 
 Mouse::Mouse() {
+  int ctr;
   cvis = 1;
   crit = 0;
   cursor = NULL;
@@ -29,7 +34,9 @@ Mouse::Mouse() {
   mtype = MOUSE_NONE;
   xpos = -666; ypos = -666;
   if(__Da_Screen == NULL) Exit(-1, "Need to create Screen before Mouse!\n");
-  memset(butt_stat, 0, 8);
+  memset(butt_stat, 0, MAX_MBUTTONS);
+  for(ctr=0; ctr<MAX_PANELS; ctr++)
+	memset(pb[ctr], 0, MAX_MBUTTONS*sizeof(int));
   switch(__Da_Screen->VideoType())  {
     #ifdef DOS
     case(VIDEO_DOS): {
@@ -93,7 +100,31 @@ void Mouse::Update() {
 
 #ifdef X_WINDOWS
 #ifdef XF86_DGA
-    case(MOUSE_XF86DGA):
+    case(MOUSE_XF86DGA): {
+      int xp=xpos, yp=ypos;
+      XEvent e;
+      XFlush(__Da_Screen->_Xdisplay);
+      while(XCheckMaskEvent(__Da_Screen->_Xdisplay,
+		PointerMotionMask|ButtonPressMask|ButtonReleaseMask, &e))  {
+	if(e.type == ButtonPress) {
+//	  xp+=e.xbutton.x; yp+=e.xbutton.y;
+	  Pressed(e.xbutton.button, xp, yp);
+	  }
+	else if(e.type == ButtonRelease) {
+//	  xp+=e.xbutton.x; yp+=e.xbutton.y;
+	  Released(e.xbutton.button, xp, yp);
+	  }
+	else  {
+	  xp+=e.xmotion.x; yp+=e.xmotion.y;
+	  if(xp<rngxs) xp=rngxs;
+	  if(yp<rngys) yp=rngys;
+	  if(xp>=rngxe) xp=rngxe-1;
+	  if(yp>=rngye) yp=rngye-1;
+	  }
+	XFlush(__Da_Screen->_Xdisplay);
+	}
+      Moved(xp, yp);
+      }break;
 #endif
     case(MOUSE_XWINDOWS): {
       int xp=xpos, yp=ypos;
@@ -103,11 +134,11 @@ void Mouse::Update() {
 		PointerMotionMask|ButtonPressMask|ButtonReleaseMask, &e))  {
 	if(e.type == ButtonPress) {
 	  xp=e.xbutton.x; yp=e.xbutton.y;
-	  Pressed(e.xbutton.button, e.xbutton.x, e.xbutton.y);
+	  Pressed(e.xbutton.button, xp, yp);
 	  }
 	else if(e.type == ButtonRelease) {
 	  xp=e.xbutton.x; yp=e.xbutton.y;
-	  Released(e.xbutton.button, e.xbutton.x, e.xbutton.y);
+	  Released(e.xbutton.button, xp, yp);
 	  }
 	else  {
 	  xp=e.xmotion.x; yp=e.xmotion.y;
@@ -118,6 +149,10 @@ void Mouse::Update() {
       }break;
 #endif
     }
+  }
+
+void Mouse::SetCursor(Graphic *g) {
+  SetCursor(*g);
   }
 
 void Mouse::SetCursor(Graphic &g) {
@@ -146,6 +181,7 @@ void Mouse::SetCursor(Graphic &g) {
 
 void Mouse::ShowCursor() {
   if(cvis || cursor == NULL) return;
+  xpos=0; ypos=0;
   cvis = 1;  Update();
   }
 
@@ -155,6 +191,10 @@ void Mouse::HideCursor() {
   }
 
 void Mouse::SetRange(int x1, int y1, int x2, int y2) {
+  rngxs = x1;
+  rngxe = x2;
+  rngys = y1;
+  rngye = y2;
 #ifdef DOS
   __dpmi_regs regs;
   regs.x.ax = 0x0007;
@@ -176,21 +216,43 @@ void Mouse::Pressed(int b, int x, int y) {
     for(ctr=0; ctr<clk.Size(); ctr++)  {
       s = __Da_Screen->GetSpriteByNumber(clk[ctr]);
       if(s!=NULL && s->IsControl())  {
-	curcont = (Control *)s;
-	contx = x; conty = y; contb = b;
-	curcont->Click(b);
+	((Control *)s)->Click(b); 
+	if(curcont == NULL) {
+	  curcont = (Control *)s;
+	  contx = x; conty = y; contb = b;
+	  }
 	return;
 	}
       }
     }
+  if(__Da_InputQueue == NULL) return;
+  InputAction a;
+  a.g.type = INPUTACTION_MOUSEDOWN;
+  a.m.button = b;
+  a.m.x = x;
+  a.m.y = y;
+  a.m.panel = __Da_Screen->WhichPanel(x, y);
+  if(__Da_Keyboard != NULL) a.m.modkeys = __Da_Keyboard->ModKeys();
+  else a.m.modkeys = 0;
+  __Da_InputQueue->ActionOccurs(&a);
   }
 
 void Mouse::Released(int b, int x, int y) {
   butt_stat[b] = 0;
   if(curcont != NULL) {
     curcont->UnClick(b);
-    curcont = NULL;
+    if(b == contb) curcont = NULL;
     }
+  if(__Da_InputQueue == NULL) return;
+  InputAction a;
+  a.g.type = INPUTACTION_MOUSEUP;
+  a.m.button = b;
+  a.m.x = x;
+  a.m.y = y;
+  a.m.panel = __Da_Screen->WhichPanel(x, y);
+  if(__Da_Keyboard != NULL) a.m.modkeys = __Da_Keyboard->ModKeys();
+  else a.m.modkeys = 0;
+  __Da_InputQueue->ActionOccurs(&a);
   }
 
 void Mouse::Moved(int x, int y) {
@@ -203,3 +265,6 @@ void Mouse::Moved(int x, int y) {
     }
   }
 
+void Mouse::SetBehavior(Panel p, int butt, int mb) {
+  pb[p][butt] = mb;
+  }

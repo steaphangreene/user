@@ -220,11 +220,8 @@ Graphic *ResFile::GrabGraphic()  {
   ret->DefSize(xs, ys);
   ret->xcenter=xc;	ret->ycenter=yc;
 
-  unsigned char buff[xs+2];
-//  printf("Depth = %d\n", dp);
   for(ctr=0; ctr<ys; ctr++)  {
-    Read(buff, xs*(dp>>3));
-    ret->DefLin((char *)buff);
+    Read(ret->image[ctr].v, xs*(dp>>3));
     }
   return ret;
   }
@@ -354,7 +351,7 @@ void NewResFile::Add(const Graphic *in)  {
   WriteInt(in->depth);
   WriteInt(in->tcolor);
   for(ctr=0; ctr<(long)in->ysize; ctr++)  {
-    Write(in->image[ctr], in->xsize*((in->depth)>>3));
+    Write(in->image[ctr].v, in->xsize*((in->depth)>>3));
     }
   }
 

@@ -9,6 +9,7 @@
 #endif
 
 class Sprite;
+class Control;
 
 class Keyboard {
   public:
@@ -25,11 +26,20 @@ class Keyboard {
   char KeyToChar(int);
   void DisableQueue();
   void EnableQueue();
+  int ModKeys();
+  int ModKey(int);
+  void AddModKey(int);
+  void RemoveModKey(int);
+  void MapKeyToControl(int, Control &);
+  void MapKeyToControl(int, Control *);
+  void MapKeyToControl(int, int);
 
   private:
   int crit;
-  Sprite *KeyRemap[128];
+  Control *KeyRemap[128];
   char KeyStats[128];
+  void Down(int);
+  void Up(int);
 
 #ifdef DOS
   __dpmi_meminfo handler_area;
@@ -39,6 +49,7 @@ class Keyboard {
   static volatile void keyboard_handler();
   static volatile unsigned short ModKey[10];
 #endif
+  static volatile int modkey[32];
   static volatile char key_stat[KEY_MAX];
   static volatile char queue_keys;
 #ifdef DOS

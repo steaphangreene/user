@@ -2,6 +2,7 @@
 
 Control::Control() {
   iscontrol = 1;
+  enabled = 1;
   }
 
 Control::~Control() {
@@ -27,3 +28,12 @@ void Control::RemappedKeyPressed() {
 
 void Control::RemappedKeyReleased() {
   }
+
+void Control::Disable() {
+  enabled = 0;
+  }
+
+void Control::Enable() {
+  enabled = 1;
+  }
+

@@ -4,6 +4,7 @@
 
 Stickey::Stickey() {
   iscontrol = 1;
+  state = 0;
   }
 
 Stickey::~Stickey() {
