@@ -239,7 +239,7 @@ void Screen::InitScreen()  {
 //      Exit(0, "Sorry, I am one of those loser-apps that can only run in a color depth of 8!\n");
 //      }
 #ifdef X_DGA
-    if(getuid() == 0)  {
+    if(geteuid() == 0)  {
       int M, m;
       if(XF86DGAQueryVersion(___mydisplay, &M, &m))  {
 	fprintf(stderr, "Got DGA version %d.%d\n", M, m);

@@ -107,6 +107,21 @@ void Palette::SetPaletteEntry(cval el, cval r, cval g, cval b)  {
   if(coldec <= el) coldec = el+1;
   }
 
+cval Palette::GetClosestColor(cval r, cval g, cval b)  {
+  int ctr, lel, tdiff, ldiff, r1, g1, b1;
+  r1=colors[0];  g1=colors[1];  b1=colors[2];
+  ldiff = ((r1-r)*(r1-r))+((g1-g)*(g1-g))+((b1-b)*(b1-b));
+  lel = 0;
+  for(ctr=3; ctr<768; ctr+=3)  {
+    r1=colors[ctr];  g1=colors[ctr+1]; b1=colors[ctr+2];
+    tdiff = ((r1-r)*(r1-r))+((g1-g)*(g1-g))+((b1-b)*(b1-b));
+    if(tdiff<ldiff)  {
+      ldiff = tdiff;  lel = ctr/3;
+      }
+    }
+  return lel;
+  }
+
 cval Palette::GetRedEntry(cval el)  {
   return colors[el*3];
   }

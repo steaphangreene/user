@@ -37,7 +37,7 @@ class Palette  {
   void SetTrueColor(cval el, TrueColor tc);
   void GetPSPPalette(const char *fn);
   void GetBMPPalette(const char *fn);
-
+  cval GetClosestColor(cval r, cval g, cval b);
   cval colors[768];
   TrueColor tcols[256];
   int coldec;

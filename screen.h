@@ -220,6 +220,7 @@ class Screen {
   void FullScreenBMP(char *);
   void GetBMPPalette(char *);
   void GetPSPPalette(char *);
+  Palette &GetPalette() { return palette; };
   void PasteBMP(char *, int, int);
   void ClearScreen();
   void BlankScreen();
