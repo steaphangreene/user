@@ -45,10 +45,12 @@ class IntList;
 
 typedef int Panel;
 
+#define DEFAULT_NAME "User Engine 2.0"
+
 class Screen  {
   public:
-  Screen();
-  Screen(int, int);
+  Screen(char *n = DEFAULT_NAME);
+  Screen(int, int, char *n = DEFAULT_NAME);
   ~Screen();
   void SetFrameRate(int);
   int SetSize(int, int);

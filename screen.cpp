@@ -72,11 +72,13 @@ Screen::~Screen()  {
 //  Debug("User::Screen::~Screen() End");
   }
 
-Screen::Screen()  {
+Screen::Screen(char *n)  {
+  name=n;
   Init();
   }
 
-Screen::Screen(int x, int y)  {
+Screen::Screen(int x, int y, char *n)  {
+  name=n;
   Init();
   SetSize(x, y);
   }
@@ -149,7 +151,6 @@ void Screen::Init()  {
       _Xwmhints = XAllocWMHints();
       _Xwmhints->flags = InputHint;
       _Xwmhints->input = True;
-      name = "User Engine";
       }break;
     #ifdef XF86_DGA
     case(VIDEO_XF86DGA): {
@@ -808,8 +809,23 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
     Debug("User:Screen:DrawPartialTransparentGraphicFG Depth 32");
     for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
       for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
-	if(g.image[ctry].uc[(ctrx<<2)+3] != g.tcolor)  {
+	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
 	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
+	  }
+	else if(g.image[ctry].uc[(ctrx<<2)+3])  {
+	  int alpha = g.image[ctry].uc[(ctrx<<2)+3];
+	  unsigned long r1 = image[ctry+y].uc[((ctrx+x)<<2)];
+	  unsigned long g1 = image[ctry+y].uc[((ctrx+x)<<2)+1];
+	  unsigned long b1 = image[ctry+y].uc[((ctrx+x)<<2)+2];
+	  unsigned long r2 = g.image[ctry].uc[(ctrx<<2)];
+	  unsigned long g2 = g.image[ctry].uc[(ctrx<<2)+1];
+	  unsigned long b2 = g.image[ctry].uc[(ctrx<<2)+2];
+          r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
+          g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
+          b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
+	  image[ctry+y].uc[((ctrx+x)<<2)] = r1;
+	  image[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
+	  image[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
 	  }
 	}
       }
@@ -845,8 +861,23 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
     Debug("User:Screen:DrawTransparentGraphicFG Depth 32");
     for(ctry=(0>?(pys[p]-y)); ctry<((pye[p]-y)<?g.ysize); ctry++)  {
       for(ctrx=(0>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?g.xsize); ctrx++)  {
-	if(g.image[ctry].uc[(ctrx<<2)+3] != g.tcolor)  {
+	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
 	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
+	  }
+	else if(g.image[ctry].uc[(ctrx<<2)+3])  {
+	  int alpha = g.image[ctry].uc[(ctrx<<2)+3];
+	  unsigned long r1 = image[ctry+y].uc[((ctrx+x)<<2)];
+	  unsigned long g1 = image[ctry+y].uc[((ctrx+x)<<2)+1];
+	  unsigned long b1 = image[ctry+y].uc[((ctrx+x)<<2)+2];
+	  unsigned long r2 = g.image[ctry].uc[(ctrx<<2)];
+	  unsigned long g2 = g.image[ctry].uc[(ctrx<<2)+1];
+	  unsigned long b2 = g.image[ctry].uc[(ctrx<<2)+2];
+          r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
+          g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
+          b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
+	  image[ctry+y].uc[((ctrx+x)<<2)] = r1;
+	  image[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
+	  image[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
 	  }
 	}
       }
@@ -936,9 +967,34 @@ void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
     Debug("User:Screen:DrawTransparentGraphicFG Depth 32");
     for(ctry=(0>?(pys[p]-y)); ctry<((pye[p]-y)<?g.ysize); ctry++)  {
       for(ctrx=(0>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?g.xsize); ctrx++)  {
-	if(g.image[ctry].uc[(ctrx<<2)+3] != g.tcolor)  {
+	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
 	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
 	  backg[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
+	  }
+	else if(g.image[ctry].uc[(ctrx<<2)+3])  {
+	  int alpha = g.image[ctry].uc[(ctrx<<2)+3];
+	  unsigned long r1 = image[ctry+y].uc[((ctrx+x)<<2)];
+	  unsigned long g1 = image[ctry+y].uc[((ctrx+x)<<2)+1];
+	  unsigned long b1 = image[ctry+y].uc[((ctrx+x)<<2)+2];
+	  unsigned long r2 = g.image[ctry].uc[(ctrx<<2)];
+	  unsigned long g2 = g.image[ctry].uc[(ctrx<<2)+1];
+	  unsigned long b2 = g.image[ctry].uc[(ctrx<<2)+2];
+          r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
+          g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
+          b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
+	  image[ctry+y].uc[((ctrx+x)<<2)] = r1;
+	  image[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
+	  image[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
+
+	  r1 = backg[ctry+y].uc[((ctrx+x)<<2)];
+	  g1 = backg[ctry+y].uc[((ctrx+x)<<2)+1];
+	  b1 = backg[ctry+y].uc[((ctrx+x)<<2)+2];
+          r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
+          g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
+          b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
+	  backg[ctry+y].uc[((ctrx+x)<<2)] = r1;
+	  backg[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
+	  backg[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
 	  }
 	}
       }
@@ -969,8 +1025,35 @@ void Screen::DrawGraphic(Graphic &g, int x, int y, Panel p)  {
   else if(depth == 32)  {
     for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
       for(ctrx=0; ctrx<((xsize-x)<?(g.xsize)); ctrx++)  {
-	image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
-	backg[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
+	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
+	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
+	  backg[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
+	  }
+	else if(g.image[ctry].uc[(ctrx<<2)+3])  {
+	  int alpha = g.image[ctry].uc[(ctrx<<2)+3];
+	  unsigned long r1 = image[ctry+y].uc[((ctrx+x)<<2)];
+	  unsigned long g1 = image[ctry+y].uc[((ctrx+x)<<2)+1];
+	  unsigned long b1 = image[ctry+y].uc[((ctrx+x)<<2)+2];
+	  unsigned long r2 = g.image[ctry].uc[(ctrx<<2)];
+	  unsigned long g2 = g.image[ctry].uc[(ctrx<<2)+1];
+	  unsigned long b2 = g.image[ctry].uc[(ctrx<<2)+2];
+          r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
+          g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
+          b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
+	  image[ctry+y].uc[((ctrx+x)<<2)] = r1;
+	  image[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
+	  image[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
+
+	  r1 = backg[ctry+y].uc[((ctrx+x)<<2)];
+	  g1 = backg[ctry+y].uc[((ctrx+x)<<2)+1];
+	  b1 = backg[ctry+y].uc[((ctrx+x)<<2)+2];
+          r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
+          g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
+          b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
+	  backg[ctry+y].uc[((ctrx+x)<<2)] = r1;
+	  backg[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
+	  backg[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
+	  }
 	}
       }
     }

@@ -846,11 +846,15 @@ void Graphic::InitTGA32(char *fn)  {
   FILE *tga=fopen(fn, "rb");
   if(tga != NULL) {
     if(read(fileno(tga), buf, 18) == 18 && buf[1] == 0 && buf[2] == 2) {
-      depth = 32; tcolor=0;
+      depth = 32; tcolor=0; int rev=(buf[17]&0x20);
+      if(buf[17]&0x10) Exit(1, "%s is a backward TGA file!\n", fn);
       DefSize((buf[13]<<8) + buf[12], (buf[15]<<8) + buf[14]);
       read(fileno(tga), buf, (int)buf[0]);
-      for(ctry=0; ctry<ysize; ++ctry) {
+      if(!rev) for(ctry=0; ctry<ysize; ++ctry) {
 	read(fileno(tga), image[ysize-(ctry+1)].ul, xsize*4);
+	}
+      else for(ctry=0; ctry<ysize; ++ctry) {
+	read(fileno(tga), image[ctry].ul, xsize*4);
 	}
       }
     else {
