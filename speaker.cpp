@@ -535,7 +535,7 @@ void Speaker::Update() {
 //  if(bits==8) memset(buf.uc, 128, SOUND_BUF_SIZE);
   if(bits==16) memset(buf.s, 0, SOUND_BUF_SIZE);
   if(bits==8)  {
-    int smp;
+    register int smp;
     for(ctr2=0; ctr2 < SOUND_BUF_SIZE; ctr2++) {
       smp = 128;
       for(ctr=0; ctr<cur_alloc; ctr++)  {

@@ -1,4 +1,4 @@
 #!/bin/sh
-echo -ffast-math -fomit-frame-pointer
-#echo -ffast-math -pg
+echo -O3 -s -Wall -ffast-math -fomit-frame-pointer
+#echo -O3 -ffast-math -pg -a -g -Wall
 

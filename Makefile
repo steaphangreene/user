@@ -1,6 +1,6 @@
-CFLAGS:=$(shell U2-CFlgs) -Wall
+CFLAGS:=$(shell U2-CFlgs)
 LIBS:=	$(shell U2-Libs)
-CC:=	gcc -O3 -s $(CFLAGS)
+CC:=	gcc $(CFLAGS)
 OBJS:=	screen.o engine.o graphic.o palette.o sound.o speaker.o sprite.o \
 	input.o keyboard.o mouse.o resfile.o bag.o net.o \
 	control.o movable.o clickey.o stickey.o
@@ -43,7 +43,8 @@ sound.o:	sound.cpp $(ALL)
 	$(CC) -c sound.cpp
 
 speaker.o:	speaker.cpp $(ALL)
-	$(CC) -fomit-frame-pointer -c speaker.cpp
+#	$(CC) -fomit-frame-pointer -c speaker.cpp
+	$(CC) -c speaker.cpp
 
 sprite.o:	sprite.cpp $(ALL)
 	$(CC) -c sprite.cpp
@@ -52,7 +53,8 @@ input.o:	input.cpp $(ALL)
 	$(CC) -c input.cpp
 
 keyboard.o:	keyboard.cpp $(ALL)
-	$(CC) -fomit-frame-pointer -c keyboard.cpp
+#	$(CC) -fomit-frame-pointer -c keyboard.cpp
+	$(CC) -c keyboard.cpp
 
 mouse.o:	mouse.cpp $(ALL)
 	$(CC) -c mouse.cpp

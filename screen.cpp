@@ -1516,15 +1516,16 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
     }
   else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   Debug("Screen:RestoreRectangle() Before Selection");
-  int ctr; Sprite **spp = spbuf;
-  for(ctr=0; ctr<MAX_SPRITES; ctr++)  {
-    if(sprites[ctr] != NULL && sprites[ctr]->drawn
-	&& sprites[ctr]->image != NULL
-	&& x < (sprites[ctr]->xpos + sprites[ctr]->image->xsize)
-	&& y < (sprites[ctr]->ypos + sprites[ctr]->image->ysize)
-	&& (y+ys) > sprites[ctr]->ypos
-	&& (x+xs) > sprites[ctr]->xpos)  {
-      *spp = sprites[ctr]; ++spp;
+  Sprite **spp = spbuf;
+  register Sprite **tmps;
+  for(tmps=sprites; tmps<sprites+MAX_SPRITES; tmps++)  {
+    if((*tmps) != NULL && (*tmps)->drawn
+	&& (y+ys) > (*tmps)->ypos
+	&& (x+xs) > (*tmps)->xpos
+	&& (*tmps)->image != NULL
+	&& x < ((*tmps)->xpos + (*tmps)->image->xsize)
+	&& y < ((*tmps)->ypos + (*tmps)->image->ysize))  {
+      *spp = *tmps; ++spp;
       }
     }
   Debug("Screen:RestoreRectangle() Before Sort");
