@@ -204,6 +204,23 @@ int Screen::SetSize(int x, int y)  {
 	}
       }
     }
+  else if(depth==16)  {
+    video_buffer.us = new unsigned short[ysize*xsize];
+    background_buffer.us = new unsigned short[ysize*xsize];
+    image = new mfmt[ysize];
+    backg = new mfmt[ysize];
+    for(ctr=0; ctr<ysize; ctr++)  {
+      image[ctr].us = &video_buffer.us[xsize*ctr];
+      backg[ctr].us = &background_buffer.us[xsize*ctr];
+      for(ctr2=0; ctr2<xsize; ctr2++)  {
+//	image[ctr].us[ctr2] = BlackPixel(_Xdisplay, 0);
+//	backg[ctr].us[ctr2] = BlackPixel(_Xdisplay, 0);
+	image[ctr].us[ctr2] = 0;
+	backg[ctr].us[ctr2] = 0;
+	}
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 
   switch(vtype)  {
     #ifdef DOS
@@ -381,6 +398,12 @@ int Screen::SetSize(int x, int y)  {
 		DefaultDepth(_Xdisplay, _Xscreen), ZPixmap, 0,
 		video_buffer.c, xsize, ysize, 32, 0);
 	}
+      else if(depth==16)  {
+	_Ximage = XCreateImage(_Xdisplay, None,
+		DefaultDepth(_Xdisplay, _Xscreen), ZPixmap, 0,
+		video_buffer.c, xsize, ysize, 16, 0);
+	}
+      else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 
       XPutImage(_Xdisplay, _Xwindow, _Xgc, _Ximage, 0, 0, 0, 0, xsize, ysize);
 
@@ -431,9 +454,13 @@ int Screen::SetSize(int x, int y)  {
 	}
       else if(depth == 32)  {
 	for(ctr=0; ctr<collen; ctr++)
-	  memset(frame.ul+rowlen*ctr, 0, xsize*4);
+	  memset(frame.ul+rowlen*ctr, 0, xsize<<2);
 	}
-      else Exit(-1, "Unknown depth error (%d)\n", depth);
+      else if(depth == 16)  {
+	for(ctr=0; ctr<collen; ctr++)
+	  memset(frame.uc+rowlen*ctr, 0, xsize<<1);
+	}
+      else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
       }break;
     #endif
     #endif
@@ -557,7 +584,14 @@ void Screen::RefreshFast()  {
 		(rxe[ctrb]-rxs[ctrb])<<2);
 	      }
 	    }
-	  else Exit(-1, "Unknown depth error (%d)\n", depth);
+	  else if(depth == 16) {
+	    for(ctry=rys[ctrb]; ctry<rye[ctrb]; ctry++) {
+	      memcpy(frame.us + ctry*rowlen + rxs[ctrb],
+		image[ctry].us + rxs[ctrb],
+		(rxe[ctrb]-rxs[ctrb])<<1);
+	      }
+	    }
+	  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 	  }break;
 	#endif
 	#endif
@@ -582,7 +616,7 @@ void Screen::RefreshFast()  {
 		(rxe[ctrb]-rxs[ctrb])<<2);
 	      }
 	    }
-	  else Exit(-1, "Unknown depth error (%d)\n", depth);
+	  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 	  }break;
 	case(VIDEO_DOS): {
 	  int ctry;
@@ -592,7 +626,7 @@ void Screen::RefreshFast()  {
 		frame.UL+ctry*rowlen+rxs[ctrb]);
 	      }
 	    }
-	  else Exit(-1, "Unknown depth error (%d)\n", depth);
+	  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 	  }break;
 	#endif
 	}
@@ -635,10 +669,15 @@ void Screen::RefreshFull()  {
 	}
       else if(depth == 32) {
 	for(ctry=0; ctry<ysize; ctry++) {
-	  memcpy(frame.ul + ctry*rowlen, image[ctry].uc, xsize*4);
+	  memcpy(frame.ul + ctry*rowlen, image[ctry].ul, xsize<<2);
 	  }
 	}
-      else Exit(-1, "Unknown depth error (%d)\n", depth);
+      else if(depth == 16) {
+	for(ctry=0; ctry<ysize; ctry++) {
+	  memcpy(frame.us + ctry*rowlen, image[ctry].us, xsize<<1);
+	  }
+	}
+      else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
       }break;
     #endif
     #endif
@@ -721,6 +760,7 @@ void Screen::FadeOut(int n)  {
   }
 
 void Screen::DrawRectangle(int x, int y, int xs, int ys, int c)  {
+  InvalidateRectangle(x, y, xs, ys);
   int ctrx, ctry;
   if(depth==8) {
     for(ctry=y; ctry<(y+ys); ctry++)  {
@@ -736,7 +776,15 @@ void Screen::DrawRectangle(int x, int y, int xs, int ys, int c)  {
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d)\n", depth);
+  else if(depth==16) {
+    for(ctry=y; ctry<(y+ys); ctry++)  {
+      for(ctrx=x; ctrx<(x+xs); ctrx++)  {
+	image[ctry].us[ctrx] = c;
+	backg[ctry].us[ctrx] = c;
+	}
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 /*
   for(ctrx=x; ctrx<(x+xs); ctrx++)  {
     for(ctry=y; ctry<(y+ys); ctry++)  {
@@ -747,6 +795,7 @@ void Screen::DrawRectangle(int x, int y, int xs, int ys, int c)  {
   }
 
 void Screen::DrawRectangleFG(int x, int y, int xs, int ys, int c)  {
+  InvalidateRectangle(x, y, xs, ys);
   int ctrx, ctry;
   for(ctrx=x; ctrx<(x+xs); ctrx++)  {
     for(ctry=y; ctry<(y+ys); ctry++)  {
@@ -837,7 +886,7 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
     for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
       for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
 	if(g.image[ctry].uc[ctrx] != g.tcolor)  {
-	  ((unsigned char **)image)[ctry+y][ctrx+x] = g.image[ctry].uc[ctrx];
+	  image[ctry+y].uc[ctrx+x] = g.image[ctry].uc[ctrx];
 	  }
 	}
       }
@@ -867,7 +916,17 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d)\n", depth);
+  else if(depth == 16)  {
+    Debug("User:Screen:DrawPartialTransparentGraphicFG Depth 16");
+    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+      for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
+	if(g.image[ctry].us[ctrx] != g.tcolor)  {
+	  image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
+	  }
+	}
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   Debug("User:Screen:DrawPartialTransparentGraphicFG End");
   }
 
@@ -919,7 +978,17 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d)\n", depth);
+  else if(depth == 16)  {
+    Debug("User:Screen:DrawTransparentGraphicFG Depth 16");
+    for(ctry=(0>?(pys[p]-y)); ctry<((pye[p]-y)<?g.ysize); ctry++)  {
+      for(ctrx=(0>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?g.xsize); ctrx++)  {
+	if(g.image[ctry].us[ctrx] != g.tcolor)  {
+	  image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
+	  }
+	}
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   Debug("User:Screen:DrawTransparentGraphicFG End");
   }
 
@@ -949,7 +1018,14 @@ void Screen::DrawGraphicFG(Graphic &g, int x, int y, Panel p)  {
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d)\n", depth);
+  else if(depth == 16)  {
+    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
+      for(ctrx=0; ctrx<((xsize-x)<?(g.xsize)); ctrx++)  {
+	image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
+	}
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   }
 
 void Screen::FullScreenGraphicFG(Graphic &g) {
@@ -975,7 +1051,7 @@ void Screen::FullScreenGraphicFG(Graphic &g) {
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d)\n", depth);
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   }
 
 void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
@@ -1029,7 +1105,17 @@ void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d)\n", depth);
+  else if(depth == 16)  {
+    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
+      for(ctrx=0; ctrx<((xsize-x)<?g.xsize); ctrx++)  {
+	if(g.image[ctry].us[ctrx] != g.tcolor)  {
+	  image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
+	  backg[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
+	  }
+	}
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   }
 
 void Screen::DrawGraphic(Graphic &g, int x, int y, Panel p)  {
@@ -1087,7 +1173,15 @@ void Screen::DrawGraphic(Graphic &g, int x, int y, Panel p)  {
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d)\n", depth);
+  else if(depth == 16)  {
+    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
+      for(ctrx=0; ctrx<((xsize-x)<?g.xsize); ctrx++)  {
+	image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
+	backg[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
+	}
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   }
 
 void Screen::FullScreenGraphic(Graphic &g) {
@@ -1115,7 +1209,15 @@ void Screen::FullScreenGraphic(Graphic &g) {
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d)\n", depth);
+  else if(depth == 16)  {
+    for(ctry=0; ctry<(ysize<?g.ysize); ctry++)  {
+      for(ctrx=0; ctrx<(xsize<?(g.xsize)); ctrx++)  {
+	image[ctry].us[ctrx] = g.image[ctry].us[ctrx];
+	backg[ctry].us[ctrx] = g.image[ctry].us[ctrx];
+	}
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   }
 
 void Screen::SetPaletteEntry(int c, int r, int g, int b) {
@@ -1396,26 +1498,19 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
   if(depth == 8)  {
     for(ctry=y; ctry<y+ys; ctry++)  {
       memcpy(image[ctry].uc+x, backg[ctry].uc+x, xs);
-/*
-      for(ctrx=x; ctrx<x+xs; ctrx++)  {
-	((unsigned char **)image)[ctry][ctrx] = 
-				((unsigned char **)backg)[ctry][ctrx];
-	}
-*/
       }
     }
   else if(depth == 32)  {
     for(ctry=y; ctry<y+ys; ctry++)  {
       memcpy(image[ctry].ul+x, backg[ctry].ul+x, xs<<2);
-/*
-      for(ctrx=x; ctrx<x+xs; ctrx++)  {
-	((unsigned long **)image)[ctry][ctrx] = 
-				((unsigned long **)backg)[ctry][ctrx];
-	}
-*/
       }
     }
-  else Exit(-1, "Unknown depth error (%d)\n", depth);
+  else if(depth == 16)  {
+    for(ctry=y; ctry<y+ys; ctry++)  {
+      memcpy(image[ctry].us+x, backg[ctry].us+x, xs<<1);
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   Debug("Screen:RestoreRectangle() Before Selection");
   int ctr; Sprite **spp = spbuf;
   for(ctr=0; ctr<MAX_SPRITES; ctr++)  {
@@ -1555,16 +1650,21 @@ int Screen::SetFont(const char *fn, const char *com)  {
   }
 
 void Screen::AlignCursor()  {
+  Debug("Screen::AlignCursor() Begin");
   if(tcx < 1) tcx = 1;
   else if(tcx >= xsize) tcx = xsize-1;
   if(tcy < 1) tcy = 1;
   else if(tcy >= ysize) tcy = ysize-1;
   if(font[' '] != NULL)  {
+    if(tcy >= ysize-(font[' ']->ysize+2)) tcy = ysize-(font[' ']->ysize+3);
+/*
     tcy += ((font[' ']->ysize+2)/2);
     tcy /= (font[' ']->ysize+2);
     tcy *= (font[' ']->ysize+2);
     tcy ++;
+*/
     }
+  Debug("Screen::AlignCursor() End");
   }
 
 void Screen::SetCursor(Graphic &g)  {
@@ -1593,6 +1693,7 @@ int Screen::Print(long cb, long cf, const char *text)  {
 //  printf("%s\n", text);
   for(;(*ind) != 0; ind++)  {
 //    printf("%d,%d:%d: ", TXPos(), TYPos(), *ind); fflush(stdout);
+
     if((*ind) == (unsigned char)'\t')  {
       int tabstops = ysize / 10;
       tcx+=tabstops;
@@ -1660,11 +1761,22 @@ int Screen::Print(long cb, long cf, const char *text)  {
 	  }
 	DrawTransparentGraphic(res, tcx-let.xcenter, tcy-let.ycenter);
 	}
-      else Exit(-1, "Unknown depth error (%d)\n", depth);
+      else if(depth==16) {
+	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
+	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
+	    if(let.image[ctry].uc[ctrx]) {
+	      res.image[ctry].us[ctrx] = cf;
+	      }
+	    else res.image[ctry].us[ctrx]=0;
+	    }
+	  }
+	DrawTransparentGraphic(res, tcx-let.xcenter, tcy-let.ycenter);
+	}
+      else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+
       tcx+=font[*ind]->xsize+1;
       AlignCursor();
       }
-//    printf("<\n");
     }
   if(TCursor != NULL)  TCursor->Move(tcx, tcy);
   Debug("User::Screen::Print(...) End");

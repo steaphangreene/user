@@ -207,14 +207,23 @@ int Sprite::Hits(int x, int y, int xs, int ys) {
     for(ctry=ypos; ctry < ((ypos+image->ysize) <? (y+ys)); ctry++)  {
       for(ctrx=xpos; ctrx < ((xpos+image->xsize) <? (x+xs)); ctrx++)  {
 	Debug("User:Sprite:Hits2 0600");
-	if(image->image[ctry-ypos].uc[(ctrx-xpos)*4+3] != image->tcolor)  {
+	if(image->image[ctry-ypos].uc[(ctrx-xpos)*4+3])  {
 	  return 1;
 	  }
 	Debug("User:Sprite:Hits2 0605");
 	}
       }
     }
-  else Exit(-1, "Unknown Depth Error (%d) in Sprite:Hits\n", image->depth);
+  if(image->depth == 16)  {
+    for(ctry=ypos; ctry < ((ypos+image->ysize) <? (y+ys)); ctry++)  {
+      for(ctrx=xpos; ctrx < ((xpos+image->xsize) <? (x+xs)); ctrx++)  {
+	if(image->image[ctry-ypos].us[ctrx-xpos] != image->tcolor) {
+	  return 1;
+	  }
+	}
+      }
+    }
+  else Exit(-1, "Unknown Depth Error (%d) in %s\n", image->depth, __PRETTY_FUNCTION__);
   Debug("User:Sprite:Hits2 1000");
   return 0;
   }
@@ -259,7 +268,7 @@ int Sprite::Hits(Sprite *s) {
 	}
       }
     }
-  else Exit(-1, "Unknown Depth Error (%d) in Sprite:Hits\n", image->depth);
+  else Exit(-1, "Unknown Depth Error (%d) in %s\n", image->depth, __PRETTY_FUNCTION__);
   Debug("User:Sprite:Hits 1000");
   return 0;
   }

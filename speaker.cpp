@@ -54,14 +54,14 @@ const int IRQ_INT[16] = {0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF,
 //#define SOUND_BUF_SIZE 16384 // Must
 //#define SOUND_BUF_POWER 14 // Agree
 
-//#define SOUND_BUF_SIZE 4096 // Must
-//#define SOUND_BUF_POWER 12 // Agree
+#define SOUND_BUF_SIZE 4096 // Must
+#define SOUND_BUF_POWER 12 // Agree
 
 //#define SOUND_BUF_SIZE 2048 // Must
 //#define SOUND_BUF_POWER 11 // Agree
 
-#define SOUND_BUF_SIZE 1024 // Must
-#define SOUND_BUF_POWER 10 // Agree
+//#define SOUND_BUF_SIZE 1024 // Must
+//#define SOUND_BUF_POWER 10 // Agree
 
 Speaker::Speaker(int stro, int bts, int fr)  {
   buf.uc = new unsigned char[SOUND_BUF_SIZE];

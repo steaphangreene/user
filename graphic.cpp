@@ -498,7 +498,7 @@ void Graphic::SetRotated(Graphic &in, int angle) {
   }
 
 Graphic::Graphic(const Graphic &from) {
-  Debug("Graphic:Copy Constructor   Begin");
+//  Debug("Graphic:Copy Constructor   Begin");
   int ctr, ctr2;
   xdef = 0;  ydef = 0;  zdef = 0;
 //  DefSize(from.xsize, from.ysize, from.zsize);
@@ -514,7 +514,7 @@ Graphic::Graphic(const Graphic &from) {
   ycenter = from.ycenter;
   zcenter = from.zcenter;
   tcolor = from.tcolor;
-  Debug("Graphic:Copy Constructor   End");
+//  Debug("Graphic:Copy Constructor   End");
   }
 
 void Graphic::operator =(const Graphic &from) {
@@ -711,7 +711,7 @@ void Graphic::SetCenter(int xcr, int ycr) {
   }
 
 void Graphic::DefSize(int xsz, int ysz) {
-  Debug("User::Graphic::DefSize Begin");
+//  Debug("User::Graphic::DefSize Begin");
   int ctr, ctr2;
   xcenter = 0;		ycenter = 0;	linedef = 0;
   ysize = ysz;          xsize = xsz;	zsize = 1;
@@ -729,6 +729,7 @@ void Graphic::DefSize(int xsz, int ysz) {
       }
     delete image3d;
     }
+//  Debug("User::Graphic::DefSize Middle");
   ysize = (ysz>ydef)?ysz:ydef; xsize = (xsz>xdef)?xsz:xdef;
   image = new mfmt[ysize];
   for(ctr=0; ctr<(long)ysize; ctr++)
@@ -736,7 +737,7 @@ void Graphic::DefSize(int xsz, int ysz) {
   image3d = new mfmt*[1];
   image3d[0] = image;
   ydef = ysize;  xdef = xsize;  zdef = 1;
-  Debug("User::Graphic::DefSize End");
+//  Debug("User::Graphic::DefSize End");
   }
 
 void Graphic::DefSize(int xsz, int ysz, int zsz) {
@@ -1147,12 +1148,44 @@ void Graphic::Init24(char *fn, Palette &p)  {
   Debug("User::Graphic::Init24 End");
   }
 
+void Graphic::PasteGraphic(Graphic &g, int x, int y) {
+  PasteGraphic(&g, x, y);
+  }
+
+void Graphic::PasteGraphic(Graphic *g, int x, int y) {
+  if(g==NULL) return;
+  if(g->depth != depth)
+    Exit(1, "Depth mismatch in %s\n", __PRETTY_FUNCTION__);
+  int ctry;
+  if(x<0 || y<0 || x+g->xsize > xsize || y+g->ysize > ysize)
+    Exit(1, "Out of bounds error in %s\n", __PRETTY_FUNCTION__);
+  if(depth == 8) {
+    for(ctry=0; ctry<g->ysize; ++ctry) {
+      memcpy(image[ctry+y].ul+x, g->image[ctry].ul, g->xsize);
+      }   
+    }
+  else if(depth == 32) {
+    int ctrx;
+    for(ctry=0; ctry<g->ysize; ++ctry) {
+      memcpy(image[ctry+y].ul+x, g->image[ctry].ul, (g->xsize)<<2);
+      for(ctrx=0; ctrx<g->xsize; ++ctrx)
+        image[ctry+y].uc[((ctrx+x)<<2)+3]=0xFF;
+      }   
+    }
+  else if(depth == 16) {
+    for(ctry=0; ctry<g->ysize; ++ctry) {
+      memcpy(image[ctry+y].us+x, g->image[ctry].us, (g->xsize)<<1);
+      }   
+    }
+  }
+
 void Graphic::DepthConvert(int d, const Palette &p) {
   Debug("User::Graphic::DepthConvert Begin");
   int ctrx, ctry;
   if(depth==8 && d==32)  {
     Graphic g(*this);
     DefSize(xsize<<2, ysize);
+    xcenter=g.xcenter; ycenter=g.ycenter;
     depth = d; xsize>>=2;
     for(ctry=0; ctry<g.ysize; ctry++)  {
       for(ctrx=0; ctrx<g.xsize; ctrx++)  {
@@ -1167,6 +1200,56 @@ void Graphic::DepthConvert(int d, const Palette &p) {
           image[ctry].uc[(ctrx<<2)+2] = p.GetRedEntry(g.image[ctry].uc[ctrx]);
           image[ctry].uc[(ctrx<<2)+1] = p.GetGreenEntry(g.image[ctry].uc[ctrx]);
           image[ctry].uc[(ctrx<<2)] = p.GetBlueEntry(g.image[ctry].uc[ctrx]);
+	  }
+	}
+      }
+    }
+/*
+  else if(depth==8 && d==16)  {
+    Graphic g(*this);
+    DefSize(xsize<<2, ysize);
+    xcenter=g.xcenter; ycenter=g.ycenter;
+    depth = d; xsize>>=2;
+    for(ctry=0; ctry<g.ysize; ctry++)  {
+      for(ctrx=0; ctrx<g.xsize; ctrx++)  {
+	if(g.image[ctry].uc[ctrx] == tcolor) {
+          image[ctry].ul[ctrx] = 0;
+	  }
+	else {
+          image[ctry].uc[(ctrx<<2)+3] = 0xFF;
+          image[ctry].uc[(ctrx<<2)+2] = p.GetRedEntry(g.image[ctry].uc[ctrx]);
+          image[ctry].uc[(ctrx<<2)+1] = p.GetGreenEntry(g.image[ctry].uc[ctrx]);
+          image[ctry].uc[(ctrx<<2)] = p.GetBlueEntry(g.image[ctry].uc[ctrx]);
+	  }
+	}
+      }
+    }
+*/
+  else if(depth==32 && d==16)  {
+    Graphic g(*this);
+    depth = 16;
+    DefSize(xsize, ysize);
+    xcenter=g.xcenter; ycenter=g.ycenter;
+    tcolor=0xFFFFFFFF;
+    for(ctry=0; ctry<g.ysize; ctry++)  {
+      for(ctrx=0; ctrx<g.xsize; ctrx++)  {
+	if(g.image[ctry].uc[(ctrx<<2)+3] == 0) {
+	  if(tcolor==0xFFFFFFFF) {
+	    tcolor = (g.image[ctry].uc[(ctrx<<2)+2] >> 3);
+	    tcolor <<= 6;
+	    tcolor |= (g.image[ctry].uc[(ctrx<<2)+1] >> 2);
+	    tcolor <<= 5;
+	    tcolor |= (g.image[ctry].uc[ctrx<<2] >> 3);
+	    }
+          image[ctry].us[ctrx] = tcolor;
+	  }
+	else {
+	  unsigned long col = (g.image[ctry].uc[(ctrx<<2)+2] >> 3);
+	  col <<= 6;
+	  col |= (g.image[ctry].uc[(ctrx<<2)+1] >> 2);
+	  col <<= 5;
+	  col |= (g.image[ctry].uc[ctrx<<2] >> 3);
+	  image[ctry].us[ctrx] = col;
 	  }
 	}
       }

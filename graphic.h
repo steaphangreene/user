@@ -36,6 +36,8 @@ class Graphic {
   void operator -=(const Graphic &from);
   Graphic operator +(const Graphic &from);
   Graphic operator -(const Graphic &from);
+  void PasteGraphic(Graphic &g, int x=0, int y=0);
+  void PasteGraphic(Graphic *g, int x=0, int y=0);
   Graphic HalfSize() {return Scaled(xsize>>1, ysize>>1);};
   Graphic DoubleSize() {return Scaled(xsize<<1, ysize<<1);};
   Graphic Hashed(); 

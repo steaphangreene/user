@@ -16,6 +16,7 @@ class Sprite  {
   void SetImage(const Graphic &);
   void UseImage(const Graphic *);
   void UseImage(const Graphic &);
+  Graphic *GetImage() { return trueimage; };
   void RedrawArea(int, int, int, int);
   IntList CMove(int, int, int);
   IntList CMove(int, int);
