@@ -5,7 +5,14 @@
 /*****************
 * Config Options *
 *****************/
+
 #define	CONFIG_FILE		"/etc/u2.conf"
+
+/*****************
+* FileIO Options *
+*****************/
+
+#define USE_ZLIB
 
 /*****************
 * Sprite Options *

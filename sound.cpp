@@ -8,7 +8,7 @@
 #include "sound.h"
 
 #define FRead(fl, data, ammt) {\
-  if(ammt > 0)  if(read(fileno(fl), data, ammt) != ammt) {\
+  if(ammt > 0)  if(U2_FRead(data, 1, ammt, fl) != ammt) {\
     U2_Exit(1, "Read failure in WAVE file!\n");\
     }\
   }
@@ -19,7 +19,7 @@ Sound::Sound()  {
 
 Sound::Sound(char *fn)  {
   data.v = NULL;
-  FILE *wave;
+  U2_File wave;
   wave = U2_FOpenRead(fn);
   if(wave == NULL)  {
     U2_Exit(-1, "\"%s\" not found.\n", fn);
@@ -45,10 +45,7 @@ Sound::Sound(char *fn)  {
     U2_Exit(1, "\"%s\" is not a PCM WAVE file (unsupported).\n", fn);
     }
   FRead(wave, &tmp, 2);
-  stereo = (tmp == 2);
-//  if(stereo)  {
-//    U2_Exit(1, "\"%s\" is a stereo WAVE file (unsupported).\n", fn);
-//    }
+  channels = tmp;
   FRead(wave, &freq, 4);
   FRead(wave, buffer, 6);
   FRead(wave, &tmp, 2);
@@ -68,12 +65,12 @@ Sound::Sound(char *fn)  {
         (buffer[2] != 't') || (buffer[3] != 'a'))  {
     U2_Exit(1, "\"%s\" is not a WAVE file (no data).\n", fn);
     }
-  FRead(wave, &len, 4); //len *=(stereo+1); len *=(bits>>3);
+  FRead(wave, &len, 4); //len *= channels; len *=(bits>>3);
   data.uc = new unsigned char[len];
 //  printf("Len = %d\n", len);
   FRead(wave, data.uc, (long)len);
   
-  fclose(wave);
+  U2_FClose(wave);
   }
 
 Sound::~Sound()  {
@@ -102,9 +99,9 @@ void Sound::Stop(int s)  {
   if(__Da_Speaker != NULL) __Da_Speaker->Stop(s);
   }
 
-void Sound::ConvertTo(int bts, int stro, int fr)  {
+void Sound::ConvertTo(int bts, int chan, int fr)  {
   UserDebug("User:Sound:ConvertTo Begin");
-  if(bits == bts && stro == stereo && fr == freq) return;
+  if(bits == bts && chan == channels && fr == freq) return;
   int ctr; mfmt odata; odata.v = data.v;
   if(bits == 8 && bts == 16)  {
     data.s = new short[len];
@@ -128,40 +125,40 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
     delete [] odata.s; odata.v = data.v;
     }
 
-  if(bits == 8 && stereo == 0 && stro == 1)  {
+  if(bits == 8 && channels == 1 && chan == 2)  {
     data.uc = new unsigned char[len<<1];
     for(ctr=0; ctr<(int)len; ctr++)  {
       data.uc[(ctr<<1)] = odata.uc[ctr];
       data.uc[(ctr<<1)+1] = odata.uc[ctr];
       }
-    len <<= 1; stereo = 1;
+    len <<= 1; channels = 2;
     delete [] odata.uc; odata.v = data.v;
     }
-  else if(bits == 8 && stereo == 1 && stro == 0)  {
+  else if(bits == 8 && channels == 2 && chan == 1)  {
     len >>= 1;
     data.uc = new unsigned char[len];
     for(ctr=0; ctr<(int)len; ctr++)  {
       data.uc[ctr] = (odata.uc[(ctr<<1)]>>1)+(odata.uc[(ctr<<1)+1]>>1);
       }
-    stereo = 1;
+    channels = 1;
     delete [] odata.uc; odata.v = data.v;
     }
-  else if(bits == 16 && stereo == 0 && stro == 1)  {
+  else if(bits == 16 && channels == 1 && chan == 2)  {
     data.s = new short[len];
     for(ctr=0; ctr<(int)(len>>1); ctr++)  {
       data.s[(ctr<<1)] = odata.s[ctr];
       data.s[(ctr<<1)+1] = odata.s[ctr];
       }
-    len <<= 1; stereo = 1;
+    len <<= 1; channels = 2;
     delete [] odata.s; odata.v = data.v;
     }
-  else if(bits == 16 && stereo == 1 && stro == 0)  {
+  else if(bits == 16 && channels == 2 && chan == 1)  {
     len >>= 1;
     data.s = new short[len>>1];
     for(ctr=0; ctr<(int)(len>>1); ctr++)  {
       data.s[ctr] = (odata.s[(ctr<<1)]>>1)+(odata.s[(ctr<<1)+1]>>1);
       }
-    stereo = 1;
+    channels = 1;
     delete [] odata.s; odata.v = data.v;
     }
 
@@ -183,7 +180,7 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
     freq = fr;
     delete [] odata.uc; odata.v = data.v;
     }
-  else if(bits == 8 && stereo && freq == (fr>>1))  {
+  else if(bits == 8 && channels == 2 && freq == (fr>>1))  {
     len = (len<<1)-2;
     data.uc = new unsigned char[len];
     unsigned char tmp2a, tmpa = odata.uc[0];
@@ -215,7 +212,7 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
     freq = fr;
     delete [] odata.uc; odata.v = data.v;
     }
-  else if(bits == 8 && stereo && freq == (fr>>2))  {
+  else if(bits == 8 && channels == 2 && freq == (fr>>2))  {
     len = (len<<2)-6;
     data.uc = new unsigned char[len];
     unsigned long tmp2a, tmpa = odata.uc[0];
@@ -252,7 +249,7 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
     freq = fr;
     delete [] odata.uc; odata.v = data.v;
     }
-  else if(bits == 16 && stereo && freq == (fr<<2))  {
+  else if(bits == 16 && channels == 2 && freq == (fr<<2))  {
     len >>= 2;
     data.s = new short[len>>1];
     for(ctr=0; ctr<(int)(len>>1); ctr+=2)  {
@@ -271,7 +268,7 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
     freq = fr;
     delete [] odata.s; odata.v = data.v;
     }
-  else if(bits == 16 && stereo && freq == (fr<<1))  {
+  else if(bits == 16 && channels == 2 && freq == (fr<<1))  {
     len >>= 1;
     data.s = new short[len>>1];
     for(ctr=0; ctr<(int)(len>>1); ctr+=2)  {
@@ -290,7 +287,7 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
     freq = fr;
     delete [] odata.s; odata.v = data.v;
     }
-  else if(bits == 16 && stereo && freq == (fr>>1))  {
+  else if(bits == 16 && channels == 2 && freq == (fr>>1))  {
     len = (len<<1)-4;
     data.s = new short[len>>1];
     short tmp2a, tmpa = odata.s[0];
@@ -321,7 +318,7 @@ void Sound::ConvertTo(int bts, int stro, int fr)  {
     freq = fr;
     delete [] odata.s; odata.v = data.v;
     }
-  else if(bits == 16 && stereo && freq == (fr>>2))  {
+  else if(bits == 16 && channels == 2 && freq == (fr>>2))  {
     len = (len<<2)-12;
     data.s = new short[len>>1];
     long tmp2a, tmpa = odata.s[0];

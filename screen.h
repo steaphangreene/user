@@ -81,6 +81,7 @@ typedef unsigned long color;
 class Screen  {
   public:
   Screen(char *n = DEFAULT_NAME);
+  Screen(int, int, char *n = DEFAULT_NAME);
   Screen(int, int, int, char *n = DEFAULT_NAME);
   ~Screen();
   void SetApparentDepth(int);

@@ -778,16 +778,16 @@ Graphic::Graphic(char *fn, Palette &p)  {
   xsize = 0;  ysize = 0;
   depth = 8; tcolor=0;
   char buffer[16];
-  FILE *bmp = U2_FOpenRead(fn);
+  U2_File bmp = U2_FOpenRead(fn);
   if(bmp == NULL)  {
     U2_Exit(1, "\"%s\" Not Found!\n", fn);
     }
-  fread(buffer, 1, 16, bmp);
+  U2_FRead(buffer, 1, 16, bmp);
   if((buffer[0] != 'B') || (buffer[1] != 'M'))  {
     U2_Exit(1, "\"%s\" is Not A Bitmap file!\n", fn);
     }
-  fread(buffer, 1, 16, bmp);
-  fclose(bmp);
+  U2_FRead(buffer, 1, 16, bmp);
+  U2_FClose(bmp);
   depth = buffer[12]+256*(buffer[13]);
   if(depth == 8)  {
     Init(fn);
@@ -816,21 +816,21 @@ Graphic::Graphic(char *fn)  {
 void Graphic::InitTGA32(char *fn)  {
   int ctry;
   unsigned char buf[256];
-  FILE *tga = U2_FOpenRead(fn);
+  U2_File tga = U2_FOpenRead(fn);
   if(tga != NULL) {
-    int nr=fread(buf, 1, 18, tga);
+    int nr=U2_FRead(buf, 1, 18, tga);
     if(nr == 18 && buf[1] == 0 && buf[2] == 2) {
       depth = 32; tcolor=0; int rev=(buf[17]&0x20);
       if(buf[17]&0x10) U2_Exit(1, "%s is a backward TGA file!\n", fn);
       if(buf[16] != 32)
 	U2_Exit(1, "Depth of \"%s\" is %d, not 32!\n", fn, buf[16]);
       DefSize((buf[13]<<8) + buf[12], (buf[15]<<8) + buf[14]);
-      fread(buf, 1, (int)buf[0], tga);
+      U2_FRead(buf, 1, (int)buf[0], tga);
       if(!rev) for(ctry=0; ctry<ysize; ++ctry) {
-	fread(image[ysize-(ctry+1)].ul, 1, xsize*4, tga);
+	U2_FRead(image[ysize-(ctry+1)].ul, 1, xsize*4, tga);
 	}
       else for(ctry=0; ctry<ysize; ++ctry) {
-	fread(image[ctry].ul, 1, xsize*4, tga);
+	U2_FRead(image[ctry].ul, 1, xsize*4, tga);
 	}
       }
     else if(nr == 18 && buf[1] == 0 && buf[2] == 10) {
@@ -839,15 +839,15 @@ void Graphic::InitTGA32(char *fn)  {
       if(buf[16] != 32)
 	U2_Exit(1, "Depth of \"%s\" is %d, not 32!\n", fn, buf[16]);
       DefSize((buf[13]<<8) + buf[12], (buf[15]<<8) + buf[14]);
-      fread(buf, 1, (int)buf[0], tga);
+      U2_FRead(buf, 1, (int)buf[0], tga);
 
       x=0; y=0; yr=0; if(!rev) yr=ysize-1;
       while(y<ysize) {
 	unsigned long tmpv;
-	fread(buf, 1, 1, tga);
+	U2_FRead(buf, 1, 1, tga);
 	sz=(buf[0]&0x7F)+1;
 	if(buf[0]&0x80) {
-	  fread(&tmpv, 1, 4, tga);
+	  U2_FRead(&tmpv, 1, 4, tga);
 	  for(ctr=0; ctr<sz; ++ctr) {
 	    image[y].ul[x++] = tmpv;
 	    if(x==xsize) {
@@ -860,10 +860,10 @@ void Graphic::InitTGA32(char *fn)  {
 	  while(x+sz>=xsize) {
 	    int sz2 = xsize-x; sz-=sz2;
 //	    fprintf(stderr, "\"%s\" breaks TGA rules!!!\n", fn);
-	    fread(&image[y].ul[x], 1, sz2<<2, tga);
+	    U2_FRead(&image[y].ul[x], 1, sz2<<2, tga);
 	    ++y; --yr; x=0;
 	    }
-	  fread(&image[y].ul[x], 1, sz<<2, tga);
+	  U2_FRead(&image[y].ul[x], 1, sz<<2, tga);
 	  x+=sz;
 	  }
 	if(x==xsize) { ++y; --yr; x=0; }
@@ -874,7 +874,7 @@ void Graphic::InitTGA32(char *fn)  {
     else {
       U2_Exit(1, "\"%s\" isn't a 32-bit TGA file!\n", fn);
       }
-    fclose(tga);
+    U2_FClose(tga);
     }
   else {
     U2_Exit(1, "Can't open \"%s\"!\n", fn);
@@ -885,7 +885,7 @@ void Graphic::Init(char *fn)  {
  UserDebug("Graphic::Init Begin");
  xdef = 0;  ydef = 0;
  if(!strcasecmp(".tga", &fn[strlen(fn)-4])) { InitTGA32(fn); return; }
- FILE *bmp;
+ U2_File bmp;
  int colused;
  long size2, width, height, off = 0;
  unsigned char buffer[1280];
@@ -893,14 +893,14 @@ void Graphic::Init(char *fn)  {
  {
   bmp = U2_FOpenRead(fn);
   UserDebug("Graphic::Init First Read");
-  fread(buffer, 1, 16, bmp);
+  U2_FRead(buffer, 1, 16, bmp);
   if((buffer[0] != 'B') || (buffer[1] != 'M'))  {
     UserDebug("Graphic::Init Using First U2_Exit!");
     U2_Exit(1, "\"%s\" Is Not A Bitmap file!\n", fn);
     }
   UserDebug("Graphic::Init After First U2_Exit");
   size2 = buffer[14]+256*(buffer[15]);
-  fread(buffer, 1, (size2 - 2), bmp);
+  U2_FRead(buffer, 1, (size2 - 2), bmp);
   width = buffer[2]+256*(buffer[3]);
   height = buffer[6]+256*(buffer[7]);
   detect = buffer[10]+256*(buffer[11]);
@@ -927,14 +927,14 @@ void Graphic::Init(char *fn)  {
     int ctr;
     colused = buffer[30]+256*(buffer[31]);
     if(colused == 0)  colused = 256;
-    fread(buffer, 1, colused*4, bmp);
+    U2_FRead(buffer, 1, colused*4, bmp);
     DefSize(width, height);
     for(ctr = height; ctr > 0; ctr--)  {
-      int tmp = fread(image[ctr-1].uc, 1, width*bytes, bmp);
+      int tmp = U2_FRead(image[ctr-1].uc, 1, width*bytes, bmp);
       if(tmp != ((long)(width*bytes)))  {
 	U2_Exit(1, "Read error in 8-bit file \"%s\"\n", fn);
 	}
-      fread(buffer, 1, off, bmp);
+      U2_FRead(buffer, 1, off, bmp);
       }
     }
   else if(depth == 24)  {
@@ -943,12 +943,12 @@ void Graphic::Init(char *fn)  {
     DefSize(width, height);
     for(ctr = height; ctr > 0; --ctr)  {
       for(ctr2 = 0; ctr2 <width; ++ctr2)  {
-	int tmp = fread(&image[ctr-1].ul[ctr2], 1, 3, bmp);
+	int tmp = U2_FRead(&image[ctr-1].ul[ctr2], 1, 3, bmp);
 	if(tmp != 3)  {
 	  U2_Exit(1, "Read error in 24-bit file \"%s\"\n", fn);
 	  }
 	}
-      fread(buffer, 1, off, bmp);
+      U2_FRead(buffer, 1, off, bmp);
       }
     for(ctr = 0; ctr < height; ++ctr) {
       for(ctr2 = 0; ctr2 <width; ++ctr2) {
@@ -963,7 +963,7 @@ void Graphic::Init(char *fn)  {
   else if(depth == 32) tcolor = image[0].uc[3]; //** 32-bit kludge
   else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
   UserDebug("Graphic::Init Close File");
-  fclose(bmp);
+  U2_FClose(bmp);
   }
  UserDebug("Graphic::Init End");
  }
@@ -972,7 +972,9 @@ void Graphic::Init(char *fn)  {
 
 void Graphic::SaveBMP(char *fn, const Palette &pal) {
  UserDebug("User::Graphic::SaveBMP(2) Begin");
- FILE *bmp;
+ U2_Exit(0, "Fix this function: Graphic::SaveBMP\n");
+/*
+ U2_File bmp;
  int ctr, ctr2;
  {
   bmp = U2_FOpenWrite(fn);
@@ -980,9 +982,9 @@ void Graphic::SaveBMP(char *fn, const Palette &pal) {
   int filesize = ((ysize * ((xsize+3) - ((xsize+3)&3))) + (pal.coldec*4) + 54);
 	//BITMAPFILEHEADER
   fprintf(bmp, "BM");				// ID
-  fpint(bmp, filesize);	//*FILE SIZE!!!!
+  fpint(bmp, filesize);				// FILE SIZE!!!!
   fprintf(bmp, "%c%c%c%c", 0, 0, 0, 0);		// Reserved
-  fpint(bmp, (pal.coldec*4) + 54);	//*OFFSET OF DATA!!!!
+  fpint(bmp, (pal.coldec*4) + 54);		// OFFSET OF DATA!!!!
   
 	//BITMAPINFOHEADER
   fprintf(bmp, "%c%c%c%c", 40, 0, 0, 0);	// Header Size
@@ -1004,21 +1006,24 @@ void Graphic::SaveBMP(char *fn, const Palette &pal) {
     }
   for(ctr=ysize-1; ctr>=0; ctr--)  {
     for(ctr2=0; ctr2<(int)xsize; ctr2++)
-      fprintf(bmp, "%c", image[ctr].uc[ctr2]); //** 8-bit only!
+      fprintf(bmp, "%c", image[ctr].uc[ctr2]); // 8-bit only!
     for(; (ctr2 & 3) != 0; ctr2++)
       fprintf(bmp, "%c", 0);
     }
-  fclose(bmp);
+  U2_FClose(bmp);
 //  printf("Xsize = %d, Ysize = %d\n  Size ?= (%d)\n", xsize, ysize,
 //	(ysize * ((xsize+3) - ((xsize+3)&3))) + (pal.coldec*4) + 54);
   }
+*/
  UserDebug("User::Graphic::SaveBMP(2) End");
  }
 
 void Graphic::SaveBMP(char *fn)  {
  UserDebug("User::Graphic::SaveBMP(1) Begin");
+ U2_Exit(0, "Fix this function: Graphic::SaveBMP\n");
+/*
  if(depth != 32) U2_Exit(1, "Depth = %ld and no Palette given!\n", depth);
- FILE *bmp;
+ U2_File bmp;
  int ctr, ctr2;
  {
   bmp = U2_FOpenRead(fn);
@@ -1026,9 +1031,9 @@ void Graphic::SaveBMP(char *fn)  {
   int filesize = ((ysize * ((xsize+3) - ((xsize+3)&3))) + 54);
 	//BITMAPFILEHEADER
   fprintf(bmp, "BM");				// ID
-  fpint(bmp, filesize);	//*FILE SIZE!!!!
+  fpint(bmp, filesize);				// FILE SIZE!!!!
   fprintf(bmp, "%c%c%c%c", 0, 0, 0, 0);		// Reserved
-  fpint(bmp, 54);	//*OFFSET OF DATA!!!!
+  fpint(bmp, 54);				// OFFSET OF DATA!!!!
   
 	//BITMAPINFOHEADER
   fprintf(bmp, "%c%c%c%c", 40, 0, 0, 0);	// Header Size
@@ -1047,21 +1052,22 @@ void Graphic::SaveBMP(char *fn)  {
     for(ctr2=0; ctr2<(int)xsize*(depth>>3); ctr2++)
       if((ctr2&3) != 3) fprintf(bmp, "%c", image[ctr].uc[ctr2]);
 //    for(ctr2=0; ctr2<(int)xsize*(depth>>3); ctr2++)
-//      fprintf(bmp, "%c", image[ctr].uc[ctr2]);  //** Broken!!!!!!
+//      fprintf(bmp, "%c", image[ctr].uc[ctr2]);  // Broken!!!!!!
 //    for(; (ctr2 & 3) != 0; ctr2++)
 //      fprintf(bmp, "%c", 0);
     }
-  fclose(bmp);
+  U2_FClose(bmp);
 //  printf("Xsize = %d, Ysize = %d\n  Size ?= (%d)\n", xsize, ysize,
 //	(ysize * ((xsize+3) - ((xsize+3)&3))) + 54);
   }
+*/
  UserDebug("User::Graphic::SaveBMP(1) End");
  }
 
 void Graphic::Init24(char *fn, Palette &p)  {
   UserDebug("User::Graphic::Init24 Begin");
   xdef = 0;  ydef = 0;
-  FILE *bmp;
+  U2_File bmp;
   long size2, width, height;
   unsigned char buffer[4096];
   long detect;
@@ -1069,12 +1075,12 @@ void Graphic::Init24(char *fn, Palette &p)  {
 
   bmp = U2_FOpenRead(fn);
 
-  fread(buffer, 1, 16, bmp);
+  U2_FRead(buffer, 1, 16, bmp);
   if((buffer[0] != 'B') || (buffer[1] != 'M'))
 	U2_Exit(1, "\"%s\" Is Not A Bitmap file!\n", fn);
   size2 = buffer[14]+256*(buffer[15]);
 
-  fread(buffer, 1, (size2 - 2), bmp);
+  U2_FRead(buffer, 1, (size2 - 2), bmp);
   width = buffer[2]+256*(buffer[3]);
   height = buffer[6]+256*(buffer[7]);
   detect = buffer[10]+256*(buffer[11]);
@@ -1095,7 +1101,7 @@ void Graphic::Init24(char *fn, Palette &p)  {
 
   int off = (4-((width*3) & 3)) & 3;
   for(ctr = height; ctr > 0; ctr--)  {
-    int tmp = fread(buffer, 1, width*3+off, bmp);
+    int tmp = U2_FRead(buffer, 1, width*3+off, bmp);
     if(tmp != (long)width*3+off)  {
       U2_Exit(1, "Read error in 24-bit file loading \"%s\"\n", fn);
       }
@@ -1110,7 +1116,7 @@ void Graphic::Init24(char *fn, Palette &p)  {
   else if(depth == 32) tcolor = image[0].uc[3]; //** 32-bit kludge
   else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
   
-  fclose(bmp);
+  U2_FClose(bmp);
   UserDebug("User::Graphic::Init24 End");
   }
 

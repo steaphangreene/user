@@ -93,6 +93,12 @@ Screen::Screen(char *n)  {
   Init();
   }
 
+Screen::Screen(int x, int y, char *n)  {
+  name=n;
+  Init();
+  SetSize(x, y);
+  }
+
 Screen::Screen(int x, int y, int d, char *n)  {
   name=n;
   Init();
@@ -2119,8 +2125,11 @@ void Screen::WaitForNextFrame()  {
 int Screen::SetFont(const char *fn)  {
   ResFile frf(fn, USER_ARGV[0]);
   int ctr;
-  for(ctr=0; ctr<256; ctr++)  if(font[ctr] != NULL) delete font[ctr];
-  for(ctr=0; ctr<256; ctr++)  font[ctr] = frf.GetGraphic();
+  for(ctr=0; ctr<256; ctr++) {
+    if(font[ctr] != NULL) delete font[ctr];
+    font[ctr] = NULL;
+    font[ctr] = frf.GetGraphic();
+    }
   AlignCursor();
   return 0;
   }

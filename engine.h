@@ -14,14 +14,22 @@ void U2_Exit(int) __attribute__ ((noreturn));
 
 void U2_Init(int argc, char **argv);//  __attribute__ ((constructor));
 
-FILE *U2_FOpenRead(const char *);
-FILE *U2_FOpenSystemRead(const char *);
-FILE *U2_FOpenLocalRead(const char *);
-FILE *U2_FOpenHomeRead(const char *);
-FILE *U2_FOpenWrite(const char *);
-FILE *U2_FOpenSystemWrite(const char *);
-FILE *U2_FOpenLocalWrite(const char *);
-FILE *U2_FOpenHomeWrite(const char *);
+typedef void *U2_File;
+
+U2_File U2_FOpenRead(const char *);
+U2_File U2_FOpenSystemRead(const char *);
+U2_File U2_FOpenLocalRead(const char *);
+U2_File U2_FOpenHomeRead(const char *);
+U2_File U2_FOpenWrite(const char *);
+U2_File U2_FOpenSystemWrite(const char *);
+U2_File U2_FOpenLocalWrite(const char *);
+U2_File U2_FOpenHomeWrite(const char *);
+int U2_FGetC(U2_File fl);
+size_t U2_FRead(void *buf, int size, int num, U2_File fl);
+int U2_FPutC(int c, U2_File fl);
+size_t U2_FWrite(const void *buf, int size, int num, U2_File fl);
+int U2_FFlush(U2_File fl);
+int U2_FClose(U2_File fl);
 
 #ifdef USER_DEBUG
   extern int debug_index;

@@ -11,17 +11,17 @@ class Sound  {
   int Play();
   int Loop();
   void Stop(int);
-  void ConvertTo(int /*bits*/, int /*stereo?*/, int /*freq*/);
+  void ConvertTo(int /*bits*/, int /*channels*/, int /*freq*/);
   int Bits() { return bits; };
   int Freq() { return freq; };
-  int Stereo() { return stereo; };
+  int Channels() { return channels; };
 
   private:
   Sound();
   unsigned long len;
   mfmt data;
   int freq;
-  char stereo, bits;
+  char channels, bits;
   friend class Speaker;
   friend class NewResFile;
   friend class ResFile;

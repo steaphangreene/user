@@ -1,6 +1,9 @@
 #ifndef INSOMNIA_USER_RESFILE_H
 #define INSOMNIA_USER_RESFILE_H
 
+#include "config.h"
+#include "engine.h"
+
 #include <stdio.h>
 
 class Graphic;
@@ -26,7 +29,7 @@ class NewResFile  {
   void WriteInt(int);
   void WriteShort(short);
   void WriteChar(char);
-  FILE *rf;
+  U2_File rf;
   char *fn;
   };
 
@@ -56,8 +59,9 @@ class ResFile  {
   int ReadInt();
   short ReadShort();
   char ReadChar();
-  FILE *rf;
+  U2_File rf;
   char *fn;
+  long version;
   };
 
 #endif

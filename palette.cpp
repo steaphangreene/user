@@ -29,14 +29,14 @@
 #endif
 
 void Palette::Set(const char *fn)  {
-  FILE *palfl = U2_FOpenRead(fn);
+  U2_File palfl = U2_FOpenRead(fn);
   if(palfl==NULL)  {
     printf("Palette File \"%s\" Not Found!\n", fn);
     exit(1);
     }
   char header[24];
-  read(fileno(palfl), header, 4);
-  fclose(palfl);
+  U2_FRead(header, 1, 4, palfl);
+  U2_FClose(palfl);
   if(!memcmp(header, "JASC", 4))  SetPSP(fn);
   else if(!memcmp(header, "BM", 2))  SetBMP(fn);
   else if(!memcmp(header, "RIFF", 4))  SetMS(fn);
@@ -48,27 +48,29 @@ void Palette::Set(const char *fn)  {
 
 void Palette::SetMS(const char *fn)  {
   int r, g, b, ctr, c;
-  FILE *palfl = U2_FOpenRead(fn);
+  U2_File palfl = U2_FOpenRead(fn);
   if(palfl==NULL)  {
     printf("Palette File Not Found!\n");
     exit(1);
     }
-  for(ctr=0; ctr<24; ctr++)  c = fgetc(palfl);
+  for(ctr=0; ctr<24; ctr++)  c = U2_FGetC(palfl);
   for(ctr=0; ctr<256; ctr++)  {
-    r = fgetc(palfl);
-    g = fgetc(palfl);
-    b = fgetc(palfl);
-    c = fgetc(palfl);
+    r = U2_FGetC(palfl);
+    g = U2_FGetC(palfl);
+    b = U2_FGetC(palfl);
+    c = U2_FGetC(palfl);
     SetPaletteEntry(ctr, r, g, b);
     }
-  fclose(palfl);
+  U2_FClose(palfl);
   coldec = 256;
   }
 
 
 void Palette::SetPSP(const char *fn)  {
+  U2_Exit(0, "Fix this function: Palette::SetPSP\n");
+/*
   int r, g, b, ctr;
-  FILE *palfl = U2_FOpenRead(fn);
+  U2_File palfl = U2_FOpenRead(fn);
   if(palfl==NULL)  {
     printf("Palette File Not Found!\n");
     exit(1);
@@ -78,13 +80,14 @@ void Palette::SetPSP(const char *fn)  {
     fscanf(palfl, "%d %d %d\n", &r, &g, &b);
     SetPaletteEntry(ctr, r, g, b);
     }
-  fclose(palfl);
+  U2_FClose(palfl);
   coldec = 256;
+*/
   }
 
 void Palette::SetBMP(const char *fn)  {
  int coldec;
- FILE *bmp;
+ U2_File bmp;
  unsigned size2, width, height;
  unsigned char buffer[1280];
  int ctr;
@@ -94,22 +97,22 @@ void Palette::SetBMP(const char *fn)  {
     printf("\"%s\" Not Found!\n", fn);
     exit(1);
     }
-  read(fileno(bmp), buffer, 16);
+  U2_FRead(buffer, 1, 16, bmp);
   if((buffer[0] != 'B') || (buffer[1] != 'M'))  {
     printf("\"%s\" is Not A Bitmap file!\n", fn);
     exit(1);
     }
   size2 = buffer[14]+(buffer[15]<<8);
-  read(fileno(bmp), buffer, (size2 - 2));
+  U2_FRead(buffer, 1, (size2 - 2), bmp);
   width = buffer[2]+(buffer[3]<<8);
   height = buffer[6]+(buffer[7]<<8);
   coldec = buffer[30]+(buffer[31]<<8);
   if(coldec == 0)  coldec = 256;
-  read(fileno(bmp), buffer, coldec<<2);
+  U2_FRead(buffer, 1, coldec<<2, bmp);
   for(ctr = 0; ctr < (coldec<<2); ctr+=4)  {
     SetPaletteEntry(ctr>>2, buffer[ctr+2], buffer[ctr+1], buffer[ctr]);
     }
-  fclose(bmp);
+  U2_FClose(bmp);
   }
  }
 

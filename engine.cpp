@@ -22,6 +22,17 @@
 #include <time.h>
 #endif
 
+#ifdef USE_ZLIB
+#  include <zlib.h>
+#  define FOPEN gzopen
+#  define RFLGS "rb"
+#  define WFLGS "wb9"
+#else
+#  define FOPEN fopen
+#  define RFLGS "rb"
+#  define WFLGS "wb"
+#endif
+
 Screen *__Da_Screen = NULL;
 Speaker *__Da_Speaker = NULL;
 Mouse *__Da_Mouse = NULL;
@@ -61,7 +72,8 @@ void StopUserEngine()  {
   __Da_Screen = NULL;
   Chunk *tmp;
   tmp->DeleteAll();
-  fprintf(stderr, "User 2.0: Engine Shut Down.\n");
+  fprintf(stderr, "User 2.01: Engine Shut Down.\n");
+  fflush(stderr);
   }
 
 int CheckArgFlag(const char *flag, char **target, int c) {
@@ -78,7 +90,7 @@ int CheckArgFlag(const char *flag, char **target, int c) {
   }
 
 void U2_Init(int argc, char **argv)  {
-  fprintf(stderr, "User 2.0: Engine Initializing....\n\r");
+  fprintf(stderr, "User 2.01: Engine Initializing....\n\r");
   signal(SIGABRT, SIG_DFL);  // Make sure abort can still generate core dumps
   signal(SIGKILL, SigHand);
   signal(SIGINT, SigHand);
@@ -175,13 +187,14 @@ void U2_Exit(int code, const char *out, ...)  {
   va_start(stuff, out);
   vprintf(out, stuff);
   va_end(stuff);
-  exit(0);
+  pthread_kill_other_threads_np();
+  _exit(0);
   }
 
-FILE *U2_FOpenRead(const char *fn)  {
-  if(fn[0] == '/') return fopen(fn, "rb");
-  FILE *file = NULL;
-  file = fopen(fn, "rb");
+U2_File U2_FOpenRead(const char *fn)  {
+  if(fn[0] == '/') return FOPEN(fn, RFLGS);
+  U2_File file = NULL;
+  file = FOPEN(fn, RFLGS);
   if(file == NULL && USER_ARGC)  {
     char buffer[256], prep[256];
     int ctr;
@@ -189,7 +202,7 @@ FILE *U2_FOpenRead(const char *fn)  {
     for(ctr=strlen(prep); ctr > 0 && prep[ctr-1] != '/'; --ctr);
     prep[ctr] = 0;
     sprintf(buffer, "%s/%s%c", prep, fn, 0);
-    file = fopen(buffer, "rb");
+    file = FOPEN(buffer, RFLGS);
 
 //    if(file == NULL) { 
 //      char *tmpp1, *tmpp2, *path, delim = ':'; 
@@ -220,13 +233,15 @@ FILE *U2_FOpenRead(const char *fn)  {
   return file;
   }
 
-FILE *U2_FOpenHomeRead(const char *fn)  {
-  if(fn[0] == '/') return fopen(fn, "rb");
-  FILE *file;
+U2_File U2_FOpenHomeRead(const char *fn)  {
+  if(fn[0] == '/') {
+    return FOPEN(fn, RFLGS);
+    }
+  U2_File file;
   if(getenv("HOME"))  {
     char buffer[256];
     sprintf(buffer, "%s/%s%c", getenv("HOME"), fn, 0);
-    file = fopen(buffer, "rb");
+    file = FOPEN(buffer, RFLGS);
     }
   else {
     file = NULL;
@@ -235,9 +250,11 @@ FILE *U2_FOpenHomeRead(const char *fn)  {
   return file;
   }
 
-FILE *U2_FOpenSystemRead(const char *fn)  {
-  if(fn[0] == '/') return fopen(fn, "rb");
-  FILE *file;
+U2_File U2_FOpenSystemRead(const char *fn)  {
+  if(fn[0] == '/') {
+    return FOPEN(fn, RFLGS);
+    }
+  U2_File file;
   if(USER_ARGC)  {
     char buffer[256], prep[256];
     int ctr;
@@ -245,7 +262,7 @@ FILE *U2_FOpenSystemRead(const char *fn)  {
     for(ctr=strlen(prep); ctr > 0 && prep[ctr-1] != '/'; --ctr);
     prep[ctr] = 0;
     sprintf(buffer, "%s/%s%c", prep, fn, 0);
-    file = fopen(buffer, "rb");
+    file = FOPEN(buffer, RFLGS);
     }
   else {
     file = NULL;
@@ -254,17 +271,19 @@ FILE *U2_FOpenSystemRead(const char *fn)  {
   return file;
   }
 
-FILE *U2_FOpenWrite(const char *fn)  {
-  return fopen(fn, "wb");
+U2_File U2_FOpenWrite(const char *fn)  {
+  return FOPEN(fn, WFLGS);
   }
 
-FILE *U2_FOpenLocalWrite(const char *fn)  {
-  return fopen(fn, "wb");
+U2_File U2_FOpenLocalWrite(const char *fn)  {
+  return FOPEN(fn, WFLGS);
   }
 
-FILE *U2_FOpenSystemWrite(const char *fn)  {
-  if(fn[0] == '/') return fopen(fn, "wb");
-  FILE *file;
+U2_File U2_FOpenSystemWrite(const char *fn)  {
+  if(fn[0] == '/') {
+    return FOPEN(fn, WFLGS);
+    }
+  U2_File file;
   if(USER_ARGC)  {
     char buffer[256], prep[256];
     int ctr;
@@ -272,7 +291,7 @@ FILE *U2_FOpenSystemWrite(const char *fn)  {
     for(ctr=strlen(prep); ctr > 0 && prep[ctr-1] != '/'; --ctr);
     prep[ctr] = 0;
     sprintf(buffer, "%s/%s%c", prep, fn, 0);
-    file = fopen(buffer, "wb");
+    file = FOPEN(buffer, WFLGS);
     }
   else {
     file = NULL;
@@ -281,17 +300,78 @@ FILE *U2_FOpenSystemWrite(const char *fn)  {
   return file;
   }
 
-FILE *U2_FOpenHomeWrite(const char *fn)  {
-  if(fn[0] == '/') return fopen(fn, "wb");
-  FILE *file;
+U2_File U2_FOpenHomeWrite(const char *fn)  {
+  if(fn[0] == '/') {
+    return FOPEN(fn, WFLGS);
+    }
+  U2_File file;
   if(getenv("HOME"))  {
     char buffer[256];
     sprintf(buffer, "%s/%s%c", getenv("HOME"), fn, 0);
-    file = fopen(buffer, "wb");
+    file = FOPEN(buffer, WFLGS);
     }
   else {
     file = NULL;
     fprintf(stderr, "Warning: U2_FOpenHomeWrite Called with no $HOME set!\n");
     }
   return file;
+  }
+
+int U2_FGetC(U2_File fl) {
+#ifdef USE_ZLIB
+  return gzgetc((gzFile)fl);
+#else
+  return fgetc((FILE *)fl);
+#endif
+  }
+
+size_t U2_FRead(void *buf, int size, int num, U2_File fl) {
+#ifdef USE_ZLIB
+  int ret = 0;
+  char *tmp = (char *)buf;
+  for(; ret < num; ++ret) {
+    if(gzread((gzFile)fl, tmp+(ret*size), size) < size) return ret;
+    }
+  return ret;
+#else
+  return fread(buf, size, num, (FILE *)fl);
+#endif
+  }
+
+int U2_FPutC(int c, U2_File fl) {
+#ifdef USE_ZLIB
+  return gzputc((gzFile)fl, c);
+#else
+  return fputc(c, (FILE *)fl);
+#endif
+  }
+
+size_t U2_FWrite(const void *buf, int size, int num, U2_File fl) {
+#ifdef USE_ZLIB
+  int ret = 0;
+  char *tmp = (char *)buf;
+  for(; ret < num; ++ret) {
+    if(gzwrite((gzFile)fl, tmp+(ret*size), size) < size) return ret;
+    }
+  return ret;
+#else
+  return fwrite(buf, size, num, (FILE *)fl);
+#endif
+  }
+
+int U2_FFlush(U2_File fl) {
+#ifdef USE_ZLIB
+  printf("In Unfinished U2_FFlush\n");
+  return 0;
+#else
+  return fflush((FILE *)fl);
+#endif
+  }
+
+int U2_FClose(U2_File fl) {
+#ifdef USE_ZLIB
+  return gzclose(fl);
+#else
+  return fclose((FILE *)fl);
+#endif
   }

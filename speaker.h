@@ -30,9 +30,9 @@ struct Playing {
 
 class Speaker {
   public:
-  Speaker(int /*stereo?*/, int /*bits*/, int /*freq*/);
+  Speaker(int bits=8, int chan=1, int freq=11025, int bufsz=0);
   ~Speaker();
-  void Reconfigure(int /*stereo?*/, int /*bits*/, int /*freq*/);
+  void Reconfigure(int bits, int chan, int freq, int bufsz);
   void FinishQueue();
   void Update();
   int Play(Sound &);
@@ -46,9 +46,9 @@ class Speaker {
 
   private:
   int stype;
-  int Configure(int, int, int);
+  int Configure(int, int, int, int);
   void ExpandCur();
-  int bufsize, stereo, cur_num, cur_alloc, ambient;
+  int bufsize, channels, cur_num, cur_alloc, ambient;
   long writenext;
   mfmt buf, *samp;
   Playing *cur;
@@ -61,6 +61,7 @@ class Speaker {
   void *dma_buf;
   pthread_t mmap_thread;
   friend void *__do_dma(void *);
+  void dma_handler();
   long writenow;
 #endif
 #else
@@ -93,5 +94,4 @@ class Speaker {
   };
 
 extern Speaker *__Da_Speaker;
-
 #endif

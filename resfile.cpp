@@ -11,7 +11,13 @@
 #include "palette.h"
 #include "graphic.h"
 
-#define FILE_HEADER	"Insomnia's User Engine 2.0 Resource File!\n\0"
+/* Be sure to keep this EXACTLY the same length if changed! */
+#define FILE_HEADER	"Insomnia's User Engine 2.01 Resource File!\n"
+
+/* Older headers for backward-compatibility detection */
+#define O200_HEADER	"Insomnia's User Engine 2.0 Resource File!\n\0"
+
+/* Tags for Resfile element types */
 #define GRAPHIC_TAG	"GRAP"
 #define PALETTE_TAG	"PALT"
 #define SOUND_TAG	"DIGS"
@@ -37,8 +43,18 @@ void ResFile::Open(const char *filen, const char *com)  {
   if(rf == NULL)  {
     U2_Exit(1, "\"%s\" not found!\n", filen);
     }
-  if(read(fileno(rf), buffer, sizeof(FILE_HEADER)) < (long)sizeof(FILE_HEADER)
-	|| strncmp(buffer, FILE_HEADER, sizeof(FILE_HEADER)))  {
+  if(U2_FRead(buffer, 1, sizeof(FILE_HEADER), rf) < (long)sizeof(FILE_HEADER)) {
+    U2_Exit(1, "Failed to read ResFile header from \"%s\".\n", fn);
+    }
+  else if(!strncmp(buffer, FILE_HEADER, sizeof(FILE_HEADER)))  {
+    version = 0x0201;
+    }
+  else if(!strncmp(buffer, O200_HEADER, sizeof(FILE_HEADER)))  {
+    fprintf(stderr, "%s: Version 2.0 - BW Compat Enabled.\n", fn);
+    version = 0x0200;
+    }
+  else {
+    buffer[sizeof(FILE_HEADER)-2] = 0;
     U2_Exit(1, "\"%s\" is not a resource file, it's header is \"%s\"!\n", fn,
 	buffer);
     }
@@ -63,6 +79,11 @@ int ResFile::TryToOpen(const char *filen, const char *com)  {
 void *ResFile::Get()  {
   char buf[TAG_SIZE];
   Read(buf, TAG_SIZE);
+  if(version == 0x0200) {
+    char tmp;
+    Read(&tmp, 1);
+    if(tmp != 0) U2_Exit(-1, "BW Compat: Bad 2.0 Resfile.\n");
+    }
   if(!strncmp(buf, GRAPHIC_TAG, TAG_SIZE))  {
     return GrabGraphic();
     }
@@ -78,6 +99,11 @@ void *ResFile::Get()  {
 LongBag *ResFile::GetLongBag()  {
   char buf[TAG_SIZE];
   Read(buf, TAG_SIZE);
+  if(version == 0x0200) {
+    char tmp;
+    Read(&tmp, 1);
+    if(tmp != 0) U2_Exit(-1, "BW Compat: Bad 2.0 Resfile.\n");
+    }
   if(strncmp(buf, LONGBAG_TAG, TAG_SIZE))  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
     U2_Exit(1, "Bad ResFile order, attempt to get LongBag on non-LongBag");
@@ -88,6 +114,11 @@ LongBag *ResFile::GetLongBag()  {
 ShortBag *ResFile::GetShortBag()  {
   char buf[TAG_SIZE];
   Read(buf, TAG_SIZE);
+  if(version == 0x0200) {
+    char tmp;
+    Read(&tmp, 1);
+    if(tmp != 0) U2_Exit(-1, "BW Compat: Bad 2.0 Resfile.\n");
+    }
   if(strncmp(buf, SHORTBAG_TAG, TAG_SIZE))  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
     U2_Exit(1, "Bad ResFile order, attempt to get ShortBag on non-ShortBag");
@@ -98,6 +129,11 @@ ShortBag *ResFile::GetShortBag()  {
 CharBag *ResFile::GetCharBag()  {
   char buf[TAG_SIZE];
   Read(buf, TAG_SIZE);
+  if(version == 0x0200) {
+    char tmp;
+    Read(&tmp, 1);
+    if(tmp != 0) U2_Exit(-1, "BW Compat: Bad 2.0 Resfile.\n");
+    }
   if(strncmp(buf, CHARBAG_TAG, TAG_SIZE))  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
     U2_Exit(1, "Bad ResFile order, attempt to get CharBag on non-CharBag");
@@ -107,19 +143,31 @@ CharBag *ResFile::GetCharBag()  {
 
 Graphic *ResFile::GetGraphic()  {
   char buf[TAG_SIZE];
-//  printf("Going\n");
+//  printf("Reading Tag\n"); fflush(stdout);
   Read(buf, TAG_SIZE);
-//  printf("Going2\n");
+  if(version == 0x0200) {
+    char tmp;
+    Read(&tmp, 1);
+    if(tmp != 0) U2_Exit(-1, "BW Compat: Bad 2.0 Resfile.\n");
+    }
+//  printf("Read Tag \"%c%c%c%c\"\n", buf[0], buf[1], buf[2], buf[3]); fflush(stdout);
   if(strncmp(buf, GRAPHIC_TAG, TAG_SIZE))  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
     U2_Exit(1, "Bad ResFile order, attempt to get Graphic on non-Graphic");
     }
+//  printf("Grabbing Graphic\n"); fflush(stdout);
   return GrabGraphic();
+//  printf("Grabbed Graphic\n"); fflush(stdout);
   }
 
 Palette *ResFile::GetPalette()  {
   char buf[TAG_SIZE];
   Read(buf, TAG_SIZE);
+  if(version == 0x0200) {
+    char tmp;
+    Read(&tmp, 1);
+    if(tmp != 0) U2_Exit(-1, "BW Compat: Bad 2.0 Resfile.\n");
+    }
   if(strncmp(buf, PALETTE_TAG, TAG_SIZE))  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
     U2_Exit(1, "Bad ResFile order, attempt to get Palette on non-Palette");
@@ -130,6 +178,11 @@ Palette *ResFile::GetPalette()  {
 Sound *ResFile::GetSound()  {
   char buf[TAG_SIZE];
   Read(buf, TAG_SIZE);
+  if(version == 0x0200) {
+    char tmp;
+    Read(&tmp, 1);
+    if(tmp != 0) U2_Exit(-1, "BW Compat: Bad 2.0 Resfile.\n");
+    }
   if(strncmp(buf, SOUND_TAG, TAG_SIZE))  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
     U2_Exit(1, "Bad ResFile order, attempt to get Sound on non-Sound");
@@ -214,14 +267,14 @@ Sound *ResFile::GrabSound()  {
   ret->len = ReadInt();
   ret->freq = ReadInt();
   ret->bits = ReadChar();
-  ret->stereo = ReadChar();
+  ret->channels = ReadChar();
   ret->data.uc = new unsigned char[ret->len];
   Read(ret->data.uc, ret->len);
   return ret;
   }
 
 void ResFile::Read(void *data, int ammt)  {
-  if(read(fileno(rf), data, ammt) != ammt)  {
+  if(U2_FRead(data, 1, ammt, rf) != (unsigned int)ammt)  {
     perror("User:ResFile:Read");
     U2_Exit(1, "Read failure on \"%s\"!\n", fn);
     }
@@ -229,29 +282,29 @@ void ResFile::Read(void *data, int ammt)  {
 
 int ResFile::ReadInt()  {
   unsigned char tmp1, tmp2, tmp3, tmp4;
-  if(read(fileno(rf), &tmp1, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(read(fileno(rf), &tmp2, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(read(fileno(rf), &tmp3, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(read(fileno(rf), &tmp4, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(U2_FRead(&tmp1, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(U2_FRead(&tmp2, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(U2_FRead(&tmp3, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(U2_FRead(&tmp4, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
   return((tmp4<<24)+(tmp3<<16)+(tmp2<<8)+tmp1);
   }
 
 short ResFile::ReadShort()  {
   unsigned char tmp1, tmp2;
-  if(read(fileno(rf), &tmp1, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(read(fileno(rf), &tmp2, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(U2_FRead(&tmp1, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(U2_FRead(&tmp2, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
   return((tmp2<<8)+tmp1);
   }
 
 char ResFile::ReadChar()  {
   unsigned char ret;
-  if(read(fileno(rf), &ret, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(U2_FRead(&ret, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
   return ret;
   }
 
 ResFile::~ResFile()  {
   delete fn;
-  fclose(rf);
+  U2_FClose(rf);
   }
 
 NewResFile::NewResFile(const char *filen)  {
@@ -261,8 +314,8 @@ NewResFile::NewResFile(const char *filen)  {
   if(rf == NULL)  {
     U2_Exit(1, "Cannot create \"%s\"!\n", fn);
     }
-  if(write(fileno(rf), FILE_HEADER, sizeof(FILE_HEADER))
-	< (long)sizeof(FILE_HEADER)) {
+  if(U2_FWrite(FILE_HEADER, 1, sizeof(FILE_HEADER), rf)
+	< (size_t)sizeof(FILE_HEADER)) {
     U2_Exit(1, "Not enough drive space for \"%s\"!\n", fn);
     }
   }
@@ -343,17 +396,17 @@ void NewResFile::Add(const Sound *in)  {
   WriteInt(in->len);
   WriteInt(in->freq);
   WriteChar(in->bits);
-  WriteChar(in->stereo);
+  WriteChar(in->channels);
   Write(in->data.uc, in->len);
   } 
 
 NewResFile::~NewResFile()  {
   delete fn;
-  fclose(rf);
+  U2_FClose(rf);
   }
 
 void NewResFile::Write(const void *data, int ammt)  {
-  if(write(fileno(rf), data, ammt) != ammt)  {
+  if(U2_FWrite(data, 1, ammt, rf) != (size_t)ammt)  {
     U2_Exit(1, "Write failure on \"%s\"!\n", fn);
     }
   }
@@ -364,20 +417,20 @@ void NewResFile::WriteInt(int data)  {
   tmp3 = (data>>16) & 255;
   tmp2 = (data>>8) & 255;
   tmp1 = data & 255;
-  if(write(fileno(rf), &tmp1, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
-  if(write(fileno(rf), &tmp2, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
-  if(write(fileno(rf), &tmp3, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
-  if(write(fileno(rf), &tmp4, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(tmp1, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(tmp2, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(tmp3, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(tmp4, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
   }
 
 void NewResFile::WriteShort(short data)  {
   unsigned char tmp1, tmp2;
   tmp2 = (data>>8) & 255;
   tmp1 = data & 255;
-  if(write(fileno(rf), &tmp1, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
-  if(write(fileno(rf), &tmp2, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(tmp1, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(tmp2, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
   }
 
 void NewResFile::WriteChar(char data)  {
-  if(write(fileno(rf), &data, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(data, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
   }
