@@ -1,0 +1,275 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include "screen.h"
+#include "resfile.h"
+
+#define FILE_HEADER	"INSOMNIA'S RESOURCE FILE!\n\0"
+#define GRAPHIC_TAG	"GRAP"
+#define SOUND_TAG	"DIGS"
+#define NULL_TAG	"NULL"
+#define TAG_SIZE	4
+
+
+extern Screen *__Da_Screen;
+extern User *__Da_User;
+extern char *ARGV_0;
+
+ResFile::ResFile(const char *filen)  {
+  Open(filen, "");
+  }
+
+ResFile::ResFile(const char *filen, const char *com)  {
+  Open(filen, com);
+  }
+
+void ResFile::Open(const char *filen, const char *com)  {
+  fn = new char[strlen(filen)+1];
+  strcpy(fn, filen);
+  char buffer[256];
+  rf = fopen(fn, "rb");
+  if(rf == NULL)  {
+    delete fn;
+    TryToOpen(filen, com);
+    if(rf == NULL)  {
+      char *tmpp1, *tmpp2, *path, delim = ':';
+      int fail = 0;
+      tmpp2 = getenv("PATH");
+      path = new char[strlen(tmpp2)+1];
+      tmpp1 = path;
+      strcpy(path, tmpp2);
+      while((!fail) && rf == NULL)  {
+	tmpp2 = tmpp1;
+	while(*tmpp2 != delim && *tmpp2 != 0) tmpp2++;
+	if(*tmpp2 == delim)  {
+	  char tmpc = tmpp2[1];
+	  *tmpp2 = '/';
+	  tmpp2[1] = 0;
+	  TryToOpen(filen, tmpp1);
+	  tmpp2[1] = tmpc;
+	  }
+	else  {
+	  tmpp2 = tmpp1;
+	  fail = 1;
+	  }
+	tmpp1 = ++tmpp2;
+	}
+      delete path;
+      if(rf == NULL)  {
+	Exit(1, "\"%s\" not found!\n", filen);
+	}
+      }
+    }
+  if(read(fileno(rf), buffer, sizeof(FILE_HEADER)) < (long)sizeof(FILE_HEADER)
+	|| strncmp(buffer, FILE_HEADER, sizeof(FILE_HEADER)))  {
+    Exit(1, "\"%s\" is not a resource file, it's header is \"%s\"!\n", fn,
+	buffer);
+    }
+  }
+
+int ResFile::TryToOpen(const char *filen, const char *com)  {
+  int pos;
+  fn = new char[strlen(filen)+strlen(com)+1];
+  sprintf(fn, "%s%c", com, 0);
+  for(pos=strlen(fn)-1; pos>=0 && fn[pos]!='/' && fn[pos]!='\\'; pos--);
+  if(pos >= 0)  fn[pos] = 0;
+  strcat(fn, "/");
+  strcat(fn, filen);
+  rf = fopen(fn, "rb");
+//  printf("Tried \"%s\"\r\n", fn);
+  if(rf == NULL)  {
+    delete fn;
+    return 0;
+    }
+  return 1;
+  }
+
+void *ResFile::Get()  {
+  char buf[TAG_SIZE];
+  Read(buf, TAG_SIZE);
+  if(!strncmp(buf, GRAPHIC_TAG, TAG_SIZE))  {
+    return GrabGraphic();
+    }
+  if(!strncmp(buf, SOUND_TAG, TAG_SIZE))  {
+    return GrabSound();
+    }
+  else  {
+    if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
+    Exit(1, "Bad ResFile order, attempt to get Graphic on non-Graphic");
+    }
+  }
+
+Graphic *ResFile::GetGraphic()  {
+  char buf[TAG_SIZE];
+  Read(buf, TAG_SIZE);
+  if(strncmp(buf, GRAPHIC_TAG, TAG_SIZE))  {
+    if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
+    Exit(1, "Bad ResFile order, attempt to get Graphic on non-Graphic");
+    }
+
+  return GrabGraphic();
+  }
+
+DigSample *ResFile::GetSound()  {
+  char buf[TAG_SIZE];
+  Read(buf, TAG_SIZE);
+  if(strncmp(buf, SOUND_TAG, TAG_SIZE))  {
+    if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
+    Exit(1, "Bad ResFile order, attempt to get Sound on non-Sound");
+    }
+  return GrabSound();
+  }
+
+Graphic *ResFile::GrabGraphic()  {
+  Graphic *ret;
+  int ctr, xc, yc, xs, ys;
+  xc = ReadInt(); 
+  yc = ReadInt(); 
+  xs = ReadInt(); 
+  ys = ReadInt(); 
+  ret = new Graphic(xs, ys);
+  if(ret == NULL)  {
+    Exit(1, "Out of Memory for Graphic!\r\n");
+    }
+  ret->xcenter=xc;	ret->ycenter=yc;
+  unsigned char buff[xs+2];
+  for(ctr=0; ctr<ys; ctr++)  {
+    Read(buff, xs);
+    ret->DefLin((char *)buff);
+    }
+  return ret;
+  }
+
+DigSample *ResFile::GrabSound()  {
+  DigSample *ret = new DigSample;
+  if(ret == NULL)  {
+    Exit(1, "Out of Memory for Sound Sample!\r\n");
+    }
+  Read(&ret->len, sizeof(unsigned long));
+  Read(&ret->freq, sizeof(int));
+//  ret->wav_data = new unsigned char[ret->len];
+//  Read(ret->wav_data, ret->len);
+  return ret;
+  }
+
+void ResFile::Read(void *data, int ammt)  {
+  if(read(fileno(rf), data, ammt) != ammt)  {
+    perror("User");
+    Exit(1, "Read failure on \"%s\"!\n", fn);
+    }
+  }
+
+int ResFile::ReadInt()  {
+  unsigned char tmp1, tmp2, tmp3, tmp4;
+  if(read(fileno(rf), &tmp1, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(read(fileno(rf), &tmp2, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(read(fileno(rf), &tmp3, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(read(fileno(rf), &tmp4, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  return((tmp4<<24)+(tmp3<<16)+(tmp2<<8)+tmp1);
+  }
+
+ResFile::~ResFile()  {
+  delete fn;
+  fclose(rf);
+  }
+
+NewResFile::NewResFile(const char *filen)  {
+  fn = new char[strlen(filen)+1];
+  strcpy(fn, filen);
+  rf = fopen(fn, "wb");
+  if(rf == NULL)  {
+    Exit(1, "Cannot create \"%s\"!\n", fn);
+    }
+  if(write(fileno(rf), FILE_HEADER, sizeof(FILE_HEADER))
+	< (long)sizeof(FILE_HEADER)) {
+    Exit(1, "Not enough drive space for \"%s\"!\n", fn);
+    }
+  }
+
+void NewResFile::Add(const Graphic *in)  {
+  if(in == NULL)  {
+    Write(NULL_TAG, TAG_SIZE);
+    return;
+    }
+  int ctr;
+  Write(GRAPHIC_TAG, TAG_SIZE);
+  WriteInt(in->xcenter);
+  WriteInt(in->ycenter);
+  WriteInt(in->xsize);
+  WriteInt(in->ysize);
+  for(ctr=0; ctr<(long)in->ysize; ctr++)  {
+    Write(in->image[ctr], in->xsize);
+    }
+  }
+
+void NewResFile::Add(const DigSample *in)  {
+  if(in == NULL)  {
+    Write(NULL_TAG, TAG_SIZE);
+    return;
+    }
+  Write(SOUND_TAG, TAG_SIZE);
+  Write(&in->len, sizeof(unsigned long));
+  Write(&in->freq, sizeof(int));
+//  Write(in->wav_data, in->len);
+  } 
+
+NewResFile::~NewResFile()  {
+  delete fn;
+  fclose(rf);
+  }
+
+void NewResFile::Write(const void *data, int ammt)  {
+  if(write(fileno(rf), data, ammt) != ammt)  {
+    Exit(1, "Write failure on \"%s\"!\n", fn);
+    }
+  }
+
+void NewResFile::WriteInt(int data)  {
+  unsigned char tmp1, tmp2, tmp3, tmp4;
+  tmp4 = (data>>24) & 255;
+  tmp3 = (data>>16) & 255;
+  tmp2 = (data>>8) & 255;
+  tmp1 = data & 255;
+  if(write(fileno(rf), &tmp1, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp2, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp3, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp4, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  }
+
+int Screen::SetFont(char *fn)  {
+  ResFile frf(fn, ARGV_0);
+  int ctr;
+  if(font != NULL)  {
+    for(ctr=0; ctr<256; ctr++)  if(font[ctr] != NULL) delete font[ctr];
+    delete font;
+    }
+  font=new Graphic*[256];
+  if(font == NULL)  {
+    Exit(1, "Out of Memory for Font!\r\n");
+    }
+  for(ctr=0; ctr<256; ctr++)  {
+    font[ctr] = (Graphic *)frf.Get();
+    }
+  AlignCursor();
+  return 0;
+  }
+
+int Screen::SetFont(char *fn, char *com)  {
+  ResFile frf(fn, com);
+  if(strcmp(com, ARGV_0)) ResFile frf(fn, ARGV_0);
+  int ctr;
+  if(font != NULL)  {
+    for(ctr=0; ctr<256; ctr++)  if(font[ctr] != NULL) delete font[ctr];
+    delete font;
+    }
+  font=new Graphic*[256];
+  if(font == NULL)  {
+    Exit(1, "Out of Memory for Font!\r\n");
+    }
+  for(ctr=0; ctr<256; ctr++)  {
+    font[ctr] = (Graphic *)frf.Get();
+    }
+  return 0;
+  }
+
