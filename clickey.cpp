@@ -11,18 +11,18 @@ extern InputQueue *__Da_InputQueue;
 extern Keyboard *__Da_Keyboard;
 
 Clickey::Clickey() {
-  iscontrol = 1;
+  flags |= SPRITE_ISCONTROL;
   state = 0;
   }
 
 Clickey::Clickey(Graphic g1, Graphic g2) {
-  iscontrol = 1;
+  flags |= SPRITE_ISCONTROL;
   state = 0;
   SetImage(&g1, &g2);
   }
 
 Clickey::Clickey(Graphic *g1, Graphic *g2) {
-  iscontrol = 1;
+  flags |= SPRITE_ISCONTROL;
   state = 0;
   SetImage(g1, g2);
   }

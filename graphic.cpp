@@ -744,7 +744,7 @@ void Graphic::DefSize(int xsz, int ysz) {
     delete image3d;
     }
 //  Debug("User::Graphic::DefSize Middle");
-  ysize = (ysz>ydef)?ysz:ydef; xsize = (xsz>xdef)?xsz:xdef;
+//  ysize = (ysz>ydef)?ysz:ydef; xsize = (xsz>xdef)?xsz:xdef;
   image = new mfmt[ysize];
   for(ctr=0; ctr<(long)ysize; ctr++)
     image[ctr].uc = new unsigned char[xsize*(depth>>3)];
@@ -889,7 +889,6 @@ void Graphic::InitTGA32(char *fn)  {
 	read(fileno(tga), buf, 1);
 	sz=(buf[0]&0x7F)+1;
 	if(buf[0]&0x80) {
-	  printf("1, %d\n", sz);
 	  read(fileno(tga), &tmpv, 4);
 	  for(ctr=0; ctr<sz; ++ctr) {
 	    image[y].ul[x++] = tmpv;
@@ -900,7 +899,6 @@ void Graphic::InitTGA32(char *fn)  {
 	    }
 	  }
 	else {
-	  printf("2, %d\n", sz);
 	  while(x+sz>=xsize) {
 	    int sz2 = xsize-x; sz-=sz2;
 	    fprintf(stderr, "\"%s\" breaks TGA rules!!!\n", fn);

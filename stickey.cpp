@@ -3,7 +3,7 @@
 #include "control.h"
 
 Stickey::Stickey() {
-  iscontrol = 1;
+  flags |= SPRITE_ISCONTROL;
   state = 0;
   }
 

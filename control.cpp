@@ -1,7 +1,7 @@
 #include "control.h"
 
 Control::Control() {
-  iscontrol = 1;
+  flags |= SPRITE_ISCONTROL;
   enabled = 1;
   }
 

@@ -578,18 +578,18 @@ void Screen::RefreshFast()  {
 		rxe[ctrb]-rxs[ctrb]);
 	      }
 	    }
-	  else if(depth == 32) {
-	    for(ctry=rys[ctrb]; ctry<rye[ctrb]; ctry++) {
-	      memcpy(frame.ul + ctry*rowlen + rxs[ctrb],
-		image[ctry].ul + rxs[ctrb],
-		(rxe[ctrb]-rxs[ctrb])<<2);
-	      }
-	    }
 	  else if(depth == 16) {
 	    for(ctry=rys[ctrb]; ctry<rye[ctrb]; ctry++) {
 	      memcpy(frame.us + ctry*rowlen + rxs[ctrb],
 		image[ctry].us + rxs[ctrb],
 		(rxe[ctrb]-rxs[ctrb])<<1);
+	      }
+	    }
+	  else if(depth == 32) {
+	    for(ctry=rys[ctrb]; ctry<rye[ctrb]; ctry++) {
+	      memcpy(frame.ul + ctry*rowlen + rxs[ctrb],
+		image[ctry].ul + rxs[ctrb],
+		(rxe[ctrb]-rxs[ctrb])<<2);
 	      }
 	    }
 	  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
@@ -934,6 +934,43 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
   Debug("User:Screen:DrawPartialTransparentGraphicFG End");
   }
 
+void Screen::DrawPartialGraphicFG(Graphic &g, int x, int y,
+	int xb, int yb, int xs, int ys, Panel p)  {
+  if(x+g.xsize <= pxs[p] || y+g.ysize <= pys[p] || x >= pxe[p] || y >= pye[p])
+	return;
+  if(g.depth != depth)  {
+    Graphic *g2 = new Graphic(g);
+    g2->DepthConvert(depth, *pal);
+    DrawPartialTransparentGraphicFG(*g2, x, y, xb, yb, xs, ys, p);
+    delete g2;
+    return;
+    }
+  Debug("User:Screen:DrawPartialTransparentGraphicFG Middle");
+  int ctry;
+  int ix = (xb>?(pxs[p]-x)), ex = (pxe[p]-x)<?(xs+xb);
+  int sx = ex-ix;
+  if(depth == 8)  {
+    Debug("User:Screen:DrawPartialTransparentGraphicFG Depth 8");
+    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+      memcpy(image[ctry+y].uc+x+ix, g.image[ctry].uc+ix, sx);
+      }
+    }
+  else if(depth == 16)  {
+    Debug("User:Screen:DrawPartialTransparentGraphicFG Depth 16");
+    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+      memcpy(image[ctry+y].us+x+ix, g.image[ctry].us+ix, sx<<1);
+      }
+    }
+  else if(depth == 32)  {
+    Debug("User:Screen:DrawPartialTransparentGraphicFG Depth 32");
+    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+      memcpy(image[ctry+y].ul+x+ix, g.image[ctry].ul+ix, sx<<2);
+      }
+    }
+  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  Debug("User:Screen:DrawPartialTransparentGraphicFG End");
+  }
+
 void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
   if(x+g.xsize <= pxs[p] || y+g.ysize <= pys[p] || x >= pxe[p] || y >= pye[p])
 	return;
@@ -1007,26 +1044,20 @@ void Screen::DrawGraphicFG(Graphic &g, int x, int y, Panel p)  {
     delete g2;
     return;
     }
-  int ctrx, ctry;
+  int ctry;
   if(depth == 8)  {
     for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      for(ctrx=0; ctrx<((xsize-x)<?g.xsize); ctrx++)  {
-	image[ctry+y].uc[ctrx+x] = g.image[ctry].uc[ctrx];
-	}
-      }
-    }
-  else if(depth == 32)  {
-    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      for(ctrx=0; ctrx<((xsize-x)<?(g.xsize)); ctrx++)  {
-	image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
-	}
+      memcpy(image[ctry+y].uc+x, g.image[ctry].uc, ((xsize-x)<?g.xsize));
       }
     }
   else if(depth == 16)  {
     for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      for(ctrx=0; ctrx<((xsize-x)<?(g.xsize)); ctrx++)  {
-	image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
-	}
+      memcpy(image[ctry+y].us+x, g.image[ctry].us, (((xsize-x)<?g.xsize)<<1));
+      }
+    }
+  else if(depth == 32)  {
+    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
+      memcpy(image[ctry+y].ul+x, g.image[ctry].ul, (((xsize-x)<?g.xsize)<<2));
       }
     }
   else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
@@ -1081,7 +1112,7 @@ void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
       }
     }
   else if(depth == 32)  {
-    Debug("User:Screen:DrawTransparentGraphicFG Depth 32");
+    Debug("User:Screen:DrawTransparentGraphic Depth 32");
     for(ctry=(0>?(pys[p]-y)); ctry<((pye[p]-y)<?g.ysize); ctry++)  {
       for(ctrx=(0>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?g.xsize); ctrx++)  {
 	if(g.image[ctry].uc[(ctrx<<2)+3] == 255)  {
@@ -1133,56 +1164,23 @@ void Screen::DrawGraphic(Graphic &g, int x, int y, Panel p)  {
     delete g2;
     return;
     }
-  int ctrx, ctry;
+  int ctry;
   if(depth == 8)  {
     for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      for(ctrx=0; ctrx<((xsize-x)<?g.xsize); ctrx++)  {
-	image[ctry+y].uc[ctrx+x] = g.image[ctry].uc[ctrx];
-	backg[ctry+y].uc[ctrx+x] = g.image[ctry].uc[ctrx];
-	}
-      }
-    }
-  else if(depth == 32)  {
-    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      for(ctrx=0; ctrx<((xsize-x)<?(g.xsize)); ctrx++)  {
-	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
-	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
-	  backg[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
-	  }
-	else if(g.image[ctry].uc[(ctrx<<2)+3])  {
-	  int alpha = g.image[ctry].uc[(ctrx<<2)+3];
-	  unsigned long r1 = image[ctry+y].uc[((ctrx+x)<<2)];
-	  unsigned long g1 = image[ctry+y].uc[((ctrx+x)<<2)+1];
-	  unsigned long b1 = image[ctry+y].uc[((ctrx+x)<<2)+2];
-	  unsigned long r2 = g.image[ctry].uc[(ctrx<<2)];
-	  unsigned long g2 = g.image[ctry].uc[(ctrx<<2)+1];
-	  unsigned long b2 = g.image[ctry].uc[(ctrx<<2)+2];
-          r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
-          g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
-          b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
-	  image[ctry+y].uc[((ctrx+x)<<2)] = r1;
-	  image[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
-	  image[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
-
-	  r1 = backg[ctry+y].uc[((ctrx+x)<<2)];
-	  g1 = backg[ctry+y].uc[((ctrx+x)<<2)+1];
-	  b1 = backg[ctry+y].uc[((ctrx+x)<<2)+2];
-          r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
-          g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
-          b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
-	  backg[ctry+y].uc[((ctrx+x)<<2)] = r1;
-	  backg[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
-	  backg[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
-	  }
-	}
+      memcpy(image[ctry+y].uc+x, g.image[ctry].uc, ((xsize-x)<?g.xsize));
+      memcpy(backg[ctry+y].uc+x, g.image[ctry].uc, ((xsize-x)<?g.xsize));
       }
     }
   else if(depth == 16)  {
     for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      for(ctrx=0; ctrx<((xsize-x)<?g.xsize); ctrx++)  {
-	image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
-	backg[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
-	}
+      memcpy(image[ctry+y].us+x, g.image[ctry].us, (((xsize-x)<?g.xsize)<<1));
+      memcpy(backg[ctry+y].us+x, g.image[ctry].us, (((xsize-x)<?g.xsize)<<1));
+      }
+    }
+  else if(depth == 32)  {
+    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
+      memcpy(image[ctry+y].ul+x, g.image[ctry].ul, (((xsize-x)<?g.xsize)<<2));
+      memcpy(backg[ctry+y].ul+x, g.image[ctry].ul, (((xsize-x)<?g.xsize)<<2));
       }
     }
   else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
@@ -1397,7 +1395,7 @@ void Screen::RemoveSprite(int n, Sprite *s) {
 IntList Screen::CollideRectangle(int x, int y, int xs, int ys)  {
   int ctr; IntList ret;
   for(ctr=0; ctr<nextsprite; ctr++)  {
-    if(sprites[ctr] != NULL && sprites[ctr]->collisions
+    if(sprites[ctr] != NULL && (!(sprites[ctr]->flags&SPRITE_NOCOLLISIONS))
 	&& sprites[ctr]->drawn && sprites[ctr]->image != NULL)  {
       if(x < (sprites[ctr]->xpos + sprites[ctr]->image->xsize)
 	    && y < (sprites[ctr]->ypos + sprites[ctr]->image->ysize)
@@ -1413,7 +1411,8 @@ IntList Screen::CollideRectangle(int x, int y, int xs, int ys)  {
 IntList Screen::CollideRectangle(int s, int x, int y, int xs, int ys)  {
   int ctr; IntList ret;
   for(ctr=0; ctr<nextsprite; ctr++)  {
-    if(ctr!=s && sprites[ctr] != NULL && sprites[ctr]->collisions
+    if(ctr!=s && sprites[ctr] != NULL
+	&& (!(sprites[ctr]->flags&SPRITE_NOCOLLISIONS))
 	&& sprites[ctr]->drawn && sprites[ctr]->image != NULL)  {
       if(x < (sprites[ctr]->xpos + sprites[ctr]->image->xsize)
 	    && y < (sprites[ctr]->ypos + sprites[ctr]->image->ysize)
@@ -1497,21 +1496,21 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
   if(x+xs > xsize) xs = xsize-x;
   if(y+ys > ysize) ys = ysize-y;
   InvalidateRectangle(x, y, xs, ys);
-  int /*ctrx,*/ ctry;
+  int ctry;
   Debug("Screen:RestoreRectangle() Before Write");
   if(depth == 8)  {
     for(ctry=y; ctry<y+ys; ctry++)  {
       memcpy(image[ctry].uc+x, backg[ctry].uc+x, xs);
       }
     }
-  else if(depth == 32)  {
-    for(ctry=y; ctry<y+ys; ctry++)  {
-      memcpy(image[ctry].ul+x, backg[ctry].ul+x, xs<<2);
-      }
-    }
   else if(depth == 16)  {
     for(ctry=y; ctry<y+ys; ctry++)  {
       memcpy(image[ctry].us+x, backg[ctry].us+x, xs<<1);
+      }
+    }
+  else if(depth == 32)  {
+    for(ctry=y; ctry<y+ys; ctry++)  {
+      memcpy(image[ctry].ul+x, backg[ctry].ul+x, xs<<2);
       }
     }
   else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
@@ -1532,7 +1531,7 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
   *spp = NULL;
 
   Sprite **ind, **best, **begin, *tmp;
-  for(begin=spbuf; begin!=spp; ++begin) {
+  for(begin=spbuf; *begin!=NULL; ++begin) {
     for(best=begin,ind=begin; ind!=spp; ++ind) {
       if((*ind)->priority > (*best)->priority) best=ind;
       else if((*ind)->priority == (*best)->priority
@@ -1677,6 +1676,21 @@ void Screen::SetCursor(Graphic &g)  {
   TCursor->Move(tcx, tcy);
   }
 
+int Screen::Printf(int x, int y, color cb, color cf, const char *text, ...) {
+  Debug("User::Screen::Printf(x, y, ...) Begin");
+  TGotoXY(x, y);
+  int ret;
+  va_list stuff;
+  va_start(stuff, text);
+  char buf[4096];
+  bzero(buf, 4096);
+  vsprintf(buf, text, stuff);
+  ret = Print(cb, cf, buf);
+  va_end(stuff);
+  Debug("User::Screen::Printf(x, y, ...) End");
+  return ret;
+  }
+
 int Screen::Printf(color cb, color cf, const char *text, ...)  {
   Debug("User::Screen::Printf(...) Begin");
   int ret;
@@ -1689,6 +1703,11 @@ int Screen::Printf(color cb, color cf, const char *text, ...)  {
   va_end(stuff);
   Debug("User::Screen::Printf(...) End");
   return ret;
+  }
+
+int Screen::Print(int x, int y, color cb, color cf, const char *text)  {
+  TGotoXY(x, y);
+  return(Print(cb, cf, text));
   }
 
 int Screen::Print(color cb, color cf, const char *text)  {

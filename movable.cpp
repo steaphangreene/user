@@ -3,7 +3,7 @@
 #include "control.h"
 
 Movable::Movable() {
-  iscontrol = 1;
+  flags |= SPRITE_ISCONTROL;
   }
 
 Movable::~Movable() {
@@ -14,16 +14,16 @@ void Movable::Drag(int b, int dx, int dy) {
   }
 
 MovableClickey::MovableClickey() {
-  iscontrol = 1;
+  flags |= SPRITE_ISCONTROL;
   }
 
 MovableClickey::MovableClickey(Graphic g1, Graphic g2) {
-  iscontrol = 1;
+  flags |= SPRITE_ISCONTROL;
   SetImage(&g1, &g2);
   }
 
 MovableClickey::MovableClickey(Graphic *g1, Graphic *g2) {
-  iscontrol = 1;
+  flags |= SPRITE_ISCONTROL;
   SetImage(g1, g2);
   }
 
@@ -35,7 +35,7 @@ void MovableClickey::Drag(int b, int dx, int dy) {
   }
 
 MovableStickey::MovableStickey() {
-  iscontrol = 1;
+  flags |= SPRITE_ISCONTROL;
   }
 
 MovableStickey::~MovableStickey() {

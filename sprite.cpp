@@ -10,10 +10,9 @@ extern Screen *__Da_Screen;
 
 Sprite::Sprite() {
   if(__Da_Screen == NULL)  Exit(-1, "Must create Screen before Sprite!\n");
-  collisions = 1;
   pan = 0;
   drawn = 0;
-  iscontrol = 0;
+  flags = 0;
   ownimage = 0;
   angle = 0;
   inum = 0;
@@ -26,10 +25,9 @@ Sprite::Sprite() {
 
 Sprite::Sprite(const Graphic &g) {
   if(__Da_Screen == NULL)  Exit(-1, "Must create Screen before Sprite!\n");
-  collisions = 1;
   pan = 0;
   drawn = 0;
-  iscontrol = 0;
+  flags = 0;
   ownimage = 0;
   angle = 0;
   inum = 0;
@@ -98,7 +96,14 @@ IntList Sprite::CDraw(int x, int y, int a) {
     image = new Graphic(trueimage->Rotated(a));
     }
   x-=image->xcenter; y-=image->ycenter;
-  __Da_Screen->DrawTransparentGraphicFG(*image, x, y, pan);
+  if(flags&(SPRITE_RECTANGLE|SPRITE_SOLID))
+    __Da_Screen->DrawGraphicFG(*image, x, y, pan);
+//  else if(flags&(SPRITE_RECTANGLE))
+//    __Da_Screen->DrawTransparentGraphicFG(*image, x, y, pan);
+//  else if(flags&(SPRITE_SOLID))
+//    __Da_Screen->DrawTransparentGraphicFG(*image, x, y, pan);
+  else
+    __Da_Screen->DrawTransparentGraphicFG(*image, x, y, pan);
   xpos = x; ypos = y; drawn = 1;
   return __Da_Screen->CollideRectangle(snum,
 	xpos, ypos, image->xsize, image->ysize);
@@ -131,6 +136,16 @@ void Sprite::Move(int x, int y) {
   Debug("User:Sprite:Move(x,y) End");
   }
 
+void Sprite::Position(int x, int y) {
+  Debug("User:Sprite:Position(x,y) Begin");
+  if(image == NULL) return;
+  Debug("User:Sprite:Position(x,y) Before Erase");
+  Erase();
+  Debug("User:Sprite:Position(x,y) Before x,y");
+  x-=image->xcenter; y-=image->ycenter;
+  xpos = x; ypos = y;
+  Debug("User:Sprite:Position(x,y) End");
+  }
 
 void Sprite::Draw(int x, int y, int a) {
   if(drawn || image == NULL) return;
@@ -149,7 +164,7 @@ void Sprite::Draw(int x, int y) {
   if(drawn || image == NULL) return;
   Debug("User:Sprite:Draw(x,y) Begin");
   x-=image->xcenter; y-=image->ycenter;
-  __Da_Screen->DrawTransparentGraphicFG(*image, x, y, pan);
+//  __Da_Screen->DrawTransparentGraphicFG(*image, x, y, pan);
   Debug("User:Sprite:Draw(x,y) Middle");
   xpos = x; ypos = y; drawn = 1;
   if(image != NULL && __Da_Screen != NULL)
@@ -159,10 +174,23 @@ void Sprite::Draw(int x, int y) {
 
 void Sprite::Draw() {
   if(drawn || image == NULL) return;
-  __Da_Screen->DrawTransparentGraphicFG(*image, xpos, ypos, pan);
+//  __Da_Screen->DrawTransparentGraphicFG(*image, xpos, ypos, pan);
   drawn = 1;
   if(image != NULL && __Da_Screen != NULL)
     __Da_Screen->RestoreRectangle(xpos, ypos, image->xsize, image->ysize);
+  }
+
+void Sprite::Position() {
+  Debug("User:Sprite:Position() Begin");
+  if(image == NULL) return;
+  Debug("User:Sprite:Position() Before Erase");
+  Erase();
+  drawn=1;
+  Debug("User:Sprite:Position() End");
+  }
+
+void Sprite::Remove() {
+  drawn = 0;
   }
 
 void Sprite::Erase() {
@@ -203,6 +231,15 @@ int Sprite::Hits(int x, int y, int xs, int ys) {
 	}
       }
     }
+  else if(image->depth == 16)  {
+    for(ctry=ypos; ctry < ((ypos+image->ysize) <? (y+ys)); ctry++)  {
+      for(ctrx=xpos; ctrx < ((xpos+image->xsize) <? (x+xs)); ctrx++)  {
+	if(image->image[ctry-ypos].us[ctrx-xpos] != image->tcolor) {
+	  return 1;
+	  }
+	}
+      }
+    }
   else if(image->depth == 32)  {
     for(ctry=ypos; ctry < ((ypos+image->ysize) <? (y+ys)); ctry++)  {
       for(ctrx=xpos; ctrx < ((xpos+image->xsize) <? (x+xs)); ctrx++)  {
@@ -211,15 +248,6 @@ int Sprite::Hits(int x, int y, int xs, int ys) {
 	  return 1;
 	  }
 	Debug("User:Sprite:Hits2 0605");
-	}
-      }
-    }
-  if(image->depth == 16)  {
-    for(ctry=ypos; ctry < ((ypos+image->ysize) <? (y+ys)); ctry++)  {
-      for(ctrx=xpos; ctrx < ((xpos+image->xsize) <? (x+xs)); ctrx++)  {
-	if(image->image[ctry-ypos].us[ctrx-xpos] != image->tcolor) {
-	  return 1;
-	  }
 	}
       }
     }
@@ -297,7 +325,10 @@ void Sprite::RedrawArea(int x, int y, int xs, int ys)  {
   if(y+ys > YS) ys = YS-y;
 
 //  printf("(%d,%d), (%d,%d)-%dx%d\n", XP, YP, x, y, xs, ys);
-  __Da_Screen->DrawPartialTransparentGraphicFG(*image,XP,YP,x,y,xs,ys,pan);
+  if(flags&(SPRITE_RECTANGLE|SPRITE_SOLID))
+    __Da_Screen->DrawPartialGraphicFG(*image,XP,YP,x,y,xs,ys,pan);
+  else
+    __Da_Screen->DrawPartialTransparentGraphicFG(*image,XP,YP,x,y,xs,ys,pan);
   }
 
 int Sprite::XCenter() {
@@ -312,4 +343,10 @@ int Sprite::YCenter() {
 
 void Sprite::SetColormap(unsigned long *cm) {
   remap = cm;
+  }
+
+void Sprite::SetLine(int x, int y, int d, color c) {
+  Erase();
+  if(image == NULL) image=new Graphic;
+  image->SetLine(x, y, d, c);
   }

@@ -20,6 +20,8 @@
 #include "mfmt.h"
 #include "palette.h"
 
+typedef unsigned long color;
+
 class Graphic {
   public:
   Graphic();
@@ -45,9 +47,9 @@ class Graphic {
   void SetRotated(Graphic &, int);
   void SetScaled(Graphic &, double);
   void SetScaled(Graphic &, int, int);
-  void SetLine(int, int, int, unsigned long);
-  void SetBox(int, int, int, unsigned long);
-  void SetFillBox(int, int, int, unsigned long);
+  void SetLine(int, int, int, color);
+  void SetBox(int, int, int, color);
+  void SetFillBox(int, int, int, color);
   Graphic Rotated(int);
   Graphic Rotated(int, int);
   Graphic Rotated(double, int, int, int);

@@ -131,6 +131,9 @@ class Screen  {
   int Print(color, color, const char *);
   int Printf(color, color, const char *, ...)
 	__attribute__ ((format (printf, 4, 5)));
+  int Print(int, int, color, color, const char *);
+  int Printf(int, int, color, color, const char *, ...)
+	__attribute__ ((format (printf, 6, 7)));
 
   Panel NewPanel(int, int, int, int);
   void RemovePanel(Panel);
