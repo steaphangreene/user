@@ -44,14 +44,26 @@ class Sprite;
 class IntList;
 
 typedef int Panel;
+typedef unsigned long color;
 
 #define DEFAULT_NAME "User Engine 2.0"
+
+#define ConvertColor(c, ad, d) if(d!=ad) { \
+  if(d==16 && ad==32) { \
+    c=((c>>8)&0xF800)|((c>>5)&0x07E0)|((c>>3)&0x001F); \
+    } \
+  else if(d==32 && ad==16) { \
+    c=((c&0xF800)<<8)|((c&0x07E0)<<5)|((c&0x001F)<<3); \
+    } \
+  else Exit(1, "Don't know how to ConvertColor from %d to %d\n", ad, d); \
+  }
 
 class Screen  {
   public:
   Screen(char *n = DEFAULT_NAME);
   Screen(int, int, char *n = DEFAULT_NAME);
   ~Screen();
+  void SetApparentDepth(int d) { appdepth=d; }
   void SetFrameRate(int);
   int SetSize(int, int);
   int XSize() { return xsize; };
@@ -98,16 +110,16 @@ class Screen  {
   Sprite *GetSpriteByNumber(int);
   void MakeFriendly(Graphic *);
   void MakeFriendly(Sprite *);
-  void SetPointFG(int, int, int);
+  void SetPointFG(int, int, color);
   void SetPointFG(int, int, int, int, int);
-  void SetPoint(int, int, int);
+  void SetPoint(int, int, color);
   void SetPoint(int, int, int, int, int);
-  void SetLineFG(int, int, int, int, int);
+  void SetLineFG(int, int, int, int, color);
   void SetLineFG(int, int, int, int, int, int, int);
-  void SetLine(int, int, int, int, int);
+  void SetLine(int, int, int, int, color);
   void SetLine(int, int, int, int, int, int, int);
-  void DrawRectangle(int, int, int, int, int);
-  void DrawRectangleFG(int, int, int, int, int);
+  void DrawRectangle(int, int, int, int, color);
+  void DrawRectangleFG(int, int, int, int, color);
   int VideoType() { return vtype; };
   int SetFont(const char *);
   int SetFont(const char *, const char *);
@@ -116,8 +128,8 @@ class Screen  {
   void TGotoXY(int, int);
   int TXPos() { return tcx; };
   int TYPos() { return tcy; };
-  int Print(long, long, const char *);
-  int Printf(long, long, const char *, ...)
+  int Print(color, color, const char *);
+  int Printf(color, color, const char *, ...)
 	__attribute__ ((format (printf, 4, 5)));
 
   Panel NewPanel(int, int, int, int);
@@ -149,7 +161,7 @@ class Screen  {
   void Init();
   void WaitForNextFrame();
   void DetectVideoType();
-  int xsize, ysize, rowlen, collen, depth, shown;
+  int xsize, ysize, rowlen, collen, depth, shown, appdepth;
   char *name;
   mfmt video_buffer, *image;
   mfmt background_buffer, *backg;

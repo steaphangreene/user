@@ -162,6 +162,7 @@ void Screen::Init()  {
     #endif
     #endif
     }
+  appdepth = depth;
   Debug("User::Screen::Init() 1400");
   }
 
@@ -759,7 +760,8 @@ void Screen::FadeOut(int n)  {
   n=n;
   }
 
-void Screen::DrawRectangle(int x, int y, int xs, int ys, int c)  {
+void Screen::DrawRectangle(int x, int y, int xs, int ys, color c)  {
+  ConvertColor(c, appdepth, depth);
   InvalidateRectangle(x, y, xs, ys);
   int ctrx, ctry;
   if(depth==8) {
@@ -794,7 +796,7 @@ void Screen::DrawRectangle(int x, int y, int xs, int ys, int c)  {
 */
   }
 
-void Screen::DrawRectangleFG(int x, int y, int xs, int ys, int c)  {
+void Screen::DrawRectangleFG(int x, int y, int xs, int ys, color c)  {
   InvalidateRectangle(x, y, xs, ys);
   int ctrx, ctry;
   for(ctrx=x; ctrx<(x+xs); ctrx++)  {
@@ -804,15 +806,17 @@ void Screen::DrawRectangleFG(int x, int y, int xs, int ys, int c)  {
     }
   }
 
-void Screen::SetLine(int xs, int ys, int xe, int ye, int c)  {
+void Screen::SetLine(int xs, int ys, int xe, int ye, color c)  {
   Graphic tmpg;
-  tmpg.SetLine(xe-xs, ye-ys, 32, 0xFF000000);
+  ConvertColor(c, appdepth, depth);
+  tmpg.SetLine(xe-xs, ye-ys, depth, c);
   DrawTransparentGraphic(tmpg, xs, ys);
   }
 
-void Screen::SetLineFG(int xs, int ys, int xe, int ye, int c)  {
+void Screen::SetLineFG(int xs, int ys, int xe, int ye, color c)  {
   Graphic tmpg;
-  tmpg.SetLine(xe-xs, ye-ys, 32, 0xFF000000);
+  ConvertColor(c, appdepth, depth);
+  tmpg.SetLine(xe-xs, ye-ys, depth, c);
   DrawTransparentGraphicFG(tmpg, xs, ys);
   }
 
@@ -824,34 +828,34 @@ void Screen::SetLineFG(int xs, int ys, int xe, int ye, int r, int g, int b)  {
   InvalidateRectangle(xs, ys, xe-xs, ye-ys);
   }
 
-void Screen::SetPoint(int x, int y, int c)  {
+void Screen::SetPoint(int x, int y, color c)  {
+  ConvertColor(c, appdepth, depth);
   InvalidateRectangle(x, y, 1, 1);
   if(depth==8)  {
-    ((unsigned char **&)image)[y][x] = c;
-    ((unsigned char **&)backg)[y][x] = c;
+    image[y].uc[x] = c;
+    backg[y].uc[x] = c;
     }
   else if(depth==32)  {
-    ((unsigned long **&)image)[y][x]
-	= (pal->GetRedEntry(c)<<16)
-	+ (pal->GetGreenEntry(c)<<8)
-	+ (pal->GetBlueEntry(c));
-    ((unsigned long **&)backg)[y][x]
-	= (pal->GetRedEntry(c)<<16)
-	+ (pal->GetGreenEntry(c)<<8)
-	+ (pal->GetBlueEntry(c));
+    image[y].ul[x] = c;
+    backg[y].ul[x] = c;
+    }
+  else if(depth==16)  {
+    image[y].us[x] = c;
+    backg[y].us[x] = c;
     }
   }
 
-void Screen::SetPointFG(int x, int y, int c)  {
+void Screen::SetPointFG(int x, int y, color c)  {
+  ConvertColor(c, appdepth, depth);
   InvalidateRectangle(x, y, 1, 1);
   if(depth==8)  {
-    ((unsigned char **&)image)[y][x] = c;
+    image[y].uc[x] = c;
     }
   else if(depth==32)  {
-    ((unsigned long **&)image)[y][x]
-	= (pal->GetRedEntry(c)<<16)
-	+ (pal->GetGreenEntry(c)<<8)
-	+ (pal->GetBlueEntry(c));
+    image[y].ul[x] = c;
+    }
+  else if(depth==16)  {
+    image[y].us[x] = c;
     }
   }
 
@@ -1672,7 +1676,7 @@ void Screen::SetCursor(Graphic &g)  {
   TCursor->Move(tcx, tcy);
   }
 
-int Screen::Printf(long cb, long cf, const char *text, ...)  {
+int Screen::Printf(color cb, color cf, const char *text, ...)  {
   Debug("User::Screen::Printf(...) Begin");
   int ret;
   va_list stuff;
@@ -1686,7 +1690,9 @@ int Screen::Printf(long cb, long cf, const char *text, ...)  {
   return ret;
   }
 
-int Screen::Print(long cb, long cf, const char *text)  {
+int Screen::Print(color cb, color cf, const char *text)  {
+  ConvertColor(cb, appdepth, depth);
+  ConvertColor(cf, appdepth, depth);
   Debug("User::Screen::Print(...) Begin");
   if(font[' '] == NULL)  Exit(-1, "Must Screen.SetFont before Screen.Print!\n");
   unsigned char *ind = (unsigned char *)text;
@@ -1764,10 +1770,22 @@ int Screen::Print(long cb, long cf, const char *text)  {
       else if(depth==16) {
 	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
 	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
-	    if(let.image[ctry].uc[ctrx]) {
-	      res.image[ctry].us[ctrx] = cf;
-	      }
-	    else res.image[ctry].us[ctrx]=0;
+	    color cl, clf = cf, clb = cb;
+	    unsigned long alpha = let.image[ctry].uc[ctrx];
+	    ConvertColor(clf, 16, 32);
+	    ConvertColor(clb, 16, 32);
+	    ((unsigned char*)&cl)[0] =
+	      (((unsigned char*)&clf)[0]*alpha 
+		+ ((unsigned char*)&clb)[0]*(255-alpha))/255;
+	    ((unsigned char*)&cl)[1] =
+	      (((unsigned char*)&clf)[1]*alpha 
+		+ ((unsigned char*)&clb)[1]*(255-alpha))/255;
+	    ((unsigned char*)&cl)[2] =
+	      (((unsigned char*)&clf)[2]*alpha 
+		+ ((unsigned char*)&clb)[2]*(255-alpha))/255;
+	    ((unsigned char*)&cl)[3] = 255;
+	    ConvertColor(cl, 32, 16);
+	    res.image[ctry].us[ctrx] = cl;
 	    }
 	  }
 	DrawTransparentGraphic(res, tcx-let.xcenter, tcy-let.ycenter);
