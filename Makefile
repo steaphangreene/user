@@ -1,9 +1,9 @@
-CFLAGS:=$(shell U2-CFlgs)
+CFLAGS:=$(shell U2-CFlags)
 LIBS:=	$(shell U2-Libs)
 CC:=	gcc $(CFLAGS)
 OBJS:=	screen.o engine.o graphic.o palette.o sound.o speaker.o sprite.o \
 	input.o keyboard.o mouse.o resfile.o bag.o chunk.o net.o \
-	control.o movable.o clickey.o stickey.o
+	control.o movable.o clickey.o stickey.o joystick.o
 ALL:=	*.h Makefile
 CCC:=	$(CC)
 TSTR:=  $(shell date +"%Y%m%d%H%M")

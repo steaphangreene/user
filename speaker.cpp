@@ -51,8 +51,8 @@ const int IRQ_INT[16] = {0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF,
 #include "sound.h"
 #include "engine.h"
 
-#define SOUND_BUF_SIZE 16384 // Must
-#define SOUND_BUF_POWER 14 // Agree
+//#define SOUND_BUF_SIZE 16384 // Must
+//#define SOUND_BUF_POWER 14 // Agree
 
 //#define SOUND_BUF_SIZE 8192 // Must
 //#define SOUND_BUF_POWER 13 // Agree
@@ -63,12 +63,12 @@ const int IRQ_INT[16] = {0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF,
 //#define SOUND_BUF_SIZE 2048 // Must
 //#define SOUND_BUF_POWER 11 // Agree
 
-//#define SOUND_BUF_SIZE 1024 // Must
-//#define SOUND_BUF_POWER 10 // Agree
+#define SOUND_BUF_SIZE 1024 // Must
+#define SOUND_BUF_POWER 10 // Agree
 
 Speaker::Speaker(int stro, int bts, int fr)  {
   buf.uc = new unsigned char[SOUND_BUF_SIZE];
-  if(__Da_Speaker != NULL) Exit(-1, "Duplicate Speaker!\n");
+  if(__Da_Speaker != NULL) U2_Exit(-1, "Duplicate Speaker!\n");
   if(Configure(stro, bts, fr)) __Da_Speaker = this;
   }
 
@@ -376,7 +376,7 @@ int Speaker::Configure(int stro, int bts, int fr)  {
     }
   if(bits==8) tmp = AFMT_U8;
   else if(bits==16) tmp = AFMT_S16_LE;
-  else Exit(-1, "Bits = %ld!?\n", bits);
+  else U2_Exit(-1, "Bits = %ld!?\n", bits);
   if(ioctl(dsp, SNDCTL_DSP_SETFMT, &tmp)==-1) {
     perror("User");
     fprintf(stderr, "Error setting format\n");
@@ -516,7 +516,7 @@ void Speaker::Update() {
     }
   if(count <= old_count) return;
 //  printf("count = %ld\n", count);
-//  Exit(0, "count = %ld\n", count);
+//  U2_Exit(0, "count = %ld\n", count);
   old_count=count;
 #endif
 
@@ -525,12 +525,10 @@ void Speaker::Update() {
 #ifdef OSS_SOUND
   if(stype == SOUND_OSS) {
     count_info tmp;
-/*
     if(ioctl(dsp, SNDCTL_DSP_GETOPTR, &tmp)==-1) {
       perror("User");
-      Exit(-1, "Error checking progress\n");
+      U2_Exit(-1, "Error checking progress\n");
       }
-*/
 //    printf("Bytes = %d\n", writenext);
     if(tmp.bytes < writenext) return;
     writenext += SOUND_BUF_SIZE;
@@ -562,7 +560,7 @@ void Speaker::Update() {
       buf.s[ctr2] = smp;
       }
     }
-  else Exit(1, "Unknown sound depth error!\n");
+  else U2_Exit(1, "Unknown sound depth error!\n");
 
   for(ctr=0; ctr<cur_alloc; ctr++)  {
     if(cur[ctr].left>=0)  {

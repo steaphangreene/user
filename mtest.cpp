@@ -2,7 +2,7 @@
 #include <user.h>
 
 int main(int argc, char **argv)  {
-  InitUserEngine(argc, argv);
+  U2_Init(argc, argv);
   UserDebug("test p1000");
   Screen *screen = new Screen;
   Mouse *mouse = new Mouse;

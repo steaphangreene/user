@@ -1,3 +1,19 @@
+// *************************************************************************
+// screen.cpp
+// Advanced Screen class, Pre ALPHA non-distribution version
+//
+// -By Insomnia (Steaphan Greene)   (Copyright 1997-2001 Steaphan Greene)
+//                   (insomnia@core.binghamton.edu)
+//      No waranty stated or implied, I am not responsible for any damage
+// caused directly or indirectly by this software.
+//      Permision granted for use/distribution/modification by anyone,
+// provided this header remains intact, and modified versions are marked
+// as so immediately below this header.
+//      Products utilizing the code or methods within may be distributed
+// freely along with this licence, but any sales for profit of such products
+// must have the author's permission, and may be subject to a royaltee fee.
+// *************************************************************************
+
 #include "config.h"
 
 #include <stdio.h>
@@ -30,7 +46,7 @@ extern InputQueue *__Da_InputQueue;
 
 Screen::~Screen()  {
 //  UserDebug("User::Screen::~Screen() Begin");
-  if(__Da_Screen != this) { __Da_Screen = NULL; Exit(1, "Phantom Screen!\n"); }
+  if(__Da_Screen != this) { __Da_Screen = NULL; U2_Exit(1, "Phantom Screen!\n"); }
   __Da_Screen = NULL;
 
   switch(vtype)  {
@@ -86,7 +102,7 @@ Screen::Screen(int x, int y, int d, char *n)  {
 
 void Screen::Init()  {
   UserDebug("User::Screen::Init() 1000");
-  if(__Da_Screen != NULL)  Exit(1, "One screen at a time!\n");
+  if(__Da_Screen != NULL)  U2_Exit(1, "One screen at a time!\n");
   __Da_Screen = this;
 
   int ctr;
@@ -209,19 +225,19 @@ int Screen::SetSize(int x, int y)  {
   pxs[0] = 0; pys[0] = 0;
   pxe[0] = x; pye[0] = y;
   bins = new (Sprite**)[xbins];
-  if(!bins) Exit(1, "Insufficient memory!\n");
+  if(!bins) U2_Exit(1, "Insufficient memory!\n");
   for(ctr=0; ctr<xbins; ++ctr) {
     bins[ctr] = new (Sprite*)[ybins];
-    if(!bins[ctr]) Exit(1, "Insufficient memory!\n");
+    if(!bins[ctr]) U2_Exit(1, "Insufficient memory!\n");
     for(ctr2=0; ctr2<ybins; ++ctr2) {
       bins[ctr][ctr2] = NULL;
       }
     }
   lbins = new (Sprite**)[xlbins];
-  if(!lbins) Exit(1, "Insufficient memory!\n");
+  if(!lbins) U2_Exit(1, "Insufficient memory!\n");
   for(ctr=0; ctr<xlbins; ++ctr) {
     lbins[ctr] = new (Sprite*)[ylbins];
-    if(!lbins[ctr]) Exit(1, "Insufficient memory!\n");
+    if(!lbins[ctr]) U2_Exit(1, "Insufficient memory!\n");
     for(ctr2=0; ctr2<ylbins; ++ctr2) {
       lbins[ctr][ctr2] = NULL;
       }
@@ -275,7 +291,7 @@ int Screen::SetSize(int x, int y)  {
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 
   switch(vtype)  {
     #ifdef DOS
@@ -296,10 +312,10 @@ int Screen::SetSize(int x, int y)  {
 	  regs.x.di = __tb & 0x0F;
 	  regs.x.es = (__tb >> 4) &0xFFFF;
 	  __dpmi_int(0x10, &regs);
-	  if(regs.x.ax != 0x004F) Exit(-1, "VESA init failed!\n");
+	  if(regs.x.ax != 0x004F) U2_Exit(-1, "VESA init failed!\n");
 	  dosmemget(__tb, sizeof(VESAInfo), &vinfo);
 	  if(strncmp(vinfo.VESASignature,"VESA",4))
-		Exit(-1, "No VESA detected!\n");
+		U2_Exit(-1, "No VESA detected!\n");
 	  short vmode = 0;
 	  int ctr;
 	  UserDebug("User::Screen::SetSize() Before Get Modes"); 
@@ -342,7 +358,7 @@ int Screen::SetSize(int x, int y)  {
 		|| (vesax[ctr] <= vesax[mode] && vesay[ctr] <= vesay[mode])))
 	    mode=ctr;
 	  }
-	if(mode==-1) Exit(-1, "No VESA %d-bit mode compatible with %dx%d!\n",
+	if(mode==-1) U2_Exit(-1, "No VESA %d-bit mode compatible with %dx%d!\n",
 		depth, xsize, ysize);
 	regs.x.ax = 0x4F01;
 	regs.x.cx = vesamode[mode];
@@ -355,7 +371,7 @@ int Screen::SetSize(int x, int y)  {
 	regs.x.bx = vesamode[mode];
 	__dpmi_int(0x10, &regs);
 	if(regs.x.ax != 0x4F)
-		Exit(-1, "VESA Mode 0x%X Failed!\n", vesamode[mode]);
+		U2_Exit(-1, "VESA Mode 0x%X Failed!\n", vesamode[mode]);
 
 	regs.x.ax = 0x4F06;
 	regs.x.bx = 0x0001;
@@ -369,7 +385,7 @@ int Screen::SetSize(int x, int y)  {
 	  regs.x.ax = 0x4F0A;
 	  regs.x.bx = 0x0000;
 	  __dpmi_int(0x10, &regs);
-	  if(regs.x.ax!=0x004F) Exit(-1,"VBE2: Error getting PM interface!\n");
+	  if(regs.x.ax!=0x004F) U2_Exit(-1,"VBE2: Error getting PM interface!\n");
 	  vbe2_info = (VBE2_PM_Info *) new unsigned char[regs.x.cx];
 
 	  _go32_dpmi_lock_data(vbe2_info, regs.x.cx);
@@ -382,7 +398,7 @@ int Screen::SetSize(int x, int y)  {
 	    regs.x.bx = 0x4000 | vesamode[mode];
 	    __dpmi_int(0x10, &regs);
 	    if(regs.x.ax != 0x4F)
-		Exit(-1, "VESA Mode 0x%X Failed!\n", vesamode[mode]);
+		U2_Exit(-1, "VESA Mode 0x%X Failed!\n", vesamode[mode]);
 
 	    __dpmi_meminfo mi;
 	    mi.size = (unsigned long)(vminfo.XResolution * vminfo.YResolution);
@@ -391,10 +407,10 @@ int Screen::SetSize(int x, int y)  {
 	    frame.UL = __dpmi_allocate_ldt_descriptors(1);
 	    __dpmi_set_segment_base_address(frame.UL, mi.address);
 	    __dpmi_set_segment_limit(frame.UL, rowlen*ysize);
-//	    Exit(0, "Linear frame buffer found at %X\n", vminfo.PhysBasePtr);
+//	    U2_Exit(0, "Linear frame buffer found at %X\n", vminfo.PhysBasePtr);
 	    }
-//	  else Exit(-1, "Linear frame buffer not found\n");
-//	  Exit(0, "VESA 2.0!\n");
+//	  else U2_Exit(-1, "Linear frame buffer not found\n");
+//	  U2_Exit(0, "VESA 2.0!\n");
 	  }
 	}
       }break;
@@ -458,7 +474,7 @@ int Screen::SetSize(int x, int y)  {
 		DefaultDepth(_Xdisplay, _Xscreen), ZPixmap, 0,
 		video_buffer.c, xsize, ysize, 32, 0);
 	}
-      else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 
       XPutImage(_Xdisplay, _Xwindow, _Xgc, _Ximage, 0, 0, 0, 0, xsize, ysize);
 
@@ -486,7 +502,7 @@ int Screen::SetSize(int x, int y)  {
 	  break;
 	  }
         }
-      if(mode == -1) Exit(0, "No DGA Mode appropriate!\n");
+      if(mode == -1) U2_Exit(0, "No DGA Mode appropriate!\n");
       for(; ctr<numm; ctr++)  {
         if(modes[ctr].depth == targetdepth
 		&& modes[ctr].viewportWidth >= xsize
@@ -573,7 +589,7 @@ int Screen::SetSize(int x, int y)  {
 	for(ctr=0; ctr<collen; ctr++)
 	  memset(frame.uc+rowlen*ctr, 0, xsize<<1);
 	}
-      else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
       }break;
     #endif
     #endif
@@ -725,7 +741,7 @@ void Screen::RefreshFast()  {
 		(rxe[ctrb]-rxs[ctrb])<<2);
 	      }
 	    }
-	  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+	  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 	  }break;
 	#endif
 	#endif
@@ -733,7 +749,7 @@ void Screen::RefreshFast()  {
 	#ifdef DOS
 	case(VIDEO_VBE2):
 	case(VIDEO_VESA): {
-	  Exit(-1, "VESA w/o liner buffer and quick refresh not implemented!\n");
+	  U2_Exit(-1, "VESA w/o liner buffer and quick refresh not implemented!\n");
 	  }break;
 	case(VIDEO_VBE2L): {
 	  int ctry;
@@ -750,7 +766,7 @@ void Screen::RefreshFast()  {
 		(rxe[ctrb]-rxs[ctrb])<<2);
 	      }
 	    }
-	  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+	  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 	  }break;
 	case(VIDEO_DOS): {
 	  int ctry;
@@ -760,7 +776,7 @@ void Screen::RefreshFast()  {
 		frame.UL+ctry*rowlen+rxs[ctrb]);
 	      }
 	    }
-	  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+	  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 	  }break;
 	#endif
 	}
@@ -814,7 +830,7 @@ void Screen::RefreshFull()  {
 	  memcpy(frame.us + ctry*rowlen, image[ctry].us, xsize<<1);
 	  }
 	}
-      else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
       }break;
     #endif
     #endif
@@ -856,28 +872,31 @@ void Screen::RefreshFull()  {
   UserDebug("User::Screen::RefreshFull() 1100");
   }
 
-void Screen::Clear()  {
+void Screen::Clear(color c)  {
   int ctr, ctr2;
-  if(depth==8)  {
+  if(depth==8) {
+    for(ctr=0; ctr<ysize; ctr++)  {
+      memset(image[ctr].uc, c, xsize);
+      memset(backg[ctr].uc, c, xsize);
+      }
+    }
+  else if(depth==16)  {
     for(ctr=0; ctr<ysize; ctr++)  {
       for(ctr2=0; ctr2<xsize; ctr2++)  {
-//	image[ctr].uc[ctr2] = BlackPixel(_Xdisplay, 0);
-//	backg[ctr].uc[ctr2] = BlackPixel(_Xdisplay, 0);
-	image[ctr].uc[ctr2] = 0;
-	backg[ctr].uc[ctr2] = 0;
+	image[ctr].us[ctr2] = c;
+	backg[ctr].us[ctr2] = c;
 	}
       }
     }
   else if(depth==32)  {
     for(ctr=0; ctr<ysize; ctr++)  {
       for(ctr2=0; ctr2<xsize; ctr2++)  {
-//	image[ctr].ul[ctr2] = BlackPixel(_Xdisplay, 0);
-//	backg[ctr].ul[ctr2] = BlackPixel(_Xdisplay, 0);
-	image[ctr].ul[ctr2] = 0;
-	backg[ctr].ul[ctr2] = 0;
+	image[ctr].ul[ctr2] = c;
+	backg[ctr].ul[ctr2] = c;
 	}
       }
     }
+  InvalidateRectangle(0, 0, xsize, ysize);
   }
 
 void Screen::FadeIn()  {
@@ -896,27 +915,32 @@ void Screen::FadeOut(int n)  {
   n=n;
   }
 
-void Screen::ClearArea(int x, int y, int xs, int ys)  {
-  int ctry;
+void Screen::ClearArea(int x, int y, int xs, int ys, color c)  {
+  int ctr, ctr2;
   if(depth==8) {
-    for(ctry=y; ctry<(y+ys); ctry++)  {
-      memset(&(image[ctry].uc[x]), 0, xs);
-      memset(&(backg[ctry].uc[x]), 0, xs);
+    for(ctr=y; ctr<(y+ys); ctr++)  {
+      memset(&(image[ctr].uc[x]), c, xs);
+      memset(&(backg[ctr].uc[x]), c, xs);
       }
     }
-  else if(depth==16) {
-    for(ctry=y; ctry<(y+ys); ctry++)  {
-      memset(&(image[ctry].us[x]), 0, xs<<1);
-      memset(&(backg[ctry].us[x]), 0, xs<<1);
+  else if(depth==16)  {
+    for(ctr=y; ctr<y+ys; ctr++)  {
+      for(ctr2=x; ctr2<x+xs; ctr2++)  {
+	image[ctr].us[ctr2] = c;
+	backg[ctr].us[ctr2] = c;
+	}
       }
     }
-  else if(depth==32) {
-    for(ctry=y; ctry<(y+ys); ctry++)  {
-      memset(&(image[ctry].ul[x]), 0, xs<<2);
-      memset(&(backg[ctry].ul[x]), 0, xs<<2);
+  else if(depth==32)  {
+    for(ctr=y; ctr<y+ys; ctr++)  {
+      for(ctr2=x; ctr2<x+xs; ctr2++)  {
+	image[ctr].ul[ctr2] = c;
+	backg[ctr].ul[ctr2] = c;
+	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  InvalidateRectangle(x, y, xs, ys);
   }
 
 void Screen::DrawRectangle(int x, int y, int xs, int ys, color c)  {
@@ -945,7 +969,7 @@ void Screen::DrawRectangle(int x, int y, int xs, int ys, color c)  {
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 /*
   for(ctrx=x; ctrx<(x+xs); ctrx++)  {
     for(ctry=y; ctry<(y+ys); ctry++)  {
@@ -988,7 +1012,12 @@ void Screen::SetLineFG(int xs, int ys, int xe, int ye, int r, int g, int b)  {
   }
 
 void Screen::SetPoint(int x, int y, color c)  {
-  ConvertColor(c, appdepth, depth);
+  if(pal && appdepth == 8 && depth != 8) {
+    c = GetColor(pal->GetRedEntry(c), pal->GetGreenEntry(c), pal->GetBlueEntry(c));
+    }
+  else {
+    ConvertColor(c, appdepth, depth);
+    }
   InvalidateRectangle(x, y, 1, 1);
   if(depth==8)  {
     image[y].uc[x] = c;
@@ -1005,7 +1034,12 @@ void Screen::SetPoint(int x, int y, color c)  {
   }
 
 void Screen::SetPointFG(int x, int y, color c)  {
-  ConvertColor(c, appdepth, depth);
+  if(pal && appdepth == 8 && depth != 8) {
+    c = GetColor(pal->GetRedEntry(c), pal->GetGreenEntry(c), pal->GetBlueEntry(c));
+    }
+  else {
+    ConvertColor(c, appdepth, depth);
+    }
   InvalidateRectangle(x, y, 1, 1);
   if(depth==8)  {
     image[y].uc[x] = c;
@@ -1091,7 +1125,7 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 //  UserDebug("User:Screen:DrawPartialTransparentGraphicFG End");
   }
 
@@ -1128,7 +1162,7 @@ void Screen::DrawPartialGraphicFG(Graphic &g, int x, int y,
       memcpy(image[ctry+y].ul+x+ix, g.image[ctry].ul+ix, sx<<2);
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 //  UserDebug("User:Screen:DrawPartialGraphicFG End");
   }
 
@@ -1190,7 +1224,7 @@ void Screen::RCDrawPartialTransparentGraphicFG(Graphic &g, mfmt remap,
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 //  UserDebug("User:Screen:RCDrawPartialTransparentGraphicFG End");
   }
 
@@ -1227,7 +1261,7 @@ void Screen::RCDrawPartialGraphicFG(Graphic &g, mfmt remap, int x, int y,
       memcpy(image[ctry+y].ul+x+ix, g.image[ctry].ul+ix, sx<<2);
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 //  UserDebug("User:Screen:RCDrawPartialGraphicFG End");
   }
 
@@ -1289,7 +1323,7 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   UserDebug("User:Screen:DrawTransparentGraphicFG End");
   }
 
@@ -1324,7 +1358,7 @@ void Screen::DrawGraphicFG(Graphic &g, int x, int y, Panel p)  {
       memcpy(image[ctry+y].us+x+xbc, g.image[ctry].us+xbc, g.xsize-xrlen);
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   }
 
 void Screen::FullScreenGraphicFG(Graphic &g) {
@@ -1350,7 +1384,7 @@ void Screen::FullScreenGraphicFG(Graphic &g) {
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   }
 
 void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
@@ -1414,7 +1448,7 @@ void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   }
 
 void Screen::DrawPartialGraphic(Graphic &g, int x, int y, 
@@ -1452,7 +1486,7 @@ void Screen::DrawPartialGraphic(Graphic &g, int x, int y,
       memcpy(backg[ctry+y].us+x+xbc, g.image[ctry+yb].us+xb+xbc, xs-xrlen);
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   }
 
 void Screen::DrawGraphic(Graphic &g, int x, int y, Panel p)  {
@@ -1489,7 +1523,7 @@ void Screen::DrawGraphic(Graphic &g, int x, int y, Panel p)  {
       memcpy(backg[ctry+y].us+x+xbc, g.image[ctry].us+xbc, g.xsize-xrlen);
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   }
 
 void Screen::FullScreenGraphic(Graphic &g) {
@@ -1525,7 +1559,7 @@ void Screen::FullScreenGraphic(Graphic &g) {
 	}
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
   }
 
 void Screen::SetPaletteEntry(int c, int r, int g, int b) {
@@ -1596,7 +1630,7 @@ void Screen::SetPaletteEntry(int c, int r, int g, int b) {
   }
 
 void Screen::SetPalette(Palette &p) {
-  if(appdepth != p.depth) Exit(1, "Palette and Screen depth mismatch\n");
+  if(appdepth != p.depth) U2_Exit(1, "Palette and Screen depth mismatch\n");
   (*pal) = p;
   if(shown)  {
     switch(vtype)  {
@@ -1743,8 +1777,8 @@ int Screen::RegisterSprite(Sprite *s) {
   }
 
 void Screen::RemoveSprite(int n, Sprite *s) {
-  if(sprites[n] == NULL) Exit(-1, "Tried to remove non-existant sprite!\n");
-  if(sprites[n] != s) Exit(-1, "Tried to remove other sprite!\n");
+  if(sprites[n] == NULL) U2_Exit(-1, "Tried to remove non-existant sprite!\n");
+  if(sprites[n] != s) U2_Exit(-1, "Tried to remove other sprite!\n");
   sprites[n] = NULL;
   }
 
@@ -1879,7 +1913,7 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
       memcpy(image[ctry].ul+x, backg[ctry].ul+x, xs<<2);
       }
     }
-  else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 
   UserDebug("Screen:RestoreRectangle() Before Identification of Sprites");
 
@@ -1995,7 +2029,7 @@ void Screen::DetectVideoType()  {
 
 	int uid, euid;
 	uid = getuid() ; euid = geteuid() ;
-	if (euid != uid && setuid(uid)) Exit(-1, "SETUID Failed!\n");
+	if (euid != uid && setuid(uid)) U2_Exit(-1, "SETUID Failed!\n");
 
 	vtype = VIDEO_XDGA2;
 	}
@@ -2006,7 +2040,7 @@ void Screen::DetectVideoType()  {
 //	fprintf(stderr, "Got DGA version %d.%d\n", M, m);
 	int Xbank, Xmem, Flags;
 	XF86DGAQueryDirectVideo(_Xdisplay, _Xscreen, &Flags);
-	if(!(Flags & XF86DGADirectPresent)) Exit(0, "Failed DGA Query\n");
+	if(!(Flags & XF86DGADirectPresent)) U2_Exit(0, "Failed DGA Query\n");
 	XF86DGAGetVideo(_Xdisplay, _Xscreen,
 		&(frame.c), &rowlen, &Xbank, &Xmem);
 //	fprintf(stderr, "Width %d, Bank %d, Mem %d\n",  rowlen, Xbank, Xmem);
@@ -2019,7 +2053,7 @@ void Screen::DetectVideoType()  {
 
 	int uid, euid;
 	uid = getuid() ; euid = geteuid() ;
-	if (euid != uid && setuid(uid)) Exit(-1, "SETUID Failed!\n");
+	if (euid != uid && setuid(uid)) U2_Exit(-1, "SETUID Failed!\n");
 	}
       else { fprintf(stderr, "No DGA support.\n"); return; }
       }
@@ -2028,7 +2062,7 @@ void Screen::DetectVideoType()  {
 #endif
 //  printf("Video type = %d\n", vtype);
   if(vtype != VIDEO_NONE) return;
-  Exit(-1, "No video capability detected!\n");
+  U2_Exit(-1, "No video capability detected!\n");
   }
 
 void Screen::SetFrameRate(int rt)  {
@@ -2230,7 +2264,7 @@ int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
   UserDebug("User::Screen::GPrint(...) Begin");
   ConvertColor(cb, appdepth, (int)g->depth);
   ConvertColor(cf, appdepth, (int)g->depth);
-  if(font[' '] == NULL)  Exit(-1, "Must Screen.SetFont before Screen.Print!\n");
+  if(font[' '] == NULL)  U2_Exit(-1, "Must Screen.SetFont before Screen.Print!\n");
   unsigned char *ind = (unsigned char *)text;
 //  printf("%s\n", text);
   for(;(*ind) != 0; ind++)  {
@@ -2326,14 +2360,14 @@ int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
         UserDebug("User::Screen::GPrint(...) Pasting character graphic (16bpp)");
 	g->PasteTransparentGraphic(res, x-let.xcenter, y-let.ycenter);
 	}
-      else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 
       UserDebug("User::Screen::GPrint(...) Finishing character");
       x+=font[*ind]->xsize+1;
       AlignCursor();
       }
     }
-  UserDebug("User::Screen::Print(...) End");
+  UserDebug("User::Screen::GPrint(...) End");
   return x;
   }
 
@@ -2343,7 +2377,7 @@ int Screen::CGPrint(Graphic *g, int x, int y, color cb, color cf,
   UserDebug("User::Screen::CGPrint(...) Begin");
   ConvertColor(cb, appdepth, (int)g->depth);
   ConvertColor(cf, appdepth, (int)g->depth);
-  if(font[' '] == NULL)  Exit(-1, "Must Screen.SetFont before Screen.Print!\n");
+  if(font[' '] == NULL)  U2_Exit(-1, "Must Screen.SetFont before Screen.Print!\n");
   { int xsz, ysz;
     GetStringSize((char *)text, &xsz, &ysz);
     g->DefSize(xsz, ysz);
@@ -2444,14 +2478,14 @@ int Screen::CGPrint(Graphic *g, int x, int y, color cb, color cf,
         UserDebug("User::Screen::CGPrint(...) Pasting character graphic (16bpp)");
 	g->PasteGraphic(res, x-let.xcenter, y-let.ycenter);
 	}
-      else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 
       UserDebug("User::Screen::CGPrint(...) Finishing character");
       x+=font[*ind]->xsize+1;
       AlignCursor();
       }
     }
-  UserDebug("User::Screen::Print(...) End");
+  UserDebug("User::Screen::CGPrint(...) End");
   return x;
   }
 
@@ -2461,10 +2495,16 @@ int Screen::Print(int x, int y, color cb, color cf, const char *text)  {
   }
 
 int Screen::Print(color cb, color cf, const char *text)  {
-  ConvertColor(cb, appdepth, depth);
-  ConvertColor(cf, appdepth, depth);
+  if(pal && appdepth == 8 && depth != 8) {
+    cb = GetColor(pal->GetRedEntry(cb), pal->GetGreenEntry(cb), pal->GetBlueEntry(cb));
+    cf = GetColor(pal->GetRedEntry(cf), pal->GetGreenEntry(cf), pal->GetBlueEntry(cf));
+    }
+  else {
+    ConvertColor(cb, appdepth, depth);
+    ConvertColor(cf, appdepth, depth);
+    }
   UserDebug("User::Screen::Print(...) Begin");
-  if(font[' '] == NULL)  Exit(-1, "Must Screen.SetFont before Screen.Print!\n");
+  if(font[' '] == NULL)  U2_Exit(-1, "Must Screen.SetFont before Screen.Print!\n");
   unsigned char *ind = (unsigned char *)text;
 //  printf("%s\n", text);
   for(;(*ind) != 0; ind++)  {
@@ -2560,7 +2600,7 @@ int Screen::Print(color cb, color cf, const char *text)  {
 	  }
 	DrawTransparentGraphic(res, tcx-let.xcenter, tcy-let.ycenter);
 	}
-      else Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 
       tcx+=font[*ind]->xsize+1;
       AlignCursor();
@@ -2582,14 +2622,14 @@ Sprite *Screen::GetSpriteByNumber(int n) {
 Panel Screen::NewPanel(int x1, int y1, int x2, int y2) {
   int ctr;
   for(ctr=1; ctr<MAX_PANELS && pxs[ctr] != -1; ctr++);
-  if(ctr >= MAX_PANELS) Exit(-1, "Out of Panels!\n");
+  if(ctr >= MAX_PANELS) U2_Exit(-1, "Out of Panels!\n");
   pxs[ctr] = x1; pxe[ctr] = x2;
   pys[ctr] = y1; pye[ctr] = y2;
   return ctr;
   }
 
 void Screen::RemovePanel(Panel p) {
-  if(pxs[0] == -1) Exit(-1, "Deleting non-existant panel!\n");
+  if(pxs[0] == -1) U2_Exit(-1, "Deleting non-existant panel!\n");
   pxs[p] = -1; pxe[p] = -1;
   pys[p] = -1; pye[p] = -1;
   }
@@ -2692,7 +2732,7 @@ void Screen::SetBank(int bank) {
   if(curbank == bank)  return;
   curbank = bank;
   switch(vtype) {
-    case(VIDEO_VBE2L): { Exit(-1, "Banking with LFB???\n"); } break;
+    case(VIDEO_VBE2L): { U2_Exit(-1, "Banking with LFB???\n"); } break;
     case(VIDEO_VBE2):
 //    {
 //      vbe2_bank(bank);
@@ -2740,7 +2780,7 @@ int Screen::DefaultYSize() {
 
 void Screen::DropSprite(Sprite *s) {
   UserDebug("Screen::DropSprite(s) Begin");
-  if((!bins) || (!lbins)) Exit(1, "No bins in Dropsprite!\n");
+  if((!bins) || (!lbins)) U2_Exit(1, "No bins in Dropsprite!\n");
   Sprite *sp;
   if(s->Flag(SPRITE_HUGE)) {
     UserDebug("Screen::DropSprite(s) In large");
@@ -2781,7 +2821,7 @@ void Screen::DropSprite(Sprite *s) {
 
 void Screen::LiftSprite(Sprite *s) {
   UserDebug("Screen::LiftSprite(s) Begin");
-  if(!s->prev) Exit(1, "Lifting non-placed Sprite (%d)!!\n", s->drawn);
+  if(!s->prev) U2_Exit(1, "Lifting non-placed Sprite (%d)!!\n", s->drawn);
   if(s->next) s->next->prev = s->prev;
   *(s->prev) = s->next; s->next = NULL; s->prev=NULL;
   UserDebug("Screen::LiftSprite(s) End");
@@ -2790,4 +2830,15 @@ void Screen::LiftSprite(Sprite *s) {
 void Screen::SetApparentDepth(int ad) {
   appdepth = ad;
   pal->depth = ad;
+  }
+
+color Screen::GetColor(int r, int g, int b) {
+  color ret = 0;
+  if(depth == 32) {
+    ret = 0xFF000000;
+    ret |= (r << 16);
+    ret |= (g << 8);
+    ret |= b;
+    }
+  return ret;
   }

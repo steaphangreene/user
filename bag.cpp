@@ -5,7 +5,7 @@
 LongBag::LongBag(int sz)  {
   contents = new long[sz];
   if(contents == NULL)
-    Exit(1, "Not enough memory for LongBag!\n");
+    U2_Exit(1, "Not enough memory for LongBag!\n");
   size = sz;
   }
 
@@ -16,9 +16,9 @@ LongBag::~LongBag()  {
 
 long &LongBag::operator [](int ind)  {
   if(size <= 0)  
-    Exit(1, "Empty LongBag accessed!\n");
+    U2_Exit(1, "Empty LongBag accessed!\n");
   else if(ind < 0 || ind >= size)
-    Exit(1, "LongBag reference out of range!\n");
+    U2_Exit(1, "LongBag reference out of range!\n");
   else return contents[ind];
   }
 
@@ -33,7 +33,7 @@ long *LongBag::GiveUpContents()  {
 ShortBag::ShortBag(int sz)  {
   contents = new short[sz];
   if(contents == NULL)
-    Exit(1, "Not enough memory for ShortBag!\n");
+    U2_Exit(1, "Not enough memory for ShortBag!\n");
   size = sz;
   }
 
@@ -44,9 +44,9 @@ ShortBag::~ShortBag()  {
 
 short &ShortBag::operator [](int ind)  {
   if(size <= 0)  
-    Exit(1, "Empty ShortBag accessed!\n");
+    U2_Exit(1, "Empty ShortBag accessed!\n");
   else if(ind < 0 || ind >= size)
-    Exit(1, "ShortBag reference out of range!\n"); 
+    U2_Exit(1, "ShortBag reference out of range!\n"); 
   else return contents[ind];
   }
 
@@ -61,7 +61,7 @@ short *ShortBag::GiveUpContents()  {
 CharBag::CharBag(int sz)  {
   contents = new char[sz];
   if(contents == NULL)
-    Exit(1, "Not enough memory for CharBag!\n");
+    U2_Exit(1, "Not enough memory for CharBag!\n");
   size = sz;
   }
 
@@ -72,9 +72,9 @@ CharBag::~CharBag()  {
 
 char &CharBag::operator [](int ind)  {
   if(size <= 0)  
-    Exit(1, "Empty CharBag accessed!\n");
+    U2_Exit(1, "Empty CharBag accessed!\n");
   else if(ind < 0 || ind >= size)
-    Exit(1, "CharBag reference out of range!\n");
+    U2_Exit(1, "CharBag reference out of range!\n");
   else return contents[ind];
   }
 

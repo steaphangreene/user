@@ -3,6 +3,11 @@
 
 
 /*****************
+* Config Options *
+*****************/
+#define	CONFIG_FILE		"/etc/u2.conf"
+
+/*****************
 * Sprite Options *
 *****************/
 
@@ -49,7 +54,7 @@
 	#define DOS_SOUND
 #else
 	#define OSS_SOUND
-	#define ESD_SOUND
+//	#define ESD_SOUND
 #endif
 
 /*************************************
@@ -57,6 +62,6 @@
 *************************************/
 
 #define KB_BUF_SIZE	128
-#define KEY_MAX		65536
+#define U2_KEY_MAX	65536
 
 #endif

@@ -20,7 +20,7 @@
 	___tmp_lock_info.size = sizeof(x);\
 	___tmp_lock_info.handle = _my_ds();\
 	if(__dpmi_lock_linear_region(&___tmp_lock_info))\
-	  Exit(1, "Unable to lock required memory!!\n");  }
+	  U2_Exit(1, "Unable to lock required memory!!\n");  }
 
 
 #define UNLOCK_VARIABLE(x)  {  __dpmi_meminfo ___tmp_unlock_info;\
@@ -28,18 +28,18 @@
 	___tmp_unlock_info.size = sizeof(x);\
 	___tmp_unlock_info.handle = _my_ds();\
 	if(__dpmi_unlock_linear_region(&___tmp_unlock_info))\
-	  Exit(1, "Unable to unlock required memory!!\n");  }
+	  U2_Exit(1, "Unable to unlock required memory!!\n");  }
 
 #define LOCK_ARRAY(x, s)  {  __dpmi_meminfo ___tmp_lock_info;\
 	___tmp_lock_info.address = (long)x;\
 	___tmp_lock_info.size = (sizeof(*x) * s);\
 	___tmp_lock_info.handle = _my_ds();\
 	if(__dpmi_lock_linear_region(&___tmp_lock_info))\
-	  Exit(1, "Unable to lock required memory!!\n");  }
+	  U2_Exit(1, "Unable to lock required memory!!\n");  }
 
 #define UNLOCK_ARRAY(x, s)  {  __dpmi_meminfo ___tmp_unlock_info;\
 	___tmp_unlock_info.address = (long)x;\
 	___tmp_unlock_info.size = (sizeof(*x) * s);\
 	___tmp_unlock_info.handle = _my_ds();\
 	if(__dpmi_unlock_linear_region(&___tmp_unlock_info))\
-	  Exit(1, "Unable to unlock required memory!!\n");  }
+	  U2_Exit(1, "Unable to unlock required memory!!\n");  }

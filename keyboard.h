@@ -50,7 +50,7 @@ class Keyboard {
   static volatile unsigned short ModKey[10];
 #endif
   static volatile int modkey[32];
-  static volatile char key_stat[KEY_MAX];
+  static volatile char key_stat[U2_KEY_MAX];
   static volatile char queue_keys;
 #ifdef DOS
   static volatile unsigned short keyboard_buf[KB_BUF_SIZE];

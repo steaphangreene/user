@@ -1,3 +1,19 @@
+// *************************************************************************
+// screen.h
+// Advanced Screen class, Pre ALPHA non-distribution version
+//
+// -By Insomnia (Steaphan Greene)   (Copyright 1997-2001 Steaphan Greene)
+//                   (insomnia@core.binghamton.edu)
+//      No waranty stated or implied, I am not responsible for any damage
+// caused directly or indirectly by this software.
+//      Permision granted for use/distribution/modification by anyone,
+// provided this header remains intact, and modified versions are marked
+// as so immediately below this header.
+//      Products utilizing the code or methods within may be distributed
+// freely along with this licence, but any sales for profit of such products
+// must have the author's permission, and may be subject to a royaltee fee.
+// *************************************************************************
+
 #ifndef INSOMNIA_USER_SCREEN_H
 #define INSOMNIA_USER_SCREEN_H
 
@@ -58,7 +74,7 @@ typedef unsigned long color;
   else if(d==32 && ad==16) { \
     c=((c&0xF800)<<8)|((c&0x07E0)<<5)|((c&0x001F)<<3); \
     } \
-  else Exit(1, "%s\nDon't know how to ConvertColor from %d to %d\n", \
+  else U2_Exit(1, "%s\nDon't know how to ConvertColor from %d to %d\n", \
 	__PRETTY_FUNCTION__, ad, d); \
   }
 
@@ -70,6 +86,7 @@ class Screen  {
   void SetApparentDepth(int);
   int GetApparentDepth() { return appdepth; }
   int GetDepth() { return depth; }
+  color GetColor(int, int, int);
   void SetFrameRate(int);
   int SetSize(int, int);
   int XSize() { return xsize; };
@@ -94,7 +111,7 @@ class Screen  {
   void FadeIn(int);
   void FadeOut(int);
 
-  void Clear();
+  void Clear(color c=0);
   void InvalidateRectangle(int, int, int, int);
   void RestoreRectangle(int, int, int, int);
   void RestoreInvalidRectangles();
@@ -137,7 +154,7 @@ class Screen  {
   void SetLine(int, int, int, int, int, int, int);
   void DrawRectangle(int, int, int, int, color);
   void DrawRectangleFG(int, int, int, int, color);
-  void ClearArea(int, int, int, int);
+  void ClearArea(int, int, int, int, color c=0);
   int VideoType() { return vtype; };
 
   int SetFont(const char *);

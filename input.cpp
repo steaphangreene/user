@@ -13,7 +13,7 @@ extern Screen *__Da_Screen;
 extern Mouse *__Da_Mouse;
 
 InputQueue::InputQueue() {
-  if(__Da_InputQueue != NULL) Exit(-1, "Multiple InputQueues Declared!\n");
+  if(__Da_InputQueue != NULL) U2_Exit(-1, "Multiple InputQueues Declared!\n");
   __Da_InputQueue = this;
   head = 0;
   tail = 0;

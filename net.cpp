@@ -74,7 +74,7 @@ void Network::SetTCPIP(char *addr, unsigned short port)  {
   TCPIP_NewOther(TCPIPsock);
   type |= NETWORK_TCPIP;
   if(write(TCPIPsock, "\r\n\0\0", 4) < 0)  {
-    if(errno != EPIPE)  Exit(0, "Unable to write to socket\r\n");
+    if(errno != EPIPE)  U2_Exit(0, "Unable to write to socket\r\n");
     else return;
     }
 #endif
@@ -292,7 +292,7 @@ void Network::CloseSocket(unsigned short sock)  {
   }
 
 void Network::Send(void *mes, int len)  {
-  if(len>(10*GetMaxPacketSize()))  Exit(0, "Packet Too Big!!\n");
+  if(len>(10*GetMaxPacketSize()))  U2_Exit(0, "Packet Too Big!!\n");
   int clen = len <? GetMaxPacketSize();
   char sb[4+clen];
   sb[0] = (len & 255);
@@ -325,11 +325,11 @@ void Network::Send(void *mes, int len)  {
 
 #ifdef X_WINDOWS
     if(write(TCPIPsock, sb, len+4) < 0)  {
-      if(errno != EPIPE)  Exit(0, "Unable to write to socket\r\n");
+      if(errno != EPIPE)  U2_Exit(0, "Unable to write to socket\r\n");
       else return;
       }
     if(write(TCPIPsock, "\r\n\0\0", 4) < 0)  {
-      if(errno != EPIPE)  Exit(0, "Unable to write to socket\r\n");
+      if(errno != EPIPE)  U2_Exit(0, "Unable to write to socket\r\n");
       else return;
       }
 #endif
@@ -370,11 +370,11 @@ void Network::Send(void *mes, int len, int who)  {
 
 #ifdef X_WINDOWS
     if(write(TCPIPsock, sb, len+4) < 0)  {
-      if(errno != EPIPE)  Exit(0, "Unable to write to socket\r\n");
+      if(errno != EPIPE)  U2_Exit(0, "Unable to write to socket\r\n");
       else return;
       }
     if(write(TCPIPsock, "\r\n\0\0", 4) < 0)  {
-      if(errno != EPIPE)  Exit(0, "Unable to write to socket\r\n");
+      if(errno != EPIPE)  U2_Exit(0, "Unable to write to socket\r\n");
       else return;
       }
 #endif
@@ -452,7 +452,7 @@ void *Network::Receive()  {
     dosmemget(rblock_offset[qhead]-header_len, header_len, headbuf);
     dosmemget(rblock_offset[qhead], 4, &size);
 //    if(rsize > GetMaxPacketSize() && rsize > size)
-//	Exit(1, "Network Error: rsize(%d) > size(%d) ?!?!\n", rsize, size);
+//	U2_Exit(1, "Network Error: rsize(%d) > size(%d) ?!?!\n", rsize, size);
     if(rsize > size) rsize = size;
     char *retbuf = new char[size];
     dosmemget(rblock_offset[qhead]+4, rsize, retbuf);
@@ -541,7 +541,7 @@ void *Network::Receive()  {
       }
     if(sz < 0)  {
       perror("Net-1");
-      Exit(1, "Read error on socket (%d)!\r\n", errno);
+      U2_Exit(1, "Read error on socket (%d)!\r\n", errno);
       }
     sz += gotfirst;
 //    if(sz < 8)  printf("Bad\r\n");
@@ -556,7 +556,7 @@ void *Network::Receive()  {
       sz = read(TCPIPsock, &buf[gotfirst], 8-gotfirst);
       if(sz < 0 && errno != EAGAIN)  {
         perror("Net-2");
-	Exit(1, "Read error on socket (%d)!\r\n", errno);
+	U2_Exit(1, "Read error on socket (%d)!\r\n", errno);
         }
       if(sz >= 0) sz += gotfirst;
       }
@@ -577,11 +577,11 @@ void *Network::Receive()  {
       }
     if(sz < 0)  {
       perror("Net-3");
-      Exit(1, "Read error on socket!\r\n");
+      U2_Exit(1, "Read error on socket!\r\n");
       }
     for(ctr=0; ctr<max_others && (others[ctr].type != OTHER_TCPIP
 	|| others[ctr].tcpip.sock != TCPIPsock); ctr++);
-    if(ctr >= max_others)  Exit(0, "TCP/IP Packet from unknown address!!!\r\n");
+    if(ctr >= max_others)  U2_Exit(0, "TCP/IP Packet from unknown address!!!\r\n");
     last_source = ctr;
 //    printf("Done!!\r\n");
     return buf;
@@ -593,7 +593,7 @@ void *Network::Receive()  {
 int Network::TCPIP_NewOther(int sock)  {
   int ctr;
   for(ctr=0; ctr<max_others && others[ctr].type != OTHER_NONE; ctr++);
-  if(ctr >= max_others)  Exit(0, "Too many others on Network!!!\r\n");
+  if(ctr >= max_others)  U2_Exit(0, "Too many others on Network!!!\r\n");
   others[ctr].type = OTHER_TCPIP;
   others[ctr].tcpip.sock = sock;
   return ctr;
@@ -602,7 +602,7 @@ int Network::TCPIP_NewOther(int sock)  {
 int Network::IPX_NewOther(unsigned char *addr)  {
   int ctr;
   for(ctr=0; ctr<max_others && others[ctr].type != OTHER_NONE; ctr++);
-  if(ctr >= max_others)  Exit(0, "Too many others on Network!!!\r\n");
+  if(ctr >= max_others)  U2_Exit(0, "Too many others on Network!!!\r\n");
   others[ctr].type = OTHER_IPX;
   others[ctr].ipx.addr[0] = addr[0];
   others[ctr].ipx.addr[1] = addr[1];

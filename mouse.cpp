@@ -38,7 +38,7 @@ Mouse::Mouse() {
   bdown = -1;
   pin = 0;
   xpos = -666; ypos = -666;
-  if(__Da_Screen == NULL) Exit(-1, "Need to create Screen before Mouse!\n");
+  if(__Da_Screen == NULL) U2_Exit(-1, "Need to create Screen before Mouse!\n");
   memset(butt_stat, 0, MAX_MBUTTONS);
   for(ctr=0; ctr<MAX_PANELS; ctr++)
 	memset(pb[ctr], 0, MAX_MBUTTONS*sizeof(int));
@@ -51,7 +51,7 @@ Mouse::Mouse() {
       regs.x.ax = 0x0000;
       __dpmi_int(0x33, &regs);
       if(regs.x.ax != 0xFFFF)  {
-	Exit(1, "Mouse Driver Not installed!\n");
+	U2_Exit(1, "Mouse Driver Not installed!\n");
 	}
       num_butt = regs.x.bx;
       }break;

@@ -2,7 +2,7 @@
 // palette.cpp
 // Basic Palette class, Pre ALPHA non-distribution version
 //
-// -By Insomnia (Steaphan Greene)      (Copyright 1997-1999 Steaphan Greene)
+// -By Insomnia (Steaphan Greene)   (Copyright 1997-2001 Steaphan Greene)
 //                   (insomnia@core.binghamton.edu)
 //      No waranty stated or implied, I am not responsible for any damage
 // caused directly or indirectly by this software.
@@ -29,7 +29,7 @@
 #endif
 
 void Palette::Set(const char *fn)  {
-  FILE *palfl = fopen(fn, "rb");
+  FILE *palfl = U2_FOpenRead(fn);
   if(palfl==NULL)  {
     printf("Palette File \"%s\" Not Found!\n", fn);
     exit(1);
@@ -48,7 +48,7 @@ void Palette::Set(const char *fn)  {
 
 void Palette::SetMS(const char *fn)  {
   int r, g, b, ctr, c;
-  FILE *palfl = fopen(fn, "rb");
+  FILE *palfl = U2_FOpenRead(fn);
   if(palfl==NULL)  {
     printf("Palette File Not Found!\n");
     exit(1);
@@ -68,7 +68,7 @@ void Palette::SetMS(const char *fn)  {
 
 void Palette::SetPSP(const char *fn)  {
   int r, g, b, ctr;
-  FILE *palfl = fopen(fn, "r");
+  FILE *palfl = U2_FOpenRead(fn);
   if(palfl==NULL)  {
     printf("Palette File Not Found!\n");
     exit(1);
@@ -89,8 +89,8 @@ void Palette::SetBMP(const char *fn)  {
  unsigned char buffer[1280];
  int ctr;
  {
-  bmp = fopen(fn, "rb");
-  if(fileno(bmp) == -1)  {
+  bmp = U2_FOpenRead(fn);
+  if(bmp == NULL)  {
     printf("\"%s\" Not Found!\n", fn);
     exit(1);
     }
@@ -176,7 +176,7 @@ color Palette::GetClosestColor(cval r, cval g, cval b)  {
   else if (depth == 32) {
     ret = 0xFF000000 | (r << 16) | (g << 8) | b;
     }
-  else Exit(1, "Unknown depth error in %s\n", __PRETTY_FUNCTION__);
+  else U2_Exit(1, "Unknown depth error in %s\n", __PRETTY_FUNCTION__);
   return ret;
   }
 

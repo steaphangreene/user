@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
   char **fn;
   struct Image *image;
 
-  if(argc < 2) Exit(1, "Usage: tgaview <filename>...\n");
+  if(argc < 2) U2_Exit(1, "Usage: tgaview <filename>...\n");
   fn = (char **)malloc((argc-1)*sizeof(char*));
   memset(fn, 0, (argc-1)*sizeof(char*));
   for(ctr=1; ctr<argc; ++ctr) {
@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
       fprintf(stderr, "Can't open \"%s\"!\n", argv[ctr]);
       }
     }
-  if(num<1) Exit(1, "No valid 32-bit TGA files found!\n");
+  if(num<1) U2_Exit(1, "No valid 32-bit TGA files found!\n");
   image = (struct Image *)malloc(num*sizeof(struct Image));
   for(ctr=0; ctr<num; ++ctr) {
     tga=fopen(fn[ctr], "rb");

@@ -19,8 +19,7 @@
 #define SHORTBAG_TAG	"SBAG"
 #define CHARBAG_TAG	"CBAG"
 #define NULL_TAG	"NULL"
-#define TAG_SIZE	(sizeof(GRAPHIC_TAG))
-
+#define TAG_SIZE	4
 
 ResFile::ResFile(const char *filen)  {
   Open(filen, "");
@@ -34,43 +33,13 @@ void ResFile::Open(const char *filen, const char *com)  {
   fn = new char[strlen(filen)+1];
   strcpy(fn, filen);
   char buffer[256];
-  rf = fopen(fn, "rb");
+  rf = U2_FOpenRead(fn);
   if(rf == NULL)  {
-    printf("Tried \"%s\"\n", fn);
-    delete fn;
-    TryToOpen(filen, com);
-    if(rf == NULL)  {
-      char *tmpp1, *tmpp2, *path, delim = ':';
-      int fail = 0;
-      tmpp2 = getenv("PATH");
-      path = new char[strlen(tmpp2)+1];
-      tmpp1 = path;
-      strcpy(path, tmpp2);
-      while((!fail) && rf == NULL)  {
-	tmpp2 = tmpp1;
-	while(*tmpp2 != delim && *tmpp2 != 0) tmpp2++;
-	if(*tmpp2 == delim)  {
-	  char tmpc = tmpp2[1];
-	  *tmpp2 = '/';
-	  tmpp2[1] = 0;
-	  TryToOpen(filen, tmpp1);
-	  tmpp2[1] = tmpc;
-	  }
-	else  {
-	  tmpp2 = tmpp1;
-	  fail = 1;
-	  }
-	tmpp1 = ++tmpp2;
-	}
-      delete path;
-      if(rf == NULL)  {
-	Exit(1, "\"%s\" not found!\n", filen);
-	}
-      }
+    U2_Exit(1, "\"%s\" not found!\n", filen);
     }
   if(read(fileno(rf), buffer, sizeof(FILE_HEADER)) < (long)sizeof(FILE_HEADER)
 	|| strncmp(buffer, FILE_HEADER, sizeof(FILE_HEADER)))  {
-    Exit(1, "\"%s\" is not a resource file, it's header is \"%s\"!\n", fn,
+    U2_Exit(1, "\"%s\" is not a resource file, it's header is \"%s\"!\n", fn,
 	buffer);
     }
   }
@@ -83,7 +52,7 @@ int ResFile::TryToOpen(const char *filen, const char *com)  {
   if(pos >= 0)  fn[pos] = 0;
   strcat(fn, "/");
   strcat(fn, filen);
-  rf = fopen(fn, "rb");
+  rf = U2_FOpenRead(fn);
   if(rf == NULL)  {
     delete fn;
     return 0;
@@ -102,7 +71,7 @@ void *ResFile::Get()  {
     }
   else  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
-    Exit(1, "Bad ResFile order, attempt to get Graphic on non-Graphic");
+    U2_Exit(1, "Bad ResFile order, attempt to get Graphic on non-Graphic");
     }
   }
 
@@ -111,7 +80,7 @@ LongBag *ResFile::GetLongBag()  {
   Read(buf, TAG_SIZE);
   if(strncmp(buf, LONGBAG_TAG, TAG_SIZE))  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
-    Exit(1, "Bad ResFile order, attempt to get LongBag on non-LongBag");
+    U2_Exit(1, "Bad ResFile order, attempt to get LongBag on non-LongBag");
     }
   return GrabLongBag();
   }
@@ -121,7 +90,7 @@ ShortBag *ResFile::GetShortBag()  {
   Read(buf, TAG_SIZE);
   if(strncmp(buf, SHORTBAG_TAG, TAG_SIZE))  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
-    Exit(1, "Bad ResFile order, attempt to get ShortBag on non-ShortBag");
+    U2_Exit(1, "Bad ResFile order, attempt to get ShortBag on non-ShortBag");
     }
   return GrabShortBag();
   }
@@ -131,7 +100,7 @@ CharBag *ResFile::GetCharBag()  {
   Read(buf, TAG_SIZE);
   if(strncmp(buf, CHARBAG_TAG, TAG_SIZE))  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
-    Exit(1, "Bad ResFile order, attempt to get CharBag on non-CharBag");
+    U2_Exit(1, "Bad ResFile order, attempt to get CharBag on non-CharBag");
     }
   return GrabCharBag();
   }
@@ -143,7 +112,7 @@ Graphic *ResFile::GetGraphic()  {
 //  printf("Going2\n");
   if(strncmp(buf, GRAPHIC_TAG, TAG_SIZE))  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
-    Exit(1, "Bad ResFile order, attempt to get Graphic on non-Graphic");
+    U2_Exit(1, "Bad ResFile order, attempt to get Graphic on non-Graphic");
     }
   return GrabGraphic();
   }
@@ -153,7 +122,7 @@ Palette *ResFile::GetPalette()  {
   Read(buf, TAG_SIZE);
   if(strncmp(buf, PALETTE_TAG, TAG_SIZE))  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
-    Exit(1, "Bad ResFile order, attempt to get Palette on non-Palette");
+    U2_Exit(1, "Bad ResFile order, attempt to get Palette on non-Palette");
     }
   return GrabPalette();
   }
@@ -163,7 +132,7 @@ Sound *ResFile::GetSound()  {
   Read(buf, TAG_SIZE);
   if(strncmp(buf, SOUND_TAG, TAG_SIZE))  {
     if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
-    Exit(1, "Bad ResFile order, attempt to get Sound on non-Sound");
+    U2_Exit(1, "Bad ResFile order, attempt to get Sound on non-Sound");
     }
   return GrabSound();
   }
@@ -213,7 +182,7 @@ Graphic *ResFile::GrabGraphic()  {
 
   ret = new Graphic;
   if(ret == NULL)  {
-    Exit(1, "Out of Memory for Graphic!\r\n");
+    U2_Exit(1, "Out of Memory for Graphic!\r\n");
     }
 
   ret->depth=dp;	ret->tcolor=tc;
@@ -230,7 +199,7 @@ Palette *ResFile::GrabPalette()  {
   Palette *ret;
   ret = new Palette;
   if(ret == NULL)  {
-    Exit(1, "Out of Memory for Palette!\r\n");
+    U2_Exit(1, "Out of Memory for Palette!\r\n");
     }
   ret->coldec = ReadInt(); 
   Read(ret->colors, ((long)ret->coldec)*3);
@@ -240,7 +209,7 @@ Palette *ResFile::GrabPalette()  {
 Sound *ResFile::GrabSound()  {
   Sound *ret = new Sound;
   if(ret == NULL)  {
-    Exit(1, "Out of Memory for Sound Sample!\r\n");
+    U2_Exit(1, "Out of Memory for Sound Sample!\r\n");
     }
   ret->len = ReadInt();
   ret->freq = ReadInt();
@@ -254,29 +223,29 @@ Sound *ResFile::GrabSound()  {
 void ResFile::Read(void *data, int ammt)  {
   if(read(fileno(rf), data, ammt) != ammt)  {
     perror("User:ResFile:Read");
-    Exit(1, "Read failure on \"%s\"!\n", fn);
+    U2_Exit(1, "Read failure on \"%s\"!\n", fn);
     }
   }
 
 int ResFile::ReadInt()  {
   unsigned char tmp1, tmp2, tmp3, tmp4;
-  if(read(fileno(rf), &tmp1, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(read(fileno(rf), &tmp2, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(read(fileno(rf), &tmp3, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(read(fileno(rf), &tmp4, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(read(fileno(rf), &tmp1, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(read(fileno(rf), &tmp2, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(read(fileno(rf), &tmp3, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(read(fileno(rf), &tmp4, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
   return((tmp4<<24)+(tmp3<<16)+(tmp2<<8)+tmp1);
   }
 
 short ResFile::ReadShort()  {
   unsigned char tmp1, tmp2;
-  if(read(fileno(rf), &tmp1, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(read(fileno(rf), &tmp2, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(read(fileno(rf), &tmp1, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(read(fileno(rf), &tmp2, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
   return((tmp2<<8)+tmp1);
   }
 
 char ResFile::ReadChar()  {
   unsigned char ret;
-  if(read(fileno(rf), &ret, 1) != 1) Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(read(fileno(rf), &ret, 1) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
   return ret;
   }
 
@@ -288,13 +257,13 @@ ResFile::~ResFile()  {
 NewResFile::NewResFile(const char *filen)  {
   fn = new char[strlen(filen)+1];
   strcpy(fn, filen);
-  rf = fopen(fn, "wb");
+  rf = U2_FOpenWrite(fn);
   if(rf == NULL)  {
-    Exit(1, "Cannot create \"%s\"!\n", fn);
+    U2_Exit(1, "Cannot create \"%s\"!\n", fn);
     }
   if(write(fileno(rf), FILE_HEADER, sizeof(FILE_HEADER))
 	< (long)sizeof(FILE_HEADER)) {
-    Exit(1, "Not enough drive space for \"%s\"!\n", fn);
+    U2_Exit(1, "Not enough drive space for \"%s\"!\n", fn);
     }
   }
 
@@ -385,7 +354,7 @@ NewResFile::~NewResFile()  {
 
 void NewResFile::Write(const void *data, int ammt)  {
   if(write(fileno(rf), data, ammt) != ammt)  {
-    Exit(1, "Write failure on \"%s\"!\n", fn);
+    U2_Exit(1, "Write failure on \"%s\"!\n", fn);
     }
   }
 
@@ -395,20 +364,20 @@ void NewResFile::WriteInt(int data)  {
   tmp3 = (data>>16) & 255;
   tmp2 = (data>>8) & 255;
   tmp1 = data & 255;
-  if(write(fileno(rf), &tmp1, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
-  if(write(fileno(rf), &tmp2, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
-  if(write(fileno(rf), &tmp3, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
-  if(write(fileno(rf), &tmp4, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp1, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp2, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp3, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp4, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
   }
 
 void NewResFile::WriteShort(short data)  {
   unsigned char tmp1, tmp2;
   tmp2 = (data>>8) & 255;
   tmp1 = data & 255;
-  if(write(fileno(rf), &tmp1, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
-  if(write(fileno(rf), &tmp2, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp1, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &tmp2, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
   }
 
 void NewResFile::WriteChar(char data)  {
-  if(write(fileno(rf), &data, 1) != 1) Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(write(fileno(rf), &data, 1) != 1) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
   }

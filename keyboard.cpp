@@ -31,10 +31,10 @@ const char *__Shift_Char_Lookup = "\0\E!@#$%^&*()_+\b\tQWERTYUIOP{}\n\0ASDFGHJKL
 #endif
 
 Keyboard::Keyboard() {
-  if(__Da_Screen == NULL) Exit(-1, "Must create Screen before Keyboard!\n");
+  if(__Da_Screen == NULL) U2_Exit(-1, "Must create Screen before Keyboard!\n");
   memset(KeyRemap, 0, KB_BUF_SIZE*(sizeof(Sprite *)));
   memset(KeyStats, 0, KB_BUF_SIZE);
-  memset((char *)key_stat, 0, KEY_MAX);
+  memset((char *)key_stat, 0, U2_KEY_MAX);
   memset((char *)modkey, 0, 32*sizeof(int));
   modkey[0] = KEY_LSHIFT;
   modkey[1] = KEY_RSHIFT;
@@ -195,13 +195,13 @@ char Keyboard::KeyToChar(int key) {
   switch(key)  {
     case(0): return 0; break;
     case(KEY_INSERT):  ret = CHAR_INSERT;  break;
-    case(KEY_DEL):  ret = CHAR_DELETE;  break;
-    case(KEY_BACKSP):  ret = CHAR_BACKSPACE;  break;
+    case(KEY_DEL):  ret = CHAR_DEL;  break;
+    case(KEY_BACKSP):  ret = CHAR_BACKSP;  break;
     case(KEY_UP):  ret = CHAR_UP;  break;
     case(KEY_DOWN):  ret = CHAR_DOWN;  break;
     case(KEY_LEFT):  ret = CHAR_LEFT;  break;
     case(KEY_RIGHT):  ret = CHAR_RIGHT;  break;
-    case(KEY_ESC):  ret = CHAR_ESCAPE;  break;
+    case(KEY_ESC):  ret = CHAR_ESC;  break;
     case(KEY_END):  ret = CHAR_END;  break;
     case(KEY_HOME):  ret = CHAR_HOME;  break;
     case(KEY_PGUP):  ret = CHAR_PGUP;  break;
@@ -307,14 +307,14 @@ int Keyboard::ModKey(int k) {
 void Keyboard::AddModKey(int k) {
   int ctr;
   for(ctr=0; ctr<32 && modkey[ctr] != 0; ctr++);
-  if(ctr >= 32) Exit(-1, "Too many ModKeys (max=32)\n");
+  if(ctr >= 32) U2_Exit(-1, "Too many ModKeys (max=32)\n");
   modkey[ctr] = k;
   }
 
 void Keyboard::RemoveModKey(int k) {
   int ctr;
   for(ctr=0; ctr<32 && modkey[ctr] != k; ctr++);
-  if(ctr >= 32) Exit(-1, "Tried to Remove Non-Existant ModKey (%d)\n", k);
+  if(ctr >= 32) U2_Exit(-1, "Tried to Remove Non-Existant ModKey (%d)\n", k);
   modkey[ctr] = 0;
   }
 
@@ -387,7 +387,7 @@ volatile unsigned short Keyboard::ModKey[10];
 
 #endif
 volatile int Keyboard::modkey[32];
-volatile char Keyboard::key_stat[KEY_MAX];
+volatile char Keyboard::key_stat[U2_KEY_MAX];
 volatile char Keyboard::queue_keys = 1;
 #ifdef DOS
 

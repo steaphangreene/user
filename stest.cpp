@@ -9,7 +9,7 @@
 #endif
 
 int  main(int argc, char **argv)  {
-  InitUserEngine(argc, argv);
+  U2_Init(argc, argv);
 
 //  Speaker *sb = new Speaker(0, 16, 11025);
 //  Speaker *sb = new Speaker(1, 16, 11025);

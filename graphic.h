@@ -2,7 +2,7 @@
 // graphic.h
 // Advanced Graphic class, Pre ALPHA non-distribution version
 //
-// -By Insomnia (Steaphan Greene)      (Copyright 1997-1999 Steaphan Greene)
+// -By Insomnia (Steaphan Greene)   (Copyright 1997-2001 Steaphan Greene)
 //                   (insomnia@core.binghamton.edu)
 //      No waranty stated or implied, I am not responsible for any damage
 // caused directly or indirectly by this software.
@@ -76,6 +76,7 @@ class Graphic {
   void DefSize(int, int);
   void DefLin(char*);
   void DefLinH(char*);
+  color GetPixel(int, int);
   Graphic HalfSize() {return Scaled(xsize>>1, ysize>>1);};
   Graphic DoubleSize() {return Scaled(xsize<<1, ysize<<1);};
   Graphic Hashed(color);

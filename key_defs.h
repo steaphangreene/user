@@ -216,9 +216,9 @@
 #define KEY_PAUSE      XK_Pause
 #endif
 
-#define CHAR_DELETE	128
-#define CHAR_BACKSPACE	'\b'
-#define CHAR_ESCAPE	'\e'
+#define CHAR_DEL	128
+#define CHAR_BACKSP	'\b'
+#define CHAR_ESC	'\e'
 #define CHAR_LEFT	129
 #define CHAR_RIGHT	130
 #define CHAR_UP		131

@@ -9,7 +9,7 @@
 extern Screen *__Da_Screen;
 
 Sprite::Sprite() {
-  if(__Da_Screen == NULL)  Exit(-1, "Must create Screen before Sprite!\n");
+  if(__Da_Screen == NULL)  U2_Exit(-1, "Must create Screen before Sprite!\n");
   pan = 0;
   drawn = 0;
   flags = 0;
@@ -26,7 +26,7 @@ Sprite::Sprite() {
   }
 
 Sprite::Sprite(const Graphic &g) {
-  if(__Da_Screen == NULL)  Exit(-1, "Must create Screen before Sprite!\n");
+  if(__Da_Screen == NULL)  U2_Exit(-1, "Must create Screen before Sprite!\n");
   pan = 0;
   drawn = 0;
   flags = 0;
@@ -220,12 +220,12 @@ void Sprite::Erase() {
   }
 
 void Sprite::DefLinH(char *l) {
-  if(image == NULL) Exit(-1, "DefLinH on undeclared Graphic in Sprite!\n");
+  if(image == NULL) U2_Exit(-1, "DefLinH on undeclared Graphic in Sprite!\n");
   trueimage->DefLinH(l);
   }
 
 void Sprite::DefLin(char *l) {
-  if(image == NULL) Exit(-1, "DefLin on undeclared Graphic in Sprite!\n");
+  if(image == NULL) U2_Exit(-1, "DefLin on undeclared Graphic in Sprite!\n");
   trueimage->DefLin(l);
   }
 
@@ -238,7 +238,7 @@ int Sprite::Hits(int x, int y, int xs, int ys) {
   UserDebug("User:Sprite:Hits(x,y,z) Start");
   int ctrx, ctry;
 
-  if(image == NULL) Exit(-1, "Hitting Nothing!\n");
+  if(image == NULL) U2_Exit(-1, "Hitting Nothing!\n");
 
   if(image->depth == 8)  {
     UserDebug("User:Sprite:Hits(x,y,z) 8-bit Loop Start");
@@ -273,7 +273,7 @@ int Sprite::Hits(int x, int y, int xs, int ys) {
       }
     UserDebug("User:Sprite:Hits(x,y,z) 32-bit Loop End");
     }
-  else Exit(-1, "Unknown Depth Error (%ld) in %s\n", image->depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown Depth Error (%ld) in %s\n", image->depth, __PRETTY_FUNCTION__);
   UserDebug("User:Sprite:Hits(x,y,z) End");
   return 0;
   }
@@ -284,8 +284,8 @@ int Sprite::Hits(Sprite *s) {
 
   UserDebug("User:Sprite:Hits 0500");
   if(image->depth != s->image->depth)
-	Exit(-1, "Depth Mismatch %ld->%ld!\n", image->depth, s->image->depth);
-  if(image == NULL || s->image == NULL) Exit(-1, "Hitting Nothing!\n");
+	U2_Exit(-1, "Depth Mismatch %ld->%ld!\n", image->depth, s->image->depth);
+  if(image == NULL || s->image == NULL) U2_Exit(-1, "Hitting Nothing!\n");
 
   if(image->depth == 8)  {
     for(ctry=(ypos >? s->ypos); ctry <
@@ -318,7 +318,7 @@ int Sprite::Hits(Sprite *s) {
 	}
       }
     }
-  else Exit(-1, "Unknown Depth Error (%ld) in %s\n", image->depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown Depth Error (%ld) in %s\n", image->depth, __PRETTY_FUNCTION__);
   UserDebug("User:Sprite:Hits 1000");
   return 0;
   }
