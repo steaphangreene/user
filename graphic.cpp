@@ -2,7 +2,7 @@
 // graphic.cpp
 // Advanced Graphic class, Pre ALPHA non-distribution version
 //
-// -By Insomnia (Steaphan Greene)      (Copyright 1997-1998 Steaphan Greene)
+// -By Insomnia (Steaphan Greene)      (Copyright 1997-1999 Steaphan Greene)
 //                   (insomnia@core.binghamton.edu)
 //      No waranty stated or implied, I am not responsible for any damage
 // caused directly or indirectly by this software.
@@ -331,6 +331,109 @@ Graphic Graphic::Rotated(int angle)  {
   Graphic ret;
   ret.SetRotated(*this, angle);
   return ret;
+  }
+
+void Graphic::SetLine(int xs, int ys, int d, unsigned long c) {
+  int ctrx, ctry;
+  tcolor=0; if(depth==8 && tcolor==c) ++tcolor;
+  depth=d; DefSize(abs(xs)+1,abs(ys)+1);
+  int rev=(abs(xs*ys)!=(xs*ys));
+
+  for(ctry=0; ctry<ysize; ++ctry)
+    memset(image[ctry].uc, tcolor, xsize*(depth>>3));
+
+  if(abs(xs)>abs(ys)) {
+    if(rev) {
+      if(depth==8)
+	for(ctrx=0; ctrx<xsize; ++ctrx)
+	  image[(ysize-1)-((ysize*ctrx)/xsize)].uc[ctrx] = c;
+      else if(depth==32)
+	for(ctrx=0; ctrx<xsize; ++ctrx)
+	  image[(ysize-1)-((ysize*ctrx)/xsize)].ul[ctrx] = c;
+      else Exit(-1, "Unknown depth error!\n");
+      }
+    else {
+      if(depth==8)
+	for(ctrx=0; ctrx<xsize; ++ctrx)
+	  image[(ysize*ctrx)/xsize].uc[ctrx] = c;
+      else if(depth==32)
+	for(ctrx=0; ctrx<xsize; ++ctrx)
+	  image[(ysize*ctrx)/xsize].ul[ctrx] = c;
+      else Exit(-1, "Unknown depth error!\n");
+      }
+    }
+  else {
+    if(rev) {
+      if(depth==8)
+	for(ctry=0; ctry<ysize; ++ctry)
+	  image[ctry].uc[(xsize-1)-((xsize*ctry)/ysize)] = c;
+      else if(depth==32)
+	for(ctry=0; ctry<ysize; ++ctry)
+	  image[ctry].ul[(xsize-1)-((xsize*ctry)/ysize)] = c;
+      else Exit(-1, "Unknown depth error!\n");
+      }
+    else {
+      if(depth==8)
+	for(ctry=0; ctry<ysize; ++ctry)
+	  image[ctry].uc[(xsize*ctry)/ysize] = c;
+      else if(depth==32)
+	for(ctry=0; ctry<ysize; ++ctry)
+	  image[ctry].ul[(xsize*ctry)/ysize] = c;
+      else Exit(-1, "Unknown depth error!\n");
+      }
+    }
+  if(xs<0) xcenter=xsize-1;
+  else xcenter=0;
+  if(ys<0) ycenter=ysize-1;
+  else ycenter=0;
+  }
+
+void Graphic::SetBox(int xs, int ys, int d, unsigned long c) {
+  if(xs<1 || ys<1) return;
+  tcolor=0; if(depth==8 && tcolor==c) ++tcolor;
+  depth=d; DefSize(xs,ys);
+  int ctry, ctrx;
+
+  for(ctry=0; ctry<ysize; ++ctry)
+    memset(image[ctry].uc, tcolor, xsize*(depth>>2));
+
+  if(depth==8) {
+    memset(image[0].uc, c, xsize);
+    memset(image[ysize-1].uc, c, xsize);
+    for(ctry=1; ctry<(ysize-1); ++ctry) {
+      image[ctry].uc[0] = c;
+      image[ctry].uc[xsize-1] = c;
+      }
+    }
+  else if(depth==32) {
+    for(ctrx=0; ctrx<xsize; ++ctrx) {
+      image[0].ul[ctrx] = c;
+      image[ysize-1].ul[ctrx] = c;
+      }
+    for(ctry=1; ctry<(ysize-1); ++ctry) {
+      image[ctry].uc[0] = c;
+      image[ctry].uc[xsize-1] = c;
+      }
+    }
+  else Exit(-1, "Unknown depth error!\n");
+  }
+
+void Graphic::SetFillBox(int xs, int ys, int d, unsigned long c) {
+  if(xs<1 || ys<1) return;
+  tcolor=0; if(depth==8 && tcolor==c) ++tcolor;
+  depth=d; DefSize(xs,ys);
+  int ctry;
+  if(depth==8) {
+    for(ctry=0; ctry<ysize; ++ctry) {
+      memset(image[ctry].uc, c, xsize);
+      }
+    }
+  else if(depth==32) {
+    for(ctry=0; ctry<ysize; ++ctry) {
+      for(int ctrx=0; ctrx<xsize; ++ctrx) image[ctry].ul[ctrx] = c;
+      }
+    }
+  else Exit(-1, "Unknown depth error!\n");
   }
 
 void Graphic::SetRotated(Graphic &in, int angle) {
@@ -730,16 +833,40 @@ Graphic::Graphic(char *fn, Palette &p)  {
     Exit(1, "I only support 8 and 24 bit Bitmap files, \"%s\" is %d-bit!\n",
 	fn, depth);
     }
-  tcolor = image[0].uc[0]; //** 8-bit only (and 32 bit kludge)
+  tcolor = image[0].uc[0]; //** 8-bit only
   }
 
 Graphic::Graphic(char *fn)  {
   Init(fn);
   }
 
+void Graphic::InitTGA32(char *fn)  {
+  int ctry;
+  unsigned char buf[256];
+  FILE *tga=fopen(fn, "rb");
+  if(tga != NULL) {
+    if(read(fileno(tga), buf, 18) == 18 && buf[1] == 0 && buf[2] == 2) {
+      depth = 32; tcolor=0;
+      DefSize((buf[13]<<8) + buf[12], (buf[15]<<8) + buf[14]);
+      read(fileno(tga), buf, (int)buf[0]);
+      for(ctry=0; ctry<ysize; ++ctry) {
+	read(fileno(tga), image[ysize-(ctry+1)].ul, xsize*4);
+	}
+      }
+    else {
+      Exit(1, "\"%s\" isn't a 32-bit TGA file!\n", fn);
+      }
+    fclose(tga);
+    }
+  else {
+    Exit(1, "Can't open \"%s\"!\n", fn);
+    }
+  }
+
 void Graphic::Init(char *fn)  {
  Debug("Graphic::Init Begin");
  xdef = 0;  ydef = 0;  zdef = 0;
+ if(!strcasecmp(".tga", &fn[strlen(fn)-4])) { InitTGA32(fn); return; }
  int bmp, colused;
  long size2, width, height, off = 0;
  unsigned char buffer[1280];
@@ -791,7 +918,7 @@ void Graphic::Init(char *fn)  {
     for(ctr = height; ctr > 0; ctr--)  {
       int tmp = read(bmp, image[ctr-1].uc, width*bytes);
       if(tmp != ((long)(width*bytes)))  {
-	Exit(1, "Read error in file \"%s\"\n", fn);
+	Exit(1, "Read error in 8-bit file \"%s\"\n", fn);
 	}
       read(bmp, buffer, off);
       }
@@ -800,18 +927,27 @@ void Graphic::Init(char *fn)  {
     int ctr, ctr2;
     depth = 32;
     DefSize(width, height);
-    for(ctr = height; ctr > 0; ctr--)  {
-      for(ctr2 = 0; ctr <width; ctr++)  {
-	int tmp = read(bmp, &image[ctr-1].uc[ctr2], 3);
+    for(ctr = height; ctr > 0; --ctr)  {
+      for(ctr2 = 0; ctr2 <width; ++ctr2)  {
+	int tmp = read(bmp, &image[ctr-1].ul[ctr2], 3);
 	if(tmp != 3)  {
-	  Exit(1, "Read error in file \"%s\"\n", fn);
+	  Exit(1, "Read error in 24-bit file \"%s\"\n", fn);
 	  }
 	}
       read(bmp, buffer, off);
       }
+    for(ctr = 0; ctr < height; ++ctr) {
+      for(ctr2 = 0; ctr2 <width; ++ctr2) {
+	image[ctr].uc[(ctr2<<2)+3] = 0;
+	if((image[0].ul[0] & 0x0FFFFFF) != (image[ctr].ul[ctr2] & 0x0FFFFFF))
+	  image[ctr].uc[(ctr2<<2)+3] = 255;
+	}
+      }
     }
   linedef = height;
-  tcolor = image[0].uc[0]; //** 8-bit only (and 32-bit kludge)
+  if(depth == 8) tcolor = image[0].uc[0];
+  else if(depth == 32) tcolor = image[0].uc[3]; //** 32-bit kludge
+  else Exit(-1, "Unknown depth error!\n");
   Debug("Graphic::Init Close File");
   close(bmp);
   }
@@ -867,7 +1003,7 @@ void Graphic::SaveBMP(char *fn, const Palette &pal) {
 
 void Graphic::SaveBMP(char *fn)  {
  Debug("User::Graphic::SaveBMP(1) Begin");
- if(depth != 24) Exit(1, "Depth = %d and no Palette given!\n", depth);
+ if(depth != 32) Exit(1, "Depth = %d and no Palette given!\n", depth);
  FILE *bmp;
  int ctr, ctr2;
  {
@@ -895,9 +1031,11 @@ void Graphic::SaveBMP(char *fn)  {
 
   for(ctr=ysize-1; ctr>=0; ctr--)  {
     for(ctr2=0; ctr2<(int)xsize*(depth>>3); ctr2++)
-      fprintf(bmp, "%c", image[ctr].uc[ctr2]);  //** Broken!!!!!!
-    for(; (ctr2 & 3) != 0; ctr2++)
-      fprintf(bmp, "%c", 0);
+      if((ctr2&3) != 3) fprintf(bmp, "%c", image[ctr].uc[ctr2]);
+//    for(ctr2=0; ctr2<(int)xsize*(depth>>3); ctr2++)
+//      fprintf(bmp, "%c", image[ctr].uc[ctr2]);  //** Broken!!!!!!
+//    for(; (ctr2 & 3) != 0; ctr2++)
+//      fprintf(bmp, "%c", 0);
     }
   fclose(bmp);
 //  printf("Xsize = %d, Ysize = %d\n  Size ?= (%d)\n", xsize, ysize,
@@ -945,7 +1083,7 @@ void Graphic::Init24(char *fn, Palette &p)  {
   for(ctr = height; ctr > 0; ctr--)  {
     int tmp = read(fileno(bmp), buffer, width*3+off);
     if(tmp != (long)width*3+off)  {
-      Exit(1, "Read error in file \"%s\"\n", fn);
+      Exit(1, "Read error in 24-bit file loading \"%s\"\n", fn);
       }
     for(ctr2 = 0; ctr2 < (int)width; ctr2++)  { //** 8-bit (maybe not an error)
       image[ctr-1].uc[ctr2] = p.GetClosestColor(buffer[ctr2*3+2],
@@ -954,7 +1092,10 @@ void Graphic::Init24(char *fn, Palette &p)  {
     }
 
   linedef = height;
-  tcolor = image[0].uc[0]; //** Same tcolor 8/32-bit kludge
+  if(depth == 8) tcolor = image[0].uc[0]; //** Same tcolor 8
+  else if(depth == 32) tcolor = image[0].uc[3]; //** 32-bit kludge
+  else Exit(-1, "Unknown depth error!\n");
+  
   fclose(bmp);
   Debug("User::Graphic::Init24 End");
   }

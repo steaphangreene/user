@@ -44,6 +44,7 @@ class Sprite  {
   void DisableCollisions() { collisions = 0; };
   void SetPanel(Panel p) { pan = p; };
   void SetColormap(unsigned long *);
+  int Visible() { return drawn; };
 
   protected:
   int Hits(Sprite *);

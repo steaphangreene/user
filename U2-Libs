@@ -1,2 +1,2 @@
 #!/bin/sh
-echo -L/usr/local/lib -luser -lX11 -lm -lXext -lXxf86dga -lXxf86vm
+echo -L/usr/local/lib -L/usr/X11R6/lib -luser -lX11 -lm -lXext -lXxf86dga -lXxf86vm

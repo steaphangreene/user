@@ -8,7 +8,9 @@ class Sound  {
   public:
   Sound(char *);
   ~Sound();
-  void Play();
+  int Play();
+  int Loop();
+  void Stop(int);
   void ConvertTo(int /*bits*/, int /*stereo?*/, int /*freq*/);
   int Bits() { return bits; };
   int Freq() { return freq; };

@@ -25,19 +25,23 @@ class Speaker {
   void Reconfigure(int /*stereo?*/, int /*bits*/, int /*freq*/);
   void FinishQueue();
   void Update();
-  void Play(Sound &);
+  int Play(Sound &);
+  int Loop(Sound &);
   void MakeFriendly(Sound &);
   void SetAsAmbient(Sound &);
 //  void Play(Music &);
+  void Stop(int);
   void StopByBuffer(mfmt, int);
   int Active();
 
   private:
   int Configure(int, int, int);
+  void ExpandCur();
   int bufsize, stereo, cur_num, cur_alloc, ambient;
   long writenext;
   mfmt buf, ambientp;
   Playing *cur;
+  int *loop;
   static volatile int freq;
 
 #ifdef OSS_SOUND

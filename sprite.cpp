@@ -17,6 +17,7 @@ Sprite::Sprite() {
   ownimage = 0;
   angle = 0;
   inum = 0;
+  priority = 0;
   remap = NULL;
   image = NULL;
   trueimage = NULL;
@@ -32,6 +33,7 @@ Sprite::Sprite(const Graphic &g) {
   ownimage = 0;
   angle = 0;
   inum = 0;
+  priority = 0;
   remap = NULL;
   image = NULL;
   trueimage = NULL;
@@ -139,6 +141,8 @@ void Sprite::Draw(int x, int y, int a) {
   x-=image->xcenter; y-=image->ycenter;
   __Da_Screen->DrawTransparentGraphicFG(*image, x, y, pan);
   xpos = x; ypos = y; drawn = 1;
+  if(image != NULL && __Da_Screen != NULL)
+    __Da_Screen->RestoreRectangle(xpos, ypos, image->xsize, image->ysize);
   }
 
 void Sprite::Draw(int x, int y) {
@@ -148,14 +152,17 @@ void Sprite::Draw(int x, int y) {
   __Da_Screen->DrawTransparentGraphicFG(*image, x, y, pan);
   Debug("User:Sprite:Draw(x,y) Middle");
   xpos = x; ypos = y; drawn = 1;
+  if(image != NULL && __Da_Screen != NULL)
+    __Da_Screen->RestoreRectangle(xpos, ypos, image->xsize, image->ysize);
   Debug("User:Sprite:Draw(x,y) End");
   }
 
 void Sprite::Draw() {
   if(drawn || image == NULL) return;
-  __Da_Screen->DrawTransparentGraphicFG(*image,
-	xpos+image->xcenter, ypos+image->ycenter, pan);
+  __Da_Screen->DrawTransparentGraphicFG(*image, xpos, ypos, pan);
   drawn = 1;
+  if(image != NULL && __Da_Screen != NULL)
+    __Da_Screen->RestoreRectangle(xpos, ypos, image->xsize, image->ysize);
   }
 
 void Sprite::Erase() {
@@ -200,7 +207,7 @@ int Sprite::Hits(int x, int y, int xs, int ys) {
     for(ctry=ypos; ctry < ((ypos+image->ysize) <? (y+ys)); ctry++)  {
       for(ctrx=xpos; ctrx < ((xpos+image->xsize) <? (x+xs)); ctrx++)  {
 	Debug("User:Sprite:Hits2 0600");
-	if(image->image[ctry-ypos].uc[(ctrx-xpos)*3+3] != image->tcolor)  {
+	if(image->image[ctry-ypos].uc[(ctrx-xpos)*4+3] != image->tcolor)  {
 	  return 1;
 	  }
 	Debug("User:Sprite:Hits2 0605");
@@ -240,9 +247,9 @@ int Sprite::Hits(Sprite *s) {
       for(ctrx=(xpos >? s->xpos); ctrx <
 		((xpos+image->xsize) <? (s->xpos+s->image->xsize)); ctrx++)  {
 	Debug("User:Sprite:Hits 0600");
-	if(image->image[ctry-ypos].uc[(ctrx-xpos)*3+3] != image->tcolor)  {
+	if(image->image[ctry-ypos].uc[(ctrx-xpos)*4+3] != image->tcolor)  {
 	  Debug("User:Sprite:Hits 0602");
-	  if(s->image->image[ctry-(s->ypos)].uc[(ctrx-(s->xpos))*3+3]
+	  if(s->image->image[ctry-(s->ypos)].uc[(ctrx-(s->xpos))*4+3]
 		!= s->image->tcolor) {
 	    Debug("User:Sprite:Hits 0999");
 	    return 1;

@@ -2,7 +2,7 @@
 // graphic.h
 // Advanced Graphic class, Pre ALPHA non-distribution version
 //
-// -By Insomnia (Steaphan Greene)      (Copyright 1997-1998 Steaphan Greene)
+// -By Insomnia (Steaphan Greene)      (Copyright 1997-1999 Steaphan Greene)
 //                   (insomnia@core.binghamton.edu)
 //      No waranty stated or implied, I am not responsible for any damage
 // caused directly or indirectly by this software.
@@ -43,6 +43,9 @@ class Graphic {
   void SetRotated(Graphic &, int);
   void SetScaled(Graphic &, double);
   void SetScaled(Graphic &, int, int);
+  void SetLine(int, int, int, unsigned long);
+  void SetBox(int, int, int, unsigned long);
+  void SetFillBox(int, int, int, unsigned long);
   Graphic Rotated(int);
   Graphic Rotated(int, int);
   Graphic Rotated(double, int, int, int);
@@ -73,6 +76,7 @@ class Graphic {
   private:
   void Init(char *);
   void Init24(char *, Palette &);
+  void InitTGA32(char *);
   int linedef;
   long xdef, ydef, zdef;
   };

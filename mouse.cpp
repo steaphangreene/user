@@ -176,6 +176,7 @@ void Mouse::SetCursor(Graphic &g) {
   if(cursor != NULL) delete cursor;
   Debug("User:Mouse:SetCursor() Middle");
   cursor = new Sprite(g);
+  cursor->SetPriority(-10000);
   Debug("User:Mouse:SetCursor() End");
   }
 

@@ -85,8 +85,18 @@ Sound::~Sound()  {
   Debug("User:Sound:~Sound End");
   }
 
-void Sound::Play()  {
-  if(__Da_Speaker != NULL) __Da_Speaker->Play(*this);
+int Sound::Play()  {
+  if(__Da_Speaker != NULL) return __Da_Speaker->Play(*this);
+  else return -1;
+  }
+
+int Sound::Loop()  {
+  if(__Da_Speaker != NULL) return __Da_Speaker->Loop(*this);
+  else return -1;
+  }
+
+void Sound::Stop(int s)  {
+  if(__Da_Speaker != NULL) __Da_Speaker->Stop(s);
   }
 
 void Sound::ConvertTo(int bts, int stro, int fr)  {

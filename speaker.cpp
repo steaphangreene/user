@@ -78,8 +78,10 @@ int Speaker::Configure(int stro, int bts, int fr)  {
 
   writenext = -(SOUND_BUF_SIZE);
   cur = new Playing[SOUND_NUM];
+  loop = new int[SOUND_NUM];
   cur_num = 0; cur_alloc = SOUND_NUM;
-  for(ctr=0; ctr<SOUND_NUM; ctr++) { cur[ctr].left=-1; cur[ctr].pos=NULL; }
+  for(ctr=0; ctr<SOUND_NUM; ctr++)
+    { cur[ctr].left=-1; cur[ctr].pos=NULL; loop[ctr]=0; }
   ambient = -1; ambientp.v = NULL;
 
   stereo=stro; bits=bts; freq=fr;
@@ -392,13 +394,14 @@ void Speaker::MakeFriendly(Sound &samp) {
   samp.ConvertTo(bits, stereo, freq);
   }
 
-void Speaker::Play(Sound &samp) {
+int Speaker::Play(Sound &samp) {
   int ctr;
   samp.ConvertTo(bits, stereo, freq);
 //  write(dsp, samp.data, samp.len);
   for(ctr=0; ctr<cur_alloc && cur[ctr].left>=0; ctr++);
-  if(ctr>=cur_alloc) Exit(-1, "Unhandled cur expansion!\n");
+  if(ctr>=cur_alloc) ExpandCur();
   cur[ctr].left = samp.len;  cur[ctr].pos = samp.data.uc;
+  loop[ctr] = 0;
 
 #ifdef DOS_SOUND
   if(paused) {
@@ -407,6 +410,26 @@ void Speaker::Play(Sound &samp) {
     paused = 0;
     }
 #endif
+  return ctr;
+  }
+
+int Speaker::Loop(Sound &samp) {
+  int ctr;
+  samp.ConvertTo(bits, stereo, freq);
+//  write(dsp, samp.data, samp.len);
+  for(ctr=0; ctr<cur_alloc && cur[ctr].left>=0; ctr++);
+  if(ctr>=cur_alloc) ExpandCur();
+  cur[ctr].left = samp.len;  cur[ctr].pos = samp.data.uc;
+  loop[ctr] = 1;
+
+#ifdef DOS_SOUND
+  if(paused) {
+    if(bits == 8) outportb(S_WRITE, 0xD4);
+    else outportb(S_WRITE, 0xD6);
+    paused = 0;
+    }
+#endif
+  return ctr;
   }
 
 void Speaker::SetAsAmbient(Sound &samp) {
@@ -414,7 +437,7 @@ void Speaker::SetAsAmbient(Sound &samp) {
   samp.ConvertTo(bits, stereo, freq);
 //  write(dsp, samp.data, samp.len);
   for(ctr=0; ctr<cur_alloc && cur[ctr].left>=0; ctr++);
-  if(ctr>=cur_alloc) Exit(-1, "Unhandled cur expansion!\n");
+  if(ctr>=cur_alloc) ExpandCur();
   cur[ctr].left = samp.len;  cur[ctr].pos = samp.data.uc;
   ambient = ctr; ambientp.uc = samp.data.uc;
 
@@ -530,11 +553,21 @@ void Speaker::Update() {
   Debug("User:Speaker:Update End");
   }
 
+void Speaker::Stop(int s)  {
+  cur[s].left = -1;
+  loop[s] = 0;
+  if(s==ambient)  {
+    ambient = -1;
+    ambientp.v = NULL;
+    }
+  }
+
 void Speaker::StopByBuffer(mfmt ptr, int sz)  {
   int ctr;
   for(ctr=0; ctr<cur_alloc; ctr++)  {
     if(cur[ctr].pos >= ptr.uc && cur[ctr].pos < (ptr.uc+sz))  {
       cur[ctr].left = -1;
+      loop[ctr] = 0;
       if(ctr==ambient)  {
 	ambient = -1;
 	ambientp.v = NULL;
@@ -545,6 +578,25 @@ void Speaker::StopByBuffer(mfmt ptr, int sz)  {
 
 int Speaker::Active()  {
   return(__Da_Speaker == this);
+  }
+
+void Speaker::ExpandCur()  {
+  int ctr;
+
+  cur_alloc += SOUND_NUM;
+  Playing *oldcur=cur;
+  cur = new Playing[cur_alloc];
+  loop = new int[cur_alloc];
+  for(ctr=0; ctr<(cur_alloc-SOUND_NUM); ctr++) {
+     cur[ctr] = oldcur[ctr];
+     loop[ctr] = loop[ctr];
+     }
+  for(; ctr<cur_alloc; ctr++) {
+    cur[ctr].left=-1;
+    cur[ctr].pos=NULL;
+    loop[ctr]=0;
+    }
+  delete oldcur;
   }
 
 #ifdef DOS_SOUND

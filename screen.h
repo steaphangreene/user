@@ -152,7 +152,6 @@ class Screen  {
   IntList CollideRectangle(int, int, int, int, int);
   Sprite *sprites[MAX_SPRITES], *spbuf[MAX_SPRITES];
   int nextsprite;
-  static int CompareSprites(Sprite *, Sprite *);
   int RegisterSprite(Sprite *);
   void RemoveSprite(int, Sprite *);
   friend class Sprite;

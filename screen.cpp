@@ -1278,22 +1278,28 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
   if(x+xs > xsize) xs = xsize-x;
   if(y+ys > ysize) ys = ysize-y;
   InvalidateRectangle(x, y, xs, ys);
-  int ctrx, ctry;
+  int /*ctrx,*/ ctry;
   Debug("Screen:RestoreRectangle() Before Write");
   if(depth == 8)  {
     for(ctry=y; ctry<y+ys; ctry++)  {
+      memcpy(image[ctry].uc+x, backg[ctry].uc+x, xs);
+/*
       for(ctrx=x; ctrx<x+xs; ctrx++)  {
 	((unsigned char **)image)[ctry][ctrx] = 
 				((unsigned char **)backg)[ctry][ctrx];
 	}
+*/
       }
     }
   else if(depth == 32)  {
     for(ctry=y; ctry<y+ys; ctry++)  {
+      memcpy(image[ctry].ul+x, backg[ctry].ul+x, xs<<2);
+/*
       for(ctrx=x; ctrx<x+xs; ctrx++)  {
 	((unsigned long **)image)[ctry][ctrx] = 
 				((unsigned long **)backg)[ctry][ctrx];
 	}
+*/
       }
     }
   else Exit(-1, "Unknown depth error (%d)\n", depth);
@@ -1311,8 +1317,18 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
     }
   Debug("Screen:RestoreRectangle() Before Sort");
   *spp = NULL;
-  qsort(spbuf,(spp-spbuf)/sizeof(Sprite*), sizeof(Sprite*), 
-	(int (*)(const void *, const void *))&CompareSprites);
+
+  Sprite **ind, **best, **begin, *tmp;
+  for(begin=spbuf; begin!=spp; ++begin) {
+    for(best=begin,ind=begin; ind!=spp; ++ind) {
+      if((*ind)->priority > (*best)->priority) best=ind;
+      else if((*ind)->priority == (*best)->priority
+	&& (*ind)->snum > (*best)->snum) best=ind;
+      }
+    tmp = *best;
+    *best=*begin;
+    *begin=tmp;
+    }
   Debug("Screen:RestoreRectangle() Before Redraw");
   for(spp = spbuf; *spp != NULL; spp++)  {
     (*spp)->RedrawArea(x, y, xs, ys);
@@ -1519,11 +1535,6 @@ int Screen::Print(long cb, long cf, const char *text)  {
   if(TCursor != NULL)  TCursor->Move(tcx, tcy);
   Debug("User::Screen::Print(...) End");
   return tcx;
-  }
-
-int Screen::CompareSprites(Sprite *s1, Sprite *s2) {
-  if(s1->priority != s2->priority)  return (s1->priority)-(s2->priority);
-  else return (s1->snum)-(s2->snum);
   }
 
 void Screen::TGotoXY(int x, int y) {
