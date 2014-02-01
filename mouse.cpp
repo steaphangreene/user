@@ -2,6 +2,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <algorithm>
+using std::min;
+using std::max;
 
 #ifdef DOS
 #include <pc.h>
@@ -372,8 +375,8 @@ void Mouse::Released(int b, int x, int y) {
 	InputAction a;
 	a.g.type = INPUTACTION_MOUSEDOWN;
 	a.m.button = b;
-	a.m.x = x <? startx;
-	a.m.y = y <? starty;
+	a.m.x = min(x, startx);
+	a.m.y = min(y, starty);
 	a.m.xs = abs(x-startx)+1;
 	a.m.ys = abs(y-starty)+1;
 	a.m.panel = __Da_Screen->WhichPanel(x, y);
@@ -429,7 +432,7 @@ void Mouse::Moved(int x, int y) {
 		__Da_Screen->GetApparentDepth(), selcolor);
 	if(selector == NULL) selector = new Sprite;
 	selector->UseImage(selg);
-	selector->Draw(x <? startx, y <? starty);
+	selector->Draw(min(x, startx), min(y, starty));
 	}break;
       }
     }

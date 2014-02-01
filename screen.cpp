@@ -21,6 +21,9 @@
 #include <string.h>
 #include <sys/time.h>
 #include <stdarg.h>
+#include <algorithm>
+using std::min;
+using std::max;
 
 #include "screen.h"
 #include "palette.h"
@@ -1088,8 +1091,8 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
   int ctrx, ctry;
   if(depth == 8)  {
 //    UserDebug("User:Screen:DrawPartialTransparentGraphicFG Depth 8");
-    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
-      for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
+    for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
+      for(ctrx=max(xb, pxs[p]-x); ctrx<min(pxe[p]-x, xs+xb); ctrx++)  {
 	if(g.image[ctry].uc[ctrx] != g.tcolor)  {
 	  image[ctry+y].uc[ctrx+x] = g.image[ctry].uc[ctrx];
 	  }
@@ -1098,8 +1101,8 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
     }
   else if(depth == 32)  {
 //    UserDebug("User:Screen:DrawPartialTransparentGraphicFG Depth 32");
-    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
-      for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
+    for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
+      for(ctrx=max(xb, pxs[p]-x); ctrx<min(pxe[p]-x, xs+xb); ctrx++)  {
 	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
 	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
 	  }
@@ -1123,8 +1126,8 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
     }
   else if(depth == 16)  {
 //    UserDebug("User:Screen:DrawPartialTransparentGraphicFG Depth 16");
-    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
-      for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
+    for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
+      for(ctrx=max(xb, pxs[p]-x); ctrx<min(pxe[p]-x, xs+xb); ctrx++)  {
 	if(g.image[ctry].us[ctrx] != g.tcolor)  {
 	  image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
 	  }
@@ -1148,23 +1151,23 @@ void Screen::DrawPartialGraphicFG(Graphic &g, int x, int y,
     }
 //  UserDebug("User:Screen:DrawPartialGraphicFG Middle");
   int ctry;
-  int ix = (xb>?(pxs[p]-x)), ex = (pxe[p]-x)<?(xs+xb);
+  int ix = max(xb, pxs[p]-x), ex = min(pxe[p]-x, xs+xb);
   int sx = ex-ix;
   if(depth == 8)  {
 //    UserDebug("User:Screen:DrawPartialGraphicFG Depth 8");
-    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+    for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
       memcpy(image[ctry+y].uc+x+ix, g.image[ctry].uc+ix, sx);
       }
     }
   else if(depth == 16)  {
 //    UserDebug("User:Screen:DrawPartialGraphicFG Depth 16");
-    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+    for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
       memcpy(image[ctry+y].us+x+ix, g.image[ctry].us+ix, sx<<1);
       }
     }
   else if(depth == 32)  {
 //    UserDebug("User:Screen:DrawPartialGraphicFG Depth 32");
-    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+    for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
       memcpy(image[ctry+y].ul+x+ix, g.image[ctry].ul+ix, sx<<2);
       }
     }
@@ -1187,8 +1190,8 @@ void Screen::RCDrawPartialTransparentGraphicFG(Graphic &g, mfmt remap,
   int ctrx, ctry;
   if(depth == 8)  {
 //    UserDebug("User:Screen:RCDrawPartialTransparentGraphicFG Depth 8");
-    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
-      for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
+    for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
+      for(ctrx=max(xb, pxs[p]-x); ctrx<min(pxe[p]-x, xs+xb); ctrx++)  {
 	if(g.image[ctry].uc[ctrx] != g.tcolor)  {
 	  image[ctry+y].uc[ctrx+x] = remap.uc[g.image[ctry].uc[ctrx]];
 	  }
@@ -1197,8 +1200,8 @@ void Screen::RCDrawPartialTransparentGraphicFG(Graphic &g, mfmt remap,
     }
   else if(depth == 32)  {
 //    UserDebug("User:Screen:RCDrawPartialTransparentGraphicFG Depth 32");
-    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
-      for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
+    for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
+      for(ctrx=max(xb, pxs[p]-x); ctrx<min(pxe[p]-x, xs+xb); ctrx++)  {
 	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
 	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
 	  }
@@ -1222,8 +1225,8 @@ void Screen::RCDrawPartialTransparentGraphicFG(Graphic &g, mfmt remap,
     }
   else if(depth == 16)  {
 //    UserDebug("User:Screen:RCDrawPartialTransparentGraphicFG Depth 16");
-    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
-      for(ctrx=(xb>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?(xs+xb)); ctrx++)  {
+    for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
+      for(ctrx=max(xb, pxs[p]-x); ctrx<min(pxe[p]-x, xs+xb); ctrx++)  {
 	if(g.image[ctry].us[ctrx] != g.tcolor)  {
 	  image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
 	  }
@@ -1247,23 +1250,23 @@ void Screen::RCDrawPartialGraphicFG(Graphic &g, mfmt remap, int x, int y,
     }
 //  UserDebug("User:Screen:RCDrawPartialGraphicFG Middle");
   int ctry;
-  int ix = (xb>?(pxs[p]-x)), ex = (pxe[p]-x)<?(xs+xb);
+  int ix = max(xb, pxs[p]-x), ex = min(pxe[p]-x, xs+xb);
   int sx = ex-ix;
   if(depth == 8)  {
 //    UserDebug("User:Screen:RCDrawPartialGraphicFG Depth 8");
-    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+    for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
       memcpy(image[ctry+y].uc+x+ix, g.image[ctry].uc+ix, sx);
       }
     }
   else if(depth == 16)  {
 //    UserDebug("User:Screen:RCDrawPartialGraphicFG Depth 16");
-    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+    for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
       memcpy(image[ctry+y].us+x+ix, g.image[ctry].us+ix, sx<<1);
       }
     }
   else if(depth == 32)  {
 //    UserDebug("User:Screen:RCDrawPartialGraphicFG Depth 32");
-    for(ctry=(yb>?(pys[p]-y)); ctry<((pye[p]-y)<?(ys+yb)); ctry++)  {
+    for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
       memcpy(image[ctry+y].ul+x+ix, g.image[ctry].ul+ix, sx<<2);
       }
     }
@@ -1286,8 +1289,8 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
   int ctrx, ctry;
   if(depth == 8)  {
     UserDebug("User:Screen:DrawTransparentGraphicFG Depth 8");
-    for(ctry=(0>?(pys[p]-y)); ctry<((pye[p]-y)<?g.ysize); ctry++)  {
-      for(ctrx=(0>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?g.xsize); ctrx++)  {
+    for(ctry=max(0, pys[p]-y); ctry<min(pye[p]-y, g.ysize); ctry++)  {
+      for(ctrx=max(0, pxs[p]-x); ctrx<min(pxe[p]-x, g.xsize); ctrx++)  {
 	if(g.image[ctry].uc[ctrx] != g.tcolor)  {
 	  image[ctry+y].uc[ctrx+x] = g.image[ctry].uc[ctrx];
 	  }
@@ -1296,8 +1299,8 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
     }
   else if(depth == 32)  {
     UserDebug("User:Screen:DrawTransparentGraphicFG Depth 32");
-    for(ctry=(0>?(pys[p]-y)); ctry<((pye[p]-y)<?g.ysize); ctry++)  {
-      for(ctrx=(0>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?g.xsize); ctrx++)  {
+    for(ctry=max(0, pys[p]-y); ctry<min(pye[p]-y, g.ysize); ctry++)  {
+      for(ctrx=max(0, pxs[p]-x); ctrx<min(pxe[p]-x, g.xsize); ctrx++)  {
 	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
 	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
 	  }
@@ -1321,8 +1324,8 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
     }
   else if(depth == 16)  {
     UserDebug("User:Screen:DrawTransparentGraphicFG Depth 16");
-    for(ctry=(0>?(pys[p]-y)); ctry<((pye[p]-y)<?g.ysize); ctry++)  {
-      for(ctrx=(0>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?g.xsize); ctrx++)  {
+    for(ctry=max(0, pys[p]-y); ctry<min(pye[p]-y, g.ysize); ctry++)  {
+      for(ctrx=max(0, pxs[p]-x); ctrx<min(pxe[p]-x, g.xsize); ctrx++)  {
 	if(g.image[ctry].us[ctrx] != g.tcolor)  {
 	  image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
 	  }
@@ -1377,15 +1380,15 @@ void Screen::FullScreenGraphicFG(Graphic &g) {
     }
   int ctrx, ctry;
   if(depth == 8)  {
-    for(ctry=0; ctry<(ysize<?g.ysize); ctry++)  {
-      for(ctrx=0; ctrx<(xsize<?g.xsize); ctrx++)  {
+    for(ctry=0; ctry<min(ysize, g.ysize); ctry++)  {
+      for(ctrx=0; ctrx<min(xsize, g.xsize); ctrx++)  {
 	image[ctry].uc[ctrx] = g.image[ctry].uc[ctrx];
 	}
       }
     }
   else if(depth == 32)  {
-    for(ctry=0; ctry<(ysize<?g.ysize); ctry++)  {
-      for(ctrx=0; ctrx<(xsize<?(g.xsize)); ctrx++)  {
+    for(ctry=0; ctry<min(ysize, g.ysize); ctry++)  {
+      for(ctrx=0; ctrx<min(xsize, g.xsize); ctrx++)  {
 	image[ctry].ul[ctrx] = g.image[ctry].ul[ctrx];
 	}
       }
@@ -1406,8 +1409,8 @@ void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
     }
   int ctrx, ctry;
   if(depth == 8)  {
-    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      for(ctrx=0; ctrx<((xsize-x)<?g.xsize); ctrx++)  {
+    for(ctry=0; ctry<min(ysize-y, g.ysize); ctry++)  {
+      for(ctrx=0; ctrx<min(xsize-x, g.xsize); ctrx++)  {
 	if(g.image[ctry].uc[ctrx] != g.tcolor)  {
 	  image[ctry+y].uc[ctrx+x] = g.image[ctry].uc[ctrx];
 	  backg[ctry+y].uc[ctrx+x] = g.image[ctry].uc[ctrx];
@@ -1417,8 +1420,8 @@ void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
     }
   else if(depth == 32)  {
     UserDebug("User:Screen:DrawTransparentGraphic Depth 32");
-    for(ctry=(0>?(pys[p]-y)); ctry<((pye[p]-y)<?g.ysize); ctry++)  {
-      for(ctrx=(0>?(pxs[p]-x)); ctrx<((pxe[p]-x)<?g.xsize); ctrx++)  {
+    for(ctry=max(0, pys[p]-y); ctry<min(pye[p]-y, g.ysize); ctry++)  {
+      for(ctrx=max(0, pxs[p]-x); ctrx<min(pxe[p]-x, g.xsize); ctrx++)  {
 	if(g.image[ctry].uc[(ctrx<<2)+3] == 255)  {
 	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
 	  backg[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
@@ -1445,8 +1448,8 @@ void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
       }
     }
   else if(depth == 16)  {
-    for(ctry=0; ctry<((ysize-y)<?g.ysize); ctry++)  {
-      for(ctrx=0; ctrx<((xsize-x)<?g.xsize); ctrx++)  {
+    for(ctry=0; ctry<min(ysize-y, g.ysize); ctry++)  {
+      for(ctrx=0; ctrx<min(xsize-x, g.xsize); ctrx++)  {
 	if(g.image[ctry].us[ctrx] != g.tcolor)  {
 	  image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
 	  backg[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
@@ -1542,24 +1545,24 @@ void Screen::FullScreenGraphic(Graphic &g) {
     }
   int ctrx, ctry;
   if(depth == 8)  {
-    for(ctry=0; ctry<(ysize<?g.ysize); ctry++)  {
-      for(ctrx=0; ctrx<(xsize<?g.xsize); ctrx++)  {
+    for(ctry=0; ctry<min(ysize, g.ysize); ctry++)  {
+      for(ctrx=0; ctrx<min(xsize, g.xsize); ctrx++)  {
 	image[ctry].uc[ctrx] = g.image[ctry].uc[ctrx];
 	backg[ctry].uc[ctrx] = g.image[ctry].uc[ctrx];
 	}
       }
     }
   else if(depth == 32)  {
-    for(ctry=0; ctry<(ysize<?g.ysize); ctry++)  {
-      for(ctrx=0; ctrx<(xsize<?(g.xsize)); ctrx++)  {
+    for(ctry=0; ctry<min(ysize, g.ysize); ctry++)  {
+      for(ctrx=0; ctrx<min(xsize, g.xsize); ctrx++)  {
 	image[ctry].ul[ctrx] = g.image[ctry].ul[ctrx];
 	backg[ctry].ul[ctrx] = g.image[ctry].ul[ctrx];
 	}
       }
     }
   else if(depth == 16)  {
-    for(ctry=0; ctry<(ysize<?g.ysize); ctry++)  {
-      for(ctrx=0; ctrx<(xsize<?(g.xsize)); ctrx++)  {
+    for(ctry=0; ctry<min(ysize, g.ysize); ctry++)  {
+      for(ctrx=0; ctrx<min(xsize, g.xsize); ctrx++)  {
 	image[ctry].us[ctrx] = g.image[ctry].us[ctrx];
 	backg[ctry].us[ctrx] = g.image[ctry].us[ctrx];
 	}
@@ -1854,10 +1857,10 @@ void Screen::InvalidateRectangle(int x, int y, int xs, int ys)  {
 	|| (xe >= rxs[ctr] && xe < rxe[ctr]))
 	&& ((y >= rys[ctr] && y < rye[ctr])
 	|| (ye >= rys[ctr] && ye < rye[ctr]))) {
-      rxs[ctr] = (rxs[ctr] <? x);
-      rxe[ctr] = (rxe[ctr] >? xe);
-      rys[ctr] = (rys[ctr] <? y);
-      rye[ctr] = (rye[ctr] >? ye);
+      rxs[ctr] = min(rxs[ctr], x);
+      rxe[ctr] = max(rxe[ctr], xe);
+      rys[ctr] = min(rys[ctr], y);
+      rye[ctr] = max(rye[ctr], ye);
       return;
       }
     }
@@ -1873,11 +1876,11 @@ void Screen::InvalidateRectangle(int x, int y, int xs, int ys)  {
     }
 
   int num=0, loss, tl;
-  loss = ((rxe[0] >? xe)-(rxs[0] <? x))*((rye[0] >? ye)-(rys[0] <? y));
+  loss = (max(rxe[0], xe)-min(rxs[0], x))*(max(rye[0], ye)-min(rys[0], y));
   loss -= (rxe[0]-rxs[0])*(rye[0]-rys[0]);
   loss -= (xe-x)*(ye-y);
   for(ctr=1; ctr<REDRAW_RECTS; ctr++) {
-    tl = ((rxe[ctr] >? xe)-(rxs[ctr] <? x))*((rye[ctr] >? ye)-(rys[ctr] <? y));
+    tl = (max(rxe[ctr], xe)-min(rxs[ctr], x))*(max(rye[ctr], ye)-min(rys[ctr], y));
     tl -= (rxe[ctr]-rxs[ctr])*(rye[ctr]-rys[ctr]);
     tl -= (xe-x)*(ye-y);
     if(tl<loss) {
@@ -1885,10 +1888,10 @@ void Screen::InvalidateRectangle(int x, int y, int xs, int ys)  {
       loss = tl;
       }
     }
-  rxs[num] = (rxs[num] <? x);
-  rxe[num] = (rxe[num] >? xe);
-  rys[num] = (rys[num] <? y);
-  rye[num] = (rye[num] >? ye);
+  rxs[num] = min(rxs[num], x);
+  rxe[num] = max(rxe[num], xe);
+  rys[num] = min(rys[num], y);
+  rye[num] = max(rye[num], ye);
   }
 
 void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {

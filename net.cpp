@@ -1,5 +1,8 @@
 #include <string.h>
 #include <user.h>
+#include <algorithm>
+using std::min;
+using std::max;
 
 #ifdef X_WINDOWS
 #include <errno.h>
@@ -293,7 +296,7 @@ void Network::CloseSocket(unsigned short sock)  {
 
 void Network::Send(void *mes, int len)  {
   if(len>(10*GetMaxPacketSize()))  U2_Exit(0, "Packet Too Big!!\n");
-  int clen = len <? GetMaxPacketSize();
+  int clen = min(len, GetMaxPacketSize());
   char sb[4+clen];
   sb[0] = (len & 255);
   sb[1] = ((len>>8) & 255);
