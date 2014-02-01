@@ -1,6 +1,7 @@
+#include "bag.h"
+#include "engine.h"
+
 #include <stdio.h>
-#include <user/bag.h>
-#include <user/engine.h>
 
 LongBag::LongBag(int sz)  {
   contents = new long[sz];

@@ -233,19 +233,19 @@ int Screen::SetSize(int x, int y)  {
 
   pxs[0] = 0; pys[0] = 0;
   pxe[0] = x; pye[0] = y;
-  bins = new (Sprite**)[xbins];
+  bins = new Sprite**[xbins];
   if(!bins) U2_Exit(1, "Insufficient memory!\n");
   for(ctr=0; ctr<xbins; ++ctr) {
-    bins[ctr] = new (Sprite*)[ybins];
+    bins[ctr] = new Sprite*[ybins];
     if(!bins[ctr]) U2_Exit(1, "Insufficient memory!\n");
     for(ctr2=0; ctr2<ybins; ++ctr2) {
       bins[ctr][ctr2] = NULL;
       }
     }
-  lbins = new (Sprite**)[xlbins];
+  lbins = new Sprite**[xlbins];
   if(!lbins) U2_Exit(1, "Insufficient memory!\n");
   for(ctr=0; ctr<xlbins; ++ctr) {
-    lbins[ctr] = new (Sprite*)[ylbins];
+    lbins[ctr] = new Sprite*[ylbins];
     if(!lbins[ctr]) U2_Exit(1, "Insufficient memory!\n");
     for(ctr2=0; ctr2<ylbins; ++ctr2) {
       lbins[ctr][ctr2] = NULL;

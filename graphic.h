@@ -83,7 +83,7 @@ class Graphic {
   Graphic OffHashed(color); 
   Graphic DoubleX();
   Graphic DoubleY();
-  long xsize, ysize, depth;
+  int xsize, ysize, depth;
   int xcenter, ycenter;
   mfmt * image;
   unsigned long tcolor;

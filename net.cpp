@@ -1,5 +1,6 @@
+#include "user.h"
+
 #include <string.h>
-#include <user.h>
 #include <algorithm>
 using std::min;
 using std::max;

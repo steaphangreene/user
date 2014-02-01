@@ -146,10 +146,6 @@ void U2_Init(int argc, char **argv)  {
 extern Display *___mydisplay;
 #endif
 
-#ifndef DOS
-  extern "C" { int strsignal(int); }
-#endif
-
 void SigHand(int sn)  {
 #ifdef USER_DEBUG
   StopUserEngine();
@@ -187,7 +183,6 @@ void U2_Exit(int code, const char *out, ...)  {
   va_start(stuff, out);
   vprintf(out, stuff);
   va_end(stuff);
-  pthread_kill_other_threads_np();
   _exit(0);
   }
 
@@ -370,7 +365,7 @@ int U2_FFlush(U2_File fl) {
 
 int U2_FClose(U2_File fl) {
 #ifdef USE_ZLIB
-  return gzclose(fl);
+  return gzclose((gzFile)fl);
 #else
   return fclose((FILE *)fl);
 #endif

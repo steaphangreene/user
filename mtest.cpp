@@ -1,5 +1,6 @@
+#include "user.h"
+
 #include <stdio.h>
-#include <user.h>
 
 int main(int argc, char **argv)  {
   U2_Init(argc, argv);
