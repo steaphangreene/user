@@ -1,2 +1,2 @@
 #!/bin/sh
-echo -L/usr/local/lib -L/usr/X11R6/lib -lu2 -lX11 -lm -lXext -lXxf86dga -lXxf86vm `esd-config --libs` -lpthread -lz
+echo -L/home/stea/git/user -L/usr/local/lib -L/usr/X11R6/lib -lu2 -lX11 -lm -lXext -lXxf86dga -lXxf86vm `esd-config --libs` -lpthread -lz

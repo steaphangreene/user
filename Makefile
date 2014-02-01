@@ -1,6 +1,6 @@
 CFLAGS:=$(shell ./U2-CFlags)
 LIBS:=	$(shell ./U2-Libs)
-CC:=	gcc $(CFLAGS)
+CC:=	g++ $(CFLAGS)
 OBJS:=	screen.o engine.o graphic.o palette.o sound.o speaker.o sprite.o \
 	input.o keyboard.o mouse.o resfile.o bag.o chunk.o net.o \
 	control.o movable.o clickey.o stickey.o joystick.o
@@ -19,7 +19,6 @@ mtest:	libu2.a mtest.o $(ALL)
 
 libu2.a:	$(OBJS) $(ALL)
 	ar rcs libu2.a $(OBJS)
-	U2-Inst
 
 user:	libu2.a
 

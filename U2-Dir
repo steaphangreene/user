@@ -1,2 +1,2 @@
 #!/bin/sh
-echo /usr/local/include/user/
+echo /home/stea/git/user/
