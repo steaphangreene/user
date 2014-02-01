@@ -53,7 +53,7 @@ class Chunk {
       }
     else if(ch[size].v) {
       data.v = ch[size].v;
-      ch[size].u8 = data.u8;
+      ch[size].u8 = (unsigned char *)(data.UL);
       }
     else {
       data.u8 = new unsigned char[size<<10];

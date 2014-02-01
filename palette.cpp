@@ -47,18 +47,18 @@ void Palette::Set(const char *fn)  {
   }
 
 void Palette::SetMS(const char *fn)  {
-  int r, g, b, ctr, c;
+  int r, g, b, ctr;
   U2_File palfl = U2_FOpenRead(fn);
   if(palfl==NULL)  {
     printf("Palette File Not Found!\n");
     exit(1);
     }
-  for(ctr=0; ctr<24; ctr++)  c = U2_FGetC(palfl);
+  for(ctr=0; ctr<24; ctr++)  U2_FGetC(palfl);
   for(ctr=0; ctr<256; ctr++)  {
     r = U2_FGetC(palfl);
     g = U2_FGetC(palfl);
     b = U2_FGetC(palfl);
-    c = U2_FGetC(palfl);
+    U2_FGetC(palfl);
     SetPaletteEntry(ctr, r, g, b);
     }
   U2_FClose(palfl);
@@ -67,22 +67,19 @@ void Palette::SetMS(const char *fn)  {
 
 
 void Palette::SetPSP(const char *fn)  {
-  U2_Exit(0, "Fix this function: Palette::SetPSP\n");
-/*
   int r, g, b, ctr;
   U2_File palfl = U2_FOpenRead(fn);
   if(palfl==NULL)  {
     printf("Palette File Not Found!\n");
     exit(1);
     }
-  fscanf(palfl, "%*[^\n]\n%*[^\n]\n%*[^\n]\n");
+  fscanf((FILE *)(palfl), "%*[^\n]\n%*[^\n]\n%*[^\n]\n");
   for(ctr=0; ctr<256; ctr++)  {
-    fscanf(palfl, "%d %d %d\n", &r, &g, &b);
+    fscanf((FILE *)(palfl), "%d %d %d\n", &r, &g, &b);
     SetPaletteEntry(ctr, r, g, b);
     }
   U2_FClose(palfl);
   coldec = 256;
-*/
   }
 
 void Palette::SetBMP(const char *fn)  {
