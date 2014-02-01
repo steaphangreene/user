@@ -66,9 +66,9 @@ Sound::Sound(char *fn)  {
     U2_Exit(1, "\"%s\" is not a WAVE file (no data).\n", fn);
     }
   FRead(wave, &len, 4); //len *= channels; len *=(bits>>3);
-  data.uc = new unsigned char[len];
+  data.u8 = new unsigned char[len];
 //  printf("Len = %d\n", len);
-  FRead(wave, data.uc, (long)len);
+  FRead(wave, data.u8, (long)len);
   
   U2_FClose(wave);
   }
@@ -78,8 +78,8 @@ Sound::~Sound()  {
   if(__Da_Speaker != NULL) __Da_Speaker->StopByBuffer(data, (long)len);
   UserDebug("User:Sound:~Sound Middle");
   if(data.v != NULL) {
-    if(bits == 16) delete [] data.s;
-    else delete [] data.uc;
+    if(bits == 16) delete [] data.s16;
+    else delete [] data.u8;
     }
   data.v = NULL;
   UserDebug("User:Sound:~Sound End");
@@ -104,256 +104,256 @@ void Sound::ConvertTo(int bts, int chan, int fr)  {
   if(bits == bts && chan == channels && fr == freq) return;
   int ctr; mfmt odata; odata.v = data.v;
   if(bits == 8 && bts == 16)  {
-    data.s = new short[len];
+    data.s16 = new short[len];
     for(ctr=0; ctr<(int)len; ctr++)  {
-      data.s[ctr] = odata.uc[ctr];
-      data.s[ctr] -= 128;
-      data.s[ctr] <<= 8;
+      data.s16[ctr] = odata.u8[ctr];
+      data.s16[ctr] -= 128;
+      data.s16[ctr] <<= 8;
       }
     len <<= 1; bits = 16;
-    delete [] odata.uc; odata.v = data.v;
+    delete [] odata.u8; odata.v = data.v;
     }
   else if(bits == 16 && bts == 8)  {
     len >>= 1;
-    data.uc = new unsigned char[len];
+    data.u8 = new unsigned char[len];
     for(ctr=0; ctr<(int)len; ctr++)  {
-      odata.s[ctr] >>= 8;
-      odata.s[ctr] += 128;
-      data.uc[ctr] = odata.s[ctr];
+      odata.s16[ctr] >>= 8;
+      odata.s16[ctr] += 128;
+      data.u8[ctr] = odata.s16[ctr];
       }
     bits = 8;
-    delete [] odata.s; odata.v = data.v;
+    delete [] odata.s16; odata.v = data.v;
     }
 
   if(bits == 8 && channels == 1 && chan == 2)  {
-    data.uc = new unsigned char[len<<1];
+    data.u8 = new unsigned char[len<<1];
     for(ctr=0; ctr<(int)len; ctr++)  {
-      data.uc[(ctr<<1)] = odata.uc[ctr];
-      data.uc[(ctr<<1)+1] = odata.uc[ctr];
+      data.u8[(ctr<<1)] = odata.u8[ctr];
+      data.u8[(ctr<<1)+1] = odata.u8[ctr];
       }
     len <<= 1; channels = 2;
-    delete [] odata.uc; odata.v = data.v;
+    delete [] odata.u8; odata.v = data.v;
     }
   else if(bits == 8 && channels == 2 && chan == 1)  {
     len >>= 1;
-    data.uc = new unsigned char[len];
+    data.u8 = new unsigned char[len];
     for(ctr=0; ctr<(int)len; ctr++)  {
-      data.uc[ctr] = (odata.uc[(ctr<<1)]>>1)+(odata.uc[(ctr<<1)+1]>>1);
+      data.u8[ctr] = (odata.u8[(ctr<<1)]>>1)+(odata.u8[(ctr<<1)+1]>>1);
       }
     channels = 1;
-    delete [] odata.uc; odata.v = data.v;
+    delete [] odata.u8; odata.v = data.v;
     }
   else if(bits == 16 && channels == 1 && chan == 2)  {
-    data.s = new short[len];
+    data.s16 = new short[len];
     for(ctr=0; ctr<(int)(len>>1); ctr++)  {
-      data.s[(ctr<<1)] = odata.s[ctr];
-      data.s[(ctr<<1)+1] = odata.s[ctr];
+      data.s16[(ctr<<1)] = odata.s16[ctr];
+      data.s16[(ctr<<1)+1] = odata.s16[ctr];
       }
     len <<= 1; channels = 2;
-    delete [] odata.s; odata.v = data.v;
+    delete [] odata.s16; odata.v = data.v;
     }
   else if(bits == 16 && channels == 2 && chan == 1)  {
     len >>= 1;
-    data.s = new short[len>>1];
+    data.s16 = new short[len>>1];
     for(ctr=0; ctr<(int)(len>>1); ctr++)  {
-      data.s[ctr] = (odata.s[(ctr<<1)]>>1)+(odata.s[(ctr<<1)+1]>>1);
+      data.s16[ctr] = (odata.s16[(ctr<<1)]>>1)+(odata.s16[(ctr<<1)+1]>>1);
       }
     channels = 1;
-    delete [] odata.s; odata.v = data.v;
+    delete [] odata.s16; odata.v = data.v;
     }
 
   if(bits == 8 && freq == (fr<<2))  {
     len >>= 2;
-    data.uc = new unsigned char[len];
+    data.u8 = new unsigned char[len];
     for(ctr=0; ctr<(int)len; ctr++)  {
-      data.uc[ctr] = odata.uc[ctr<<2];
+      data.u8[ctr] = odata.u8[ctr<<2];
       }
     freq = fr;
-    delete [] odata.uc; odata.v = data.v;
+    delete [] odata.u8; odata.v = data.v;
     }
   else if(bits == 8 && freq == (fr<<1))  {
     len >>= 1;
-    data.uc = new unsigned char[len];
+    data.u8 = new unsigned char[len];
     for(ctr=0; ctr<(int)len; ctr++)  {
-      data.uc[ctr] = odata.uc[ctr<<1];
+      data.u8[ctr] = odata.u8[ctr<<1];
       }
     freq = fr;
-    delete [] odata.uc; odata.v = data.v;
+    delete [] odata.u8; odata.v = data.v;
     }
   else if(bits == 8 && channels == 2 && freq == (fr>>1))  {
     len = (len<<1)-2;
-    data.uc = new unsigned char[len];
-    unsigned char tmp2a, tmpa = odata.uc[0];
-    unsigned char tmp2b, tmpb = odata.uc[1];
-    data.uc[0] = tmpa;
-    data.uc[1] = tmpb;
+    data.u8 = new unsigned char[len];
+    unsigned char tmp2a, tmpa = odata.u8[0];
+    unsigned char tmp2b, tmpb = odata.u8[1];
+    data.u8[0] = tmpa;
+    data.u8[1] = tmpb;
     for(ctr=4; ctr<(int)len; ctr+=4)  {
-      tmp2a = odata.uc[(ctr>>1)];
-      tmp2b = odata.uc[(ctr>>1)+1];
-      data.uc[ctr-1] = ((tmpa+tmp2a)>>1);
-      data.uc[ctr] = tmp2a;
-      data.uc[ctr-3] = ((tmpb+tmp2b)>>1);
-      data.uc[ctr-2] = tmp2b;
+      tmp2a = odata.u8[(ctr>>1)];
+      tmp2b = odata.u8[(ctr>>1)+1];
+      data.u8[ctr-1] = ((tmpa+tmp2a)>>1);
+      data.u8[ctr] = tmp2a;
+      data.u8[ctr-3] = ((tmpb+tmp2b)>>1);
+      data.u8[ctr-2] = tmp2b;
       tmpa = tmp2a; tmpb = tmp2b;
       }
     freq = fr;
-    delete [] odata.uc; odata.v = data.v;
+    delete [] odata.u8; odata.v = data.v;
     }
   else if(bits == 8 && freq == (fr>>1))  {
     len = (len<<1)-1;
-    data.uc = new unsigned char[len];
-    unsigned char tmp2, tmp = odata.uc[0];
-    data.uc[0] = tmp;
+    data.u8 = new unsigned char[len];
+    unsigned char tmp2, tmp = odata.u8[0];
+    data.u8[0] = tmp;
     for(ctr=2; ctr<(int)len; ctr+=2)  {
-      tmp2 = odata.uc[ctr>>1];
-      data.uc[ctr-1] = ((tmp+tmp2)>>1);
-      data.uc[ctr] = tmp2; tmp = tmp2;
+      tmp2 = odata.u8[ctr>>1];
+      data.u8[ctr-1] = ((tmp+tmp2)>>1);
+      data.u8[ctr] = tmp2; tmp = tmp2;
       }
     freq = fr;
-    delete [] odata.uc; odata.v = data.v;
+    delete [] odata.u8; odata.v = data.v;
     }
   else if(bits == 8 && channels == 2 && freq == (fr>>2))  {
     len = (len<<2)-6;
-    data.uc = new unsigned char[len];
-    unsigned long tmp2a, tmpa = odata.uc[0];
-    unsigned long tmp2b, tmpb = odata.uc[1];
-    data.uc[0] = tmpa;
-    data.uc[1] = tmpb;
+    data.u8 = new unsigned char[len];
+    unsigned long tmp2a, tmpa = odata.u8[0];
+    unsigned long tmp2b, tmpb = odata.u8[1];
+    data.u8[0] = tmpa;
+    data.u8[1] = tmpb;
     for(ctr=8; ctr<(int)len; ctr+=8)  {
-      tmp2a = odata.uc[(ctr>>2)];
-      tmp2b = odata.uc[(ctr>>2)+1];
-      data.uc[ctr-3] = ((tmpb+tmp2b+tmp2b+tmp2b)>>2);
-      data.uc[ctr-2] = ((tmpb+tmp2b)>>1);
-      data.uc[ctr-1] = ((tmpb+tmpb+tmpb+tmp2b)>>2);
-      data.uc[ctr] = tmp2b; tmpb = tmp2b;
-      data.uc[ctr-7] = ((tmpa+tmp2a+tmp2a+tmp2a)>>2);
-      data.uc[ctr-6] = ((tmpa+tmp2a)>>1);
-      data.uc[ctr-5] = ((tmpa+tmpa+tmpa+tmp2a)>>2);
-      data.uc[ctr-4] = tmp2a; tmpa = tmp2a;
+      tmp2a = odata.u8[(ctr>>2)];
+      tmp2b = odata.u8[(ctr>>2)+1];
+      data.u8[ctr-3] = ((tmpb+tmp2b+tmp2b+tmp2b)>>2);
+      data.u8[ctr-2] = ((tmpb+tmp2b)>>1);
+      data.u8[ctr-1] = ((tmpb+tmpb+tmpb+tmp2b)>>2);
+      data.u8[ctr] = tmp2b; tmpb = tmp2b;
+      data.u8[ctr-7] = ((tmpa+tmp2a+tmp2a+tmp2a)>>2);
+      data.u8[ctr-6] = ((tmpa+tmp2a)>>1);
+      data.u8[ctr-5] = ((tmpa+tmpa+tmpa+tmp2a)>>2);
+      data.u8[ctr-4] = tmp2a; tmpa = tmp2a;
       }
     freq = fr;
-    delete [] odata.uc; odata.v = data.v;
+    delete [] odata.u8; odata.v = data.v;
     }
   else if(bits == 8 && freq == (fr>>2))  {
     len = (len<<2)-3;
-    data.uc = new unsigned char[len];
-    unsigned long tmp2, tmp = odata.uc[0];
-    data.uc[0] = tmp;
+    data.u8 = new unsigned char[len];
+    unsigned long tmp2, tmp = odata.u8[0];
+    data.u8[0] = tmp;
     for(ctr=4; ctr<(int)len; ctr+=4)  {
-      tmp2 = odata.uc[ctr>>2];
-      data.uc[ctr-3] = ((tmp+tmp2+tmp2+tmp2)>>2);
-      data.uc[ctr-2] = ((tmp+tmp2)>>1);
-      data.uc[ctr-1] = ((tmp+tmp+tmp+tmp2)>>2);
-      data.uc[ctr] = tmp2; tmp = tmp2;
+      tmp2 = odata.u8[ctr>>2];
+      data.u8[ctr-3] = ((tmp+tmp2+tmp2+tmp2)>>2);
+      data.u8[ctr-2] = ((tmp+tmp2)>>1);
+      data.u8[ctr-1] = ((tmp+tmp+tmp+tmp2)>>2);
+      data.u8[ctr] = tmp2; tmp = tmp2;
       }
     freq = fr;
-    delete [] odata.uc; odata.v = data.v;
+    delete [] odata.u8; odata.v = data.v;
     }
   else if(bits == 16 && channels == 2 && freq == (fr<<2))  {
     len >>= 2;
-    data.s = new short[len>>1];
+    data.s16 = new short[len>>1];
     for(ctr=0; ctr<(int)(len>>1); ctr+=2)  {
-      data.s[ctr] = odata.s[ctr<<2];
-      data.s[ctr+1] = odata.s[(ctr<<2)+1];
+      data.s16[ctr] = odata.s16[ctr<<2];
+      data.s16[ctr+1] = odata.s16[(ctr<<2)+1];
       }
     freq = fr;
-    delete [] odata.s; odata.v = data.v;
+    delete [] odata.s16; odata.v = data.v;
     }
   else if(bits == 16 && freq == (fr<<2))  {
     len >>= 2;
-    data.s = new short[len>>1];
+    data.s16 = new short[len>>1];
     for(ctr=0; ctr<(int)(len>>1); ctr++)  {
-      data.s[ctr] = odata.s[ctr<<2];
+      data.s16[ctr] = odata.s16[ctr<<2];
       }
     freq = fr;
-    delete [] odata.s; odata.v = data.v;
+    delete [] odata.s16; odata.v = data.v;
     }
   else if(bits == 16 && channels == 2 && freq == (fr<<1))  {
     len >>= 1;
-    data.s = new short[len>>1];
+    data.s16 = new short[len>>1];
     for(ctr=0; ctr<(int)(len>>1); ctr+=2)  {
-      data.s[ctr] = odata.s[ctr<<1];
-      data.s[ctr+1] = odata.s[(ctr<<1)+1];
+      data.s16[ctr] = odata.s16[ctr<<1];
+      data.s16[ctr+1] = odata.s16[(ctr<<1)+1];
       }
     freq = fr;
-    delete [] odata.s; odata.v = data.v;
+    delete [] odata.s16; odata.v = data.v;
     }
   else if(bits == 16 && freq == (fr<<1))  {
     len >>= 1;
-    data.s = new short[len>>1];
+    data.s16 = new short[len>>1];
     for(ctr=0; ctr<(int)(len>>1); ctr++)  {
-      data.s[ctr] = odata.s[ctr<<1];
+      data.s16[ctr] = odata.s16[ctr<<1];
       }
     freq = fr;
-    delete [] odata.s; odata.v = data.v;
+    delete [] odata.s16; odata.v = data.v;
     }
   else if(bits == 16 && channels == 2 && freq == (fr>>1))  {
     len = (len<<1)-4;
-    data.s = new short[len>>1];
-    short tmp2a, tmpa = odata.s[0];
-    short tmp2b, tmpb = odata.s[1];
-    data.s[0] = tmpa;
-    data.s[1] = tmpb;
+    data.s16 = new short[len>>1];
+    short tmp2a, tmpa = odata.s16[0];
+    short tmp2b, tmpb = odata.s16[1];
+    data.s16[0] = tmpa;
+    data.s16[1] = tmpb;
     for(ctr=4; ctr<(int)(len>>1); ctr+=4)  {
-      tmp2a = odata.s[(ctr>>1)];
-      tmp2b = odata.s[(ctr>>1)+1];
-      data.s[ctr-1] = (tmpa+tmp2a)>>1;
-      data.s[ctr] = tmp2a; tmpa = tmp2a;
-      data.s[ctr-3] = (tmpb+tmp2b)>>1;
-      data.s[ctr-2] = tmp2b; tmpb = tmp2b;
+      tmp2a = odata.s16[(ctr>>1)];
+      tmp2b = odata.s16[(ctr>>1)+1];
+      data.s16[ctr-1] = (tmpa+tmp2a)>>1;
+      data.s16[ctr] = tmp2a; tmpa = tmp2a;
+      data.s16[ctr-3] = (tmpb+tmp2b)>>1;
+      data.s16[ctr-2] = tmp2b; tmpb = tmp2b;
       }
     freq = fr;
-    delete [] odata.s; odata.v = data.v;
+    delete [] odata.s16; odata.v = data.v;
     }
   else if(bits == 16 && freq == (fr>>1))  {
     len = (len<<1)-2;
-    data.s = new short[len>>1];
-    short tmp2, tmp = odata.s[0];
-    data.s[0] = tmp;
+    data.s16 = new short[len>>1];
+    short tmp2, tmp = odata.s16[0];
+    data.s16[0] = tmp;
     for(ctr=2; ctr<(int)(len>>1); ctr+=2)  {
-      tmp2 = odata.s[ctr>>1];
-      data.s[ctr-1] = (tmp+tmp2)>>1;
-      data.s[ctr] = tmp2; tmp = tmp2;
+      tmp2 = odata.s16[ctr>>1];
+      data.s16[ctr-1] = (tmp+tmp2)>>1;
+      data.s16[ctr] = tmp2; tmp = tmp2;
       }
     freq = fr;
-    delete [] odata.s; odata.v = data.v;
+    delete [] odata.s16; odata.v = data.v;
     }
   else if(bits == 16 && channels == 2 && freq == (fr>>2))  {
     len = (len<<2)-12;
-    data.s = new short[len>>1];
-    long tmp2a, tmpa = odata.s[0];
-    long tmp2b, tmpb = odata.s[1];
-    data.s[0] = tmpa;
-    data.s[1] = tmpb;
+    data.s16 = new short[len>>1];
+    long tmp2a, tmpa = odata.s16[0];
+    long tmp2b, tmpb = odata.s16[1];
+    data.s16[0] = tmpa;
+    data.s16[1] = tmpb;
     for(ctr=8; ctr<(int)(len>>1); ctr+=8)  {
-      tmp2a = odata.s[(ctr>>2)];
-      tmp2b = odata.s[(ctr>>2)+1];
-      data.s[ctr-3] = (tmpa+tmp2a+tmp2a+tmp2a)>>2;
-      data.s[ctr-2] = (tmpa+tmp2a)>>1;
-      data.s[ctr-1] = (tmpa+tmpa+tmpa+tmp2a)>>2;
-      data.s[ctr] = tmp2a; tmpa = tmp2a;
-      data.s[ctr-7] = (tmpb+tmp2b+tmp2b+tmp2b)>>2;
-      data.s[ctr-6] = (tmpb+tmp2b)>>1;
-      data.s[ctr-5] = (tmpb+tmpb+tmpb+tmp2b)>>2;
-      data.s[ctr-4] = tmp2b; tmpb = tmp2b;
+      tmp2a = odata.s16[(ctr>>2)];
+      tmp2b = odata.s16[(ctr>>2)+1];
+      data.s16[ctr-3] = (tmpa+tmp2a+tmp2a+tmp2a)>>2;
+      data.s16[ctr-2] = (tmpa+tmp2a)>>1;
+      data.s16[ctr-1] = (tmpa+tmpa+tmpa+tmp2a)>>2;
+      data.s16[ctr] = tmp2a; tmpa = tmp2a;
+      data.s16[ctr-7] = (tmpb+tmp2b+tmp2b+tmp2b)>>2;
+      data.s16[ctr-6] = (tmpb+tmp2b)>>1;
+      data.s16[ctr-5] = (tmpb+tmpb+tmpb+tmp2b)>>2;
+      data.s16[ctr-4] = tmp2b; tmpb = tmp2b;
       }
     freq = fr;
-    delete [] odata.s; odata.v = data.v;
+    delete [] odata.s16; odata.v = data.v;
     }
   else if(bits == 16 && freq == (fr>>2))  {
     len = (len<<2)-6;
-    data.s = new short[len>>1];
-    long tmp2, tmp = odata.s[0];
-    data.s[0] = tmp;
+    data.s16 = new short[len>>1];
+    long tmp2, tmp = odata.s16[0];
+    data.s16[0] = tmp;
     for(ctr=4; ctr<(int)(len>>1); ctr+=4)  {
-      tmp2 = odata.s[ctr>>2];
-      data.s[ctr-3] = (tmp+tmp2+tmp2+tmp2)>>2;
-      data.s[ctr-2] = (tmp+tmp2)>>1;
-      data.s[ctr-1] = (tmp+tmp+tmp+tmp2)>>2;
-      data.s[ctr] = tmp2; tmp = tmp2;
+      tmp2 = odata.s16[ctr>>2];
+      data.s16[ctr-3] = (tmp+tmp2+tmp2+tmp2)>>2;
+      data.s16[ctr-2] = (tmp+tmp2)>>1;
+      data.s16[ctr-1] = (tmp+tmp+tmp+tmp2)>>2;
+      data.s16[ctr] = tmp2; tmp = tmp2;
       }
     freq = fr;
-    delete [] odata.s; odata.v = data.v;
+    delete [] odata.s16; odata.v = data.v;
     }
   UserDebug("User:Sound:ConvertTo End");
   }

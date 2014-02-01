@@ -268,8 +268,8 @@ Sound *ResFile::GrabSound()  {
   ret->freq = ReadInt();
   ret->bits = ReadChar();
   ret->channels = ReadChar();
-  ret->data.uc = new unsigned char[ret->len];
-  Read(ret->data.uc, ret->len);
+  ret->data.u8 = new unsigned char[ret->len];
+  Read(ret->data.u8, ret->len);
   return ret;
   }
 
@@ -397,7 +397,7 @@ void NewResFile::Add(const Sound *in)  {
   WriteInt(in->freq);
   WriteChar(in->bits);
   WriteChar(in->channels);
-  Write(in->data.uc, in->len);
+  Write(in->data.u8, in->len);
   } 
 
 NewResFile::~NewResFile()  {

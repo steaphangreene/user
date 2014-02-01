@@ -247,7 +247,7 @@ int Sprite::Hits(int x, int y, int xs, int ys) {
     UserDebug("User:Sprite:Hits(x,y,z) 8-bit Loop Start");
     for(ctry=max(ypos, y); ctry < min(ypos+image->ysize, y+ys); ctry++)  {
       for(ctrx=max(xpos, x); ctrx < min(xpos+image->xsize, x+xs); ctrx++)  {
-	if(image->image[ctry-ypos].uc[ctrx-xpos] != image->tcolor) {
+	if(image->image[ctry-ypos].u8[ctrx-xpos] != image->tcolor) {
 	  return 1;
 	  }
 	}
@@ -258,7 +258,7 @@ int Sprite::Hits(int x, int y, int xs, int ys) {
     UserDebug("User:Sprite:Hits(x,y,z) 16-bit Loop Start");
     for(ctry=max(ypos, y); ctry < min(ypos+image->ysize, y+ys); ctry++)  {
       for(ctrx=max(xpos, x); ctrx < min(xpos+image->xsize, x+xs); ctrx++)  {
-	if(image->image[ctry-ypos].us[ctrx-xpos] != image->tcolor) {
+	if(image->image[ctry-ypos].u16[ctrx-xpos] != image->tcolor) {
 	  return 1;
 	  }
 	}
@@ -269,7 +269,7 @@ int Sprite::Hits(int x, int y, int xs, int ys) {
     UserDebug("User:Sprite:Hits(x,y,z) 32-bit Loop Start");
     for(ctry=max(ypos, y); ctry < min(ypos+image->ysize, y+ys); ctry++)  {
       for(ctrx=max(xpos, x); ctrx < min(xpos+image->xsize, x+xs); ctrx++)  {
-	if(image->image[ctry-ypos].uc[((ctrx-xpos)<<2)+3]) {
+	if(image->image[ctry-ypos].u8[((ctrx-xpos)<<2)+3]) {
 	  return 1;
 	  }
 	}
@@ -295,8 +295,8 @@ int Sprite::Hits(Sprite *s) {
 		min(ypos+image->ysize, s->ypos+s->image->ysize); ctry++)  {
       for(ctrx=max(xpos, s->xpos); ctrx <
 		min(xpos+image->xsize, s->xpos+s->image->xsize); ctrx++)  {
-	if((image->image[ctry-ypos].uc[ctrx-xpos] != image->tcolor)
-	  	&& (s->image->image[ctry-(s->ypos)].uc[ctrx-(s->xpos)]
+	if((image->image[ctry-ypos].u8[ctrx-xpos] != image->tcolor)
+	  	&& (s->image->image[ctry-(s->ypos)].u8[ctrx-(s->xpos)]
 		!= s->image->tcolor)) {
 	  return 1;
 	  }
@@ -309,9 +309,9 @@ int Sprite::Hits(Sprite *s) {
       for(ctrx=max(xpos, s->xpos); ctrx <
 		min(xpos+image->xsize, s->xpos+s->image->xsize); ctrx++)  {
 	UserDebug("User:Sprite:Hits 0600");
-	if(image->image[ctry-ypos].uc[(ctrx-xpos)*4+3] != image->tcolor)  {
+	if(image->image[ctry-ypos].u8[(ctrx-xpos)*4+3] != image->tcolor)  {
 	  UserDebug("User:Sprite:Hits 0602");
-	  if(s->image->image[ctry-(s->ypos)].uc[(ctrx-(s->xpos))*4+3]
+	  if(s->image->image[ctry-(s->ypos)].u8[(ctrx-(s->xpos))*4+3]
 		!= s->image->tcolor) {
 	    UserDebug("User:Sprite:Hits 0999");
 	    return 1;
@@ -378,16 +378,16 @@ int Sprite::YCenter() {
   else return image->ycenter;
   }
 
-void Sprite::SetColormap(unsigned long *cm) {
-  remap.ul = cm;
+void Sprite::SetColormap(unsigned int *cm) {
+  remap.u32 = cm;
   }
 
 void Sprite::SetColormap(unsigned char *cm) {
-  remap.uc = cm;
+  remap.u8 = cm;
   }
 
 void Sprite::SetColormap(unsigned short *cm) {
-  remap.us = cm;
+  remap.u16 = cm;
   }
 
 void Sprite::SetLine(int x, int y, int d, color c) {

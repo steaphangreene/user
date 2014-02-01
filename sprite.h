@@ -63,7 +63,7 @@ class Sprite  {
   void ClearFlag(int i) { flags &= (~i); };
   int Flag(int i) { return (flags&i); };
   void SetPanel(Panel p) { pan = p; };
-  void SetColormap(unsigned long *);
+  void SetColormap(unsigned int *);
   void SetColormap(unsigned char *);
   void SetColormap(unsigned short *);
   int Visible() { return drawn; };

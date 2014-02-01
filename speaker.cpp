@@ -448,8 +448,8 @@ int Speaker::Configure(int chan, int bts, int fr, int bfsz)  {
 #endif
   writenext = -(bufsize);
 #endif
-  if(buf.uc != NULL) delete buf.uc;
-  buf.uc = new unsigned char[bufsize];
+  if(buf.u8 != NULL) delete [] buf.u8;
+  buf.u8 = new unsigned char[bufsize];
 
   return 1;
   }
@@ -554,8 +554,8 @@ int Speaker::Play(Sound &smp) {
 //  write(dsp, smp.data, smp.len);
   for(ctr=0; ctr<cur_alloc && cur[ctr].left>=0; ctr++);
   if(ctr>=cur_alloc) /* ExpandCur(); */ return -1; 
-  cur[ctr].left = smp.len;  cur[ctr].pos.uc = smp.data.uc;
-  loop[ctr] = 0; samp[ctr].uc = smp.data.uc;
+  cur[ctr].left = smp.len;  cur[ctr].pos.u8 = smp.data.u8;
+  loop[ctr] = 0; samp[ctr].u8 = smp.data.u8;
 
 #ifdef DOS_SOUND
   if(paused) {
@@ -573,8 +573,8 @@ int Speaker::Loop(Sound &smp) {
 //  write(dsp, smp.data, smp.len);
   for(ctr=0; ctr<cur_alloc && cur[ctr].left>=0; ctr++);
   if(ctr>=cur_alloc) /* ExpandCur(); */ return -1; 
-  cur[ctr].left = smp.len;  cur[ctr].pos.uc = smp.data.uc;
-  loop[ctr] = 1; samp[ctr].uc = smp.data.uc;
+  cur[ctr].left = smp.len;  cur[ctr].pos.u8 = smp.data.u8;
+  loop[ctr] = 1; samp[ctr].u8 = smp.data.u8;
 
 #ifdef DOS_SOUND
   if(paused) {
@@ -592,8 +592,8 @@ void Speaker::SetAsAmbient(Sound &smp) {
 //  write(dsp, smp.data, smp.len);
   for(ctr=0; ctr<cur_alloc && cur[ctr].left>=0; ctr++);
   if(ctr>=cur_alloc) /* ExpandCur(); */ return; 
-  cur[ctr].left = smp.len;  cur[ctr].pos.uc = smp.data.uc;
-  ambient = ctr; samp[ctr].uc = smp.data.uc;
+  cur[ctr].left = smp.len;  cur[ctr].pos.u8 = smp.data.u8;
+  ambient = ctr; samp[ctr].u8 = smp.data.u8;
   loop[ctr] = 1;
 
 #ifdef DOS_SOUND
@@ -643,17 +643,17 @@ void Speaker::Update() {
 #endif
 #endif
 
-//  if(bits==8) memset(buf.uc, 128, bufsize);
-//  if(bits==16) memset(buf.s, 0, bufsize);
+//  if(bits==8) memset(buf.u8, 128, bufsize);
+//  if(bits==16) memset(buf.s16, 0, bufsize);
   if(bits==8)  {
     register int smp;
     for(ctr2=0; ctr2 < bufsize; ctr2++) {
       smp = 128;
       for(ctr=0; ctr<cur_alloc; ctr++)  {
-	if(ctr2 < cur[ctr].left) { smp += cur[ctr].pos.uc[ctr2]; smp -= 128; }
+	if(ctr2 < cur[ctr].left) { smp += cur[ctr].pos.u8[ctr2]; smp -= 128; }
 	}
       if(smp<0) smp=0; else if(smp>255) smp=255;
-      buf.uc[ctr2] = smp;
+      buf.u8[ctr2] = smp;
       }
     }
   else if(bits==16) for(ctr=0; ctr<cur_alloc; ctr++)  {
@@ -661,10 +661,10 @@ void Speaker::Update() {
     for(ctr2=0; ctr2 < (bufsize>>1); ctr2++) {
       smp = 0;
       for(ctr=0; ctr<cur_alloc; ctr++)  {
-	if(ctr2 < ((cur[ctr].left)>>1)) { smp += cur[ctr].pos.s[ctr2]; }
+	if(ctr2 < ((cur[ctr].left)>>1)) { smp += cur[ctr].pos.s16[ctr2]; }
 	}
       if(smp<-32768) smp=-32768; else if(smp>32767) smp=32767;
-      buf.s[ctr2] = smp;
+      buf.s16[ctr2] = smp;
       }
     }
   else U2_Exit(1, "Unknown sound depth error!\n");
@@ -673,8 +673,8 @@ void Speaker::Update() {
     if(cur[ctr].left>=0)  {
       if(cur[ctr].left <= bufsize) {
 	if(loop[ctr])  {
-	  cur[ctr].left += cur[ctr].pos.uc-samp[ctr].uc;
-	  cur[ctr].pos.uc = samp[ctr].uc;
+	  cur[ctr].left += cur[ctr].pos.u8-samp[ctr].u8;
+	  cur[ctr].pos.u8 = samp[ctr].u8;
 	  }
 	else {
 	  cur[ctr].left = -1;
@@ -682,7 +682,7 @@ void Speaker::Update() {
 	}
       else  {
 	cur[ctr].left -= bufsize;
-	cur[ctr].pos.uc += bufsize;
+	cur[ctr].pos.u8 += bufsize;
 	}
       }
     }
@@ -693,10 +693,10 @@ void Speaker::Update() {
 #endif
 
 #ifdef OSS_SOUND
-  if(stype == SOUND_OSS) write(dsp, buf.uc, bufsize);
+  if(stype == SOUND_OSS) write(dsp, buf.u8, bufsize);
 #endif
 #ifdef ESD_SOUND
-  if(stype == SOUND_ESD) write(dsp, buf.uc, bufsize);
+  if(stype == SOUND_ESD) write(dsp, buf.u8, bufsize);
 //  if(stype == SOUND_ESD) fcntl(dsp, F_SETFL, O_SYNC);
 #endif
 
@@ -715,7 +715,7 @@ void Speaker::Stop(int s)  {
 void Speaker::StopByBuffer(mfmt ptr, int sz)  {
   int ctr;
   for(ctr=0; ctr<cur_alloc; ctr++)  {
-    if(cur[ctr].pos.uc >= ptr.uc && cur[ctr].pos.uc < (ptr.uc+sz))  {
+    if(cur[ctr].pos.u8 >= ptr.u8 && cur[ctr].pos.u8 < (ptr.u8+sz))  {
       cur[ctr].left = -1;
       loop[ctr] = 0;
       samp[ctr].v = NULL;

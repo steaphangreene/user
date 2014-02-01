@@ -8,8 +8,8 @@
 
 class Chunk {
   public:
-  Chunk() { data.c = NULL; size = 0; };
-  Chunk(int sz) { data.c = NULL; size = 0; Get(sz); };
+  Chunk() { data.s8 = NULL; size = 0; };
+  Chunk(int sz) { data.s8 = NULL; size = 0; Get(sz); };
 
   void SetSize(int sz) {
     if(size == ((sz+1023)>>10)) return;
@@ -31,16 +31,16 @@ class Chunk {
   static mfmt ch[CHUNK_MAX];
 
   void Drop() {
-    if(data.c != NULL) {
+    if(data.s8 != NULL) {
       if(size >= CHUNK_MAX) {
-	delete data.c;
-	data.c = NULL;
+	delete [] data.s8;
+	data.s8 = NULL;
 	size = 0;
 	}
       else {
-	(*(data.ul)) = (unsigned long)ch[size].c;
+	(*(data.u64)) = ch[size].UL;
 	ch[size].v = data.v;
-	data.c = NULL;
+	data.s8 = NULL;
 	size = 0;
 	}
       }
@@ -49,14 +49,14 @@ class Chunk {
   void Get(int sz) {
     size = (sz+1023)>>10;
     if(size >= CHUNK_MAX) {
-      data.c = new char[size<<10];
+      data.u8 = new unsigned char[size<<10];
       }
     else if(ch[size].v) {
       data.v = ch[size].v;
-      ch[size].c = (char *)(*(data.ul));
+      ch[size].u8 = data.u8;
       }
     else {
-      data.c = new char[size<<10];
+      data.u8 = new unsigned char[size<<10];
       }
     };
   };

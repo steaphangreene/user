@@ -102,7 +102,7 @@ void Graphic::PaletteConvert(const Palette &p1, const Palette &p2)  {
     }
   for(ctr=0; ctr<(int)ysize; ++ctr)  {
     for(ctr2=0; ctr2<(int)xsize; ++ctr2)  {
-      image[ctr].uc[ctr2] = remap[image[ctr].uc[ctr2]];
+      image[ctr].u8[ctr2] = remap[image[ctr].u8[ctr2]];
       }
     }
   tcolor = remap[tcolor];
@@ -117,13 +117,13 @@ Graphic Graphic::DoubleX()  {
   ret.ycenter = ycenter;
   ret.DefSize(xsize*2, ysize);
   for(Y=0; Y<(long)ysize; Y++)  {
-    memcpy(ret.image[Y].uc, image[Y].uc, xsize*(depth>>3));
+    memcpy(ret.image[Y].u8, image[Y].u8, xsize*(depth>>3));
     if(depth == 8)
-      memcpy(ret.image[Y].uc+xsize, image[Y].uc, xsize);
+      memcpy(ret.image[Y].u8+xsize, image[Y].u8, xsize);
     else if(depth == 32)
-      memcpy(ret.image[Y].ul+xsize, image[Y].ul, xsize*4);
+      memcpy(ret.image[Y].u32+xsize, image[Y].u32, xsize*4);
     else if(depth == 16)
-      memcpy(ret.image[Y].us+xsize, image[Y].us, xsize*2);
+      memcpy(ret.image[Y].u16+xsize, image[Y].u16, xsize*2);
     }
   return ret;
   }
@@ -137,8 +137,8 @@ Graphic Graphic::DoubleY()  {
   ret.ycenter = ycenter;
   ret.DefSize(xsize, ysize*2);
   for(Y=0; Y<(long)ysize; Y++)  {
-    memcpy(ret.image[Y].uc, image[Y].uc, xsize*(depth>>3));
-    memcpy(ret.image[Y+ysize].uc, image[Y].uc, xsize*(depth>>3));
+    memcpy(ret.image[Y].u8, image[Y].u8, xsize*(depth>>3));
+    memcpy(ret.image[Y+ysize].u8, image[Y].u8, xsize*(depth>>3));
     }
   return ret;
   }
@@ -149,8 +149,8 @@ Graphic Graphic::Hashed(color c)  {
   ret = *this;
   for(Y=0; Y<(long)ysize; Y++)  {
     for(X=(Y&1); X<(long)xsize; X+=2)  {
-      if(depth == 8) ret.image[Y].uc[X] = c;
-      else if(depth == 32) ret.image[Y].ul[X] = c;
+      if(depth == 8) ret.image[Y].u8[X] = c;
+      else if(depth == 32) ret.image[Y].u32[X] = c;
       else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
@@ -163,8 +163,8 @@ Graphic Graphic::OffHashed(color c)  {
   ret = *this;
   for(Y=0; Y<(long)ysize; Y++)  {
     for(X=(1-(Y&1)); X<(long)xsize; X+=2)  {
-      if(depth == 8) ret.image[Y].uc[X] = c;
-      else if(depth == 32) ret.image[Y].ul[X] = c;
+      if(depth == 8) ret.image[Y].u8[X] = c;
+      else if(depth == 32) ret.image[Y].u32[X] = c;
       else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
@@ -188,7 +188,7 @@ Graphic Graphic::Partial(int x1, int y1, int x2, int y2)  {
   int ctr;
   ret.DefSize(xsz, ysz);
   for(ctr=y1; ctr<y2; ctr++)  {
-    ret.DefLin((char *)&image[ctr].uc[x1]);  //*** 8-bit only!
+    ret.DefLin((char *)&image[ctr].u8[x1]);  //*** 8-bit only!
     }
   return ret;
   }
@@ -212,8 +212,8 @@ Graphic Graphic::Scaled(int xsz, int ysz)  {
       ox /= ret.xsize;
       oy = (yi * ysize);
       oy /= ret.ysize;
-      if(depth == 8) ret.image[yi].uc[xi] = image[(int)oy].uc[(int)ox];
-      else if(depth == 32) ret.image[yi].ul[xi] = image[(int)oy].ul[(int)ox];
+      if(depth == 8) ret.image[yi].u8[xi] = image[(int)oy].u8[(int)ox];
+      else if(depth == 32) ret.image[yi].u32[xi] = image[(int)oy].u32[(int)ox];
       }
     }
   ret.xcenter = (xcenter * ret.xsize) / xsize;
@@ -230,9 +230,9 @@ Graphic Graphic::RotatedCounterClock()  {
     ret.DefLin(tmpb);
     for(ctr2=0; ctr2<(int)ret.xsize; ctr2++)  {
       if(depth == 8)
-	ret.image[ctr1].uc[ctr2] = image[ctr2].uc[(xsize-1)-ctr1];
+	ret.image[ctr1].u8[ctr2] = image[ctr2].u8[(xsize-1)-ctr1];
       else if(depth == 32)
-	ret.image[ctr1].ul[ctr2] = image[ctr2].ul[(xsize-1)-ctr1];
+	ret.image[ctr1].u32[ctr2] = image[ctr2].u32[(xsize-1)-ctr1];
       else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
@@ -248,9 +248,9 @@ Graphic Graphic::RotatedClock()  {
     ret.DefLin(tmpb);
     for(ctr2=0; ctr2<(int)ret.xsize; ctr2++)  {
       if(depth == 8)
-	ret.image[ctr1].uc[ctr2] = image[(ysize-1)-ctr2].uc[ctr1];
+	ret.image[ctr1].u8[ctr2] = image[(ysize-1)-ctr2].u8[ctr1];
       else if(depth == 32)
-	ret.image[ctr1].ul[ctr2] = image[(ysize-1)-ctr2].ul[ctr1];
+	ret.image[ctr1].u32[ctr2] = image[(ysize-1)-ctr2].u32[ctr1];
       else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
@@ -273,31 +273,31 @@ void Graphic::SetLine(int xs, int ys, int d, unsigned long c) {
   int rev=(abs(xs*ys)!=(xs*ys));
 
   for(ctry=0; ctry<ysize; ++ctry)
-    memset(image[ctry].uc, tcolor, xsize*(depth>>3));
+    memset(image[ctry].u8, tcolor, xsize*(depth>>3));
 
   if(abs(xs)>abs(ys)) {
     if(rev) {
       if(depth==8)
 	for(ctrx=0; ctrx<xsize; ++ctrx)
-	  image[(ysize-1)-((ysize*ctrx)/xsize)].uc[ctrx] = c;
+	  image[(ysize-1)-((ysize*ctrx)/xsize)].u8[ctrx] = c;
       else if(depth==32)
 	for(ctrx=0; ctrx<xsize; ++ctrx)
-	  image[(ysize-1)-((ysize*ctrx)/xsize)].ul[ctrx] = c;
+	  image[(ysize-1)-((ysize*ctrx)/xsize)].u32[ctrx] = c;
       else if(depth==16)
 	for(ctrx=0; ctrx<xsize; ++ctrx)
-	  image[(ysize-1)-((ysize*ctrx)/xsize)].us[ctrx] = c;
+	  image[(ysize-1)-((ysize*ctrx)/xsize)].u16[ctrx] = c;
       else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     else {
       if(depth==8)
 	for(ctrx=0; ctrx<xsize; ++ctrx)
-	  image[(ysize*ctrx)/xsize].uc[ctrx] = c;
+	  image[(ysize*ctrx)/xsize].u8[ctrx] = c;
       else if(depth==32)
 	for(ctrx=0; ctrx<xsize; ++ctrx)
-	  image[(ysize*ctrx)/xsize].ul[ctrx] = c;
+	  image[(ysize*ctrx)/xsize].u32[ctrx] = c;
       else if(depth==16)
 	for(ctrx=0; ctrx<xsize; ++ctrx)
-	  image[(ysize*ctrx)/xsize].us[ctrx] = c;
+	  image[(ysize*ctrx)/xsize].u16[ctrx] = c;
       else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
@@ -305,25 +305,25 @@ void Graphic::SetLine(int xs, int ys, int d, unsigned long c) {
     if(rev) {
       if(depth==8)
 	for(ctry=0; ctry<ysize; ++ctry)
-	  image[ctry].uc[(xsize-1)-((xsize*ctry)/ysize)] = c;
+	  image[ctry].u8[(xsize-1)-((xsize*ctry)/ysize)] = c;
       else if(depth==32)
 	for(ctry=0; ctry<ysize; ++ctry)
-	  image[ctry].ul[(xsize-1)-((xsize*ctry)/ysize)] = c;
+	  image[ctry].u32[(xsize-1)-((xsize*ctry)/ysize)] = c;
       else if(depth==16)
 	for(ctry=0; ctry<ysize; ++ctry)
-	  image[ctry].us[(xsize-1)-((xsize*ctry)/ysize)] = c;
+	  image[ctry].u16[(xsize-1)-((xsize*ctry)/ysize)] = c;
       else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     else {
       if(depth==8)
 	for(ctry=0; ctry<ysize; ++ctry)
-	  image[ctry].uc[(xsize*ctry)/ysize] = c;
+	  image[ctry].u8[(xsize*ctry)/ysize] = c;
       else if(depth==32)
 	for(ctry=0; ctry<ysize; ++ctry)
-	  image[ctry].ul[(xsize*ctry)/ysize] = c;
+	  image[ctry].u32[(xsize*ctry)/ysize] = c;
       else if(depth==16)
 	for(ctry=0; ctry<ysize; ++ctry)
-	  image[ctry].us[(xsize*ctry)/ysize] = c;
+	  image[ctry].u16[(xsize*ctry)/ysize] = c;
       else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
@@ -340,24 +340,24 @@ void Graphic::SetRect(int xs, int ys, int d, unsigned long c) {
   int ctry, ctrx;
 
   for(ctry=0; ctry<ysize; ++ctry)
-    memset(image[ctry].uc, tcolor, xsize*(depth>>3));
+    memset(image[ctry].u8, tcolor, xsize*(depth>>3));
 
   if(depth==8) {
-    memset(image[0].uc, c, xsize);
-    memset(image[ysize-1].uc, c, xsize);
+    memset(image[0].u8, c, xsize);
+    memset(image[ysize-1].u8, c, xsize);
     for(ctry=1; ctry<(ysize-1); ++ctry) {
-      image[ctry].uc[0] = c;
-      image[ctry].uc[xsize-1] = c;
+      image[ctry].u8[0] = c;
+      image[ctry].u8[xsize-1] = c;
       }
     }
   else if(depth==32) {
     for(ctrx=0; ctrx<xsize; ++ctrx) {
-      image[0].ul[ctrx] = c;
-      image[ysize-1].ul[ctrx] = c;
+      image[0].u32[ctrx] = c;
+      image[ysize-1].u32[ctrx] = c;
       }
     for(ctry=1; ctry<(ysize-1); ++ctry) {
-      image[ctry].uc[0] = c;
-      image[ctry].uc[xsize-1] = c;
+      image[ctry].u8[0] = c;
+      image[ctry].u8[xsize-1] = c;
       }
     }
   else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
@@ -370,17 +370,17 @@ void Graphic::SetFillRect(int xs, int ys, int d, unsigned long c) {
   int ctry;
   if(depth==8) {
     for(ctry=0; ctry<ysize; ++ctry) {
-      memset(image[ctry].uc, c, xsize);
+      memset(image[ctry].u8, c, xsize);
       }
     }
   else if(depth==16) {
     for(ctry=0; ctry<ysize; ++ctry) {
-      for(int ctrx=0; ctrx<xsize; ++ctrx) image[ctry].us[ctrx] = c;
+      for(int ctrx=0; ctrx<xsize; ++ctrx) image[ctry].u16[ctrx] = c;
       }
     }
   else if(depth==32) {
     for(ctry=0; ctry<ysize; ++ctry) {
-      for(int ctrx=0; ctrx<xsize; ++ctrx) image[ctry].ul[ctrx] = c;
+      for(int ctrx=0; ctrx<xsize; ++ctrx) image[ctry].u32[ctrx] = c;
       }
     }
   else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
@@ -394,16 +394,16 @@ void Graphic::ClearArea(int x, int y, int xs, int ys) {
   if(tcolor == 0) {
     int ctr;
     for(ctr=y; ctr<y+ys; ++ctr) {
-      memset(image[ctr].uc+(x*(depth>>3)), 0, xs*(depth>>3));
+      memset(image[ctr].u8+(x*(depth>>3)), 0, xs*(depth>>3));
       }
     }
   else {
     int ctrx, ctry;
     for(ctry=0; ctry<ysize; ++ctry) {
       for(ctrx=0; ctrx<xsize; ++ctrx) {
-	if(depth == 8) image[ctry].uc[ctry] = tcolor;
-	else if(depth == 16) image[ctry].us[ctry] = tcolor;
-	else if(depth == 32) image[ctry].ul[ctry] = tcolor;
+	if(depth == 8) image[ctry].u8[ctry] = tcolor;
+	else if(depth == 16) image[ctry].u16[ctry] = tcolor;
+	else if(depth == 32) image[ctry].u32[ctry] = tcolor;
 	}
       }
     }
@@ -412,13 +412,13 @@ void Graphic::ClearArea(int x, int y, int xs, int ys) {
 void Graphic::DrawPixel(int x, int y, int d, unsigned long c) {
   ConvertColor(c, d, (int)depth);
   if(depth == 8) {
-    image[y].uc[x] = c;
+    image[y].u8[x] = c;
     }
   else if (depth == 16) {
-    image[y].us[x] = c;
+    image[y].u16[x] = c;
     }
   else if (depth == 32) {
-    image[y].ul[x] = c;
+    image[y].u32[x] = c;
     }
   }
 
@@ -488,17 +488,17 @@ void Graphic::SetRotated(Graphic &in, int angle) {
     for(xi=0; xi<(long)xsize; xi++)  {
       dx=(int)curx;	dy=(int)cury;
       if((dx>=0) && (dy>=0) && (dx < (long)in.xsize) && (dy < (long)in.ysize)) {
-	if(depth == 8) *(curpt.uc) = in.image[dy].uc[dx];
-	else if(depth == 32) *(curpt.ul) = in.image[dy].ul[dx];
+	if(depth == 8) *(curpt.u8) = in.image[dy].u8[dx];
+	else if(depth == 32) *(curpt.u32) = in.image[dy].u32[dx];
         else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
 	}
       else  {
-	if(depth == 8) *(curpt.uc) = tcolor;
-	else if(depth == 32) *(curpt.ul) = tcolor;
+	if(depth == 8) *(curpt.u8) = tcolor;
+	else if(depth == 32) *(curpt.u32) = tcolor;
         else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
 	}
-      if(depth == 8) curpt.uc++;
-      else if(depth == 32) curpt.ul++;
+      if(depth == 8) curpt.u8++;
+      else if(depth == 32) curpt.u32++;
       else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
       curx+=incxx;
       cury+=incyx;
@@ -558,27 +558,27 @@ Graphic Graphic::operator +(const Graphic &from)  {
 	if((ctrx+from.xcenter >= 0) && (ctry+from.ycenter >= 0) && 
 		(ctrx+from.xcenter < (long)from.xsize) && 
 		(ctry+from.ycenter < (long)from.ysize) &&
-		(from.image[ctry+from.ycenter].uc[ctrx+from.xcenter] != from.tcolor))
-	  ret.image[ctry+yc].uc[ctrx+xc] =
-		from.image[ctry+from.ycenter].uc[ctrx+from.xcenter];
+		(from.image[ctry+from.ycenter].u8[ctrx+from.xcenter] != from.tcolor))
+	  ret.image[ctry+yc].u8[ctrx+xc] =
+		from.image[ctry+from.ycenter].u8[ctrx+from.xcenter];
 	else if((ctrx+xcenter >= 0) && (ctry+ycenter >= 0) && 
 		(ctrx+xcenter < (long)xsize) && (ctry+ycenter < (long)ysize) &&
-		(image[ctry+ycenter].uc[ctrx+xcenter] != from.tcolor))
-	  ret.image[ctry+yc].uc[ctrx+xc] = image[ctry+ycenter].uc[ctrx+xcenter];
-	else ret.image[ctry+yc].uc[ctrx+xc] = from.tcolor;
+		(image[ctry+ycenter].u8[ctrx+xcenter] != from.tcolor))
+	  ret.image[ctry+yc].u8[ctrx+xc] = image[ctry+ycenter].u8[ctrx+xcenter];
+	else ret.image[ctry+yc].u8[ctrx+xc] = from.tcolor;
 	}
       else if(depth == 32) {
 	if((ctrx+from.xcenter >= 0) && (ctry+from.ycenter >= 0) && 
 		(ctrx+from.xcenter < (long)from.xsize) && 
 		(ctry+from.ycenter < (long)from.ysize) &&
-		(from.image[ctry+from.ycenter].ul[ctrx+from.xcenter] != from.tcolor))
-	  ret.image[ctry+yc].ul[ctrx+xc] =
-		from.image[ctry+from.ycenter].ul[ctrx+from.xcenter];
+		(from.image[ctry+from.ycenter].u32[ctrx+from.xcenter] != from.tcolor))
+	  ret.image[ctry+yc].u32[ctrx+xc] =
+		from.image[ctry+from.ycenter].u32[ctrx+from.xcenter];
 	else if((ctrx+xcenter >= 0) && (ctry+ycenter >= 0) && 
 		(ctrx+xcenter < (long)xsize) && (ctry+ycenter < (long)ysize) &&
-		(image[ctry+ycenter].ul[ctrx+xcenter] != from.tcolor))
-	  ret.image[ctry+yc].ul[ctrx+xc] = image[ctry+ycenter].ul[ctrx+xcenter];
-	else ret.image[ctry+yc].ul[ctrx+xc] = 0;
+		(image[ctry+ycenter].u32[ctrx+xcenter] != from.tcolor))
+	  ret.image[ctry+yc].u32[ctrx+xc] = image[ctry+ycenter].u32[ctrx+xcenter];
+	else ret.image[ctry+yc].u32[ctrx+xc] = 0;
 	}
       else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
@@ -592,9 +592,9 @@ void Graphic::XFlip() {
     unsigned char tmp;
     for(ctr = 0; ctr < (long)ysize; ctr++)  {
       for(ctr2 = 0; ctr2 < (long)xsize/2; ctr2++)  {
- 	tmp = image[ctr].uc[ctr2];
-	image[ctr].uc[ctr2] = image[ctr].uc[(xsize-1) - ctr2];
-	image[ctr].uc[(xsize-1) - ctr2] = tmp;
+ 	tmp = image[ctr].u8[ctr2];
+	image[ctr].u8[ctr2] = image[ctr].u8[(xsize-1) - ctr2];
+	image[ctr].u8[(xsize-1) - ctr2] = tmp;
         }
       }
     }
@@ -602,9 +602,9 @@ void Graphic::XFlip() {
     unsigned short tmp;
     for(ctr = 0; ctr < (long)ysize; ctr++)  {
       for(ctr2 = 0; ctr2 < (long)xsize/2; ctr2++)  {
- 	tmp = image[ctr].us[ctr2];
-	image[ctr].us[ctr2] = image[ctr].us[(xsize-1) - ctr2];
-	image[ctr].us[(xsize-1) - ctr2] = tmp;
+ 	tmp = image[ctr].u16[ctr2];
+	image[ctr].u16[ctr2] = image[ctr].u16[(xsize-1) - ctr2];
+	image[ctr].u16[(xsize-1) - ctr2] = tmp;
         }
       }
     }
@@ -612,9 +612,9 @@ void Graphic::XFlip() {
     unsigned long tmp;
     for(ctr = 0; ctr < (long)ysize; ctr++)  {
       for(ctr2 = 0; ctr2 < (long)xsize/2; ctr2++)  {
- 	tmp = image[ctr].ul[ctr2];
-	image[ctr].ul[ctr2] = image[ctr].ul[(xsize-1) - ctr2];
-	image[ctr].ul[(xsize-1) - ctr2] = tmp;
+ 	tmp = image[ctr].u32[ctr2];
+	image[ctr].u32[ctr2] = image[ctr].u32[(xsize-1) - ctr2];
+	image[ctr].u32[(xsize-1) - ctr2] = tmp;
         }
       }
     }
@@ -625,9 +625,9 @@ void Graphic::YFlip() {
   int ctr;
   unsigned char tmp[xsize*(depth>>3)];
   for(ctr = 0; ctr < ((long)ysize/2); ctr++)  {
-    memcpy(tmp, image[ctr].uc, xsize*(depth>>3));
-    memcpy(image[ctr].uc, image[(ysize-1) - ctr].uc, xsize*(depth>>3));
-    memcpy(image[(ysize-1) - ctr].uc, tmp, xsize*(depth>>3));
+    memcpy(tmp, image[ctr].u8, xsize*(depth>>3));
+    memcpy(image[ctr].u8, image[(ysize-1) - ctr].u8, xsize*(depth>>3));
+    memcpy(image[(ysize-1) - ctr].u8, tmp, xsize*(depth>>3));
     }
   ycenter = (ysize-1)-ycenter;
   }
@@ -649,8 +649,8 @@ void Graphic::Trim() {
   for(ctry = 0; ctry < (long)ysize; ctry++)  {
     int xclear = 1;
     for(ctrx = 0; ctrx < (long)xsize; ctrx++)  {
-      if((depth == 8 && image[ctry].uc [ctrx] != 0)
-	  || (depth == 32 && image[ctry].ul[ctrx] != 0))  {
+      if((depth == 8 && image[ctry].u8 [ctrx] != 0)
+	  || (depth == 32 && image[ctry].u32[ctrx] != 0))  {
 	if((yclear == 1) && (xclear == 1) && (yb > ctry))  yb = ctry;
         yclear = 0;
 	if(ye < ctry)  ye = ctry;
@@ -685,11 +685,11 @@ void Graphic::Trim() {
   UserDebug("Graphic:Trim()  Begin Trim");
   for(ctry = yb; ctry < (ye+1); ctry++)  {
     if(depth == 8)
-	memmove(image[ctry-yb].uc, &image[ctry].uc[xb], xsize);
+	memmove(image[ctry-yb].u8, &image[ctry].u8[xb], xsize);
     else if(depth == 16)
-	memmove(image[ctry-yb].us, &image[ctry].us[xb], xsize*2);
+	memmove(image[ctry-yb].u16, &image[ctry].u16[xb], xsize*2);
     else if(depth == 32)
-	memmove(image[ctry-yb].ul, &image[ctry].ul[xb], xsize*4);
+	memmove(image[ctry-yb].u32, &image[ctry].u32[xb], xsize*4);
     else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
     }
   UserDebug("Graphic:Trim()  End");
@@ -730,7 +730,7 @@ void Graphic::DefSize(int xsz, int ysz) {
   UserDebug("User:Graphic:DefSize After Memory");
   if(!image) U2_Exit(-1, "Out of memory (image)!\n");
   for(ctr=0; ctr<ydef; ++ctr) {
-    image[ctr].c = chunk.Data().c + ctr*xdef*(depth>>3);
+    image[ctr].u8 = chunk.Data().u8 + ctr*xdef*(depth>>3);
     }
 
   UserDebug("User:Graphic:DefSize End");
@@ -749,7 +749,7 @@ Graphic::~Graphic() {
 void Graphic::DefLin(char *data)  {
   if(ysize == 0 || xsize == 0)  return;
   int line = linedef%ysize;
-  memcpy(image[line].uc, data, xsize*(depth>>3));
+  memcpy(image[line].u8, data, xsize*(depth>>3));
   linedef++;
   }
 
@@ -766,7 +766,7 @@ void Graphic::DefLinH(char *data)  { //** 8-bit only
     if((tmp < 0) || (tmp > 15))  tmp = data[ctr*2+1]+10-'A';
     if((tmp < 0) || (tmp > 15))  tmp = 0;
     tmp = tmp2*16+tmp;
-    image[linedef].uc[ctr] = tmp;
+    image[linedef].u8[ctr] = tmp;
     }
   linedef++;
   if(linedef >= (long)ysize)  linedef = 0;
@@ -802,7 +802,7 @@ Graphic::Graphic(char *fn, Palette &p)  {
     U2_Exit(1, "I only support 8 and 24 bit Bitmap files, \"%s\" is %ld-bit!\n",
 	fn, depth);
     }
-  tcolor = image[0].uc[0]; //** 8-bit only
+  tcolor = image[0].u8[0]; //** 8-bit only
   }
 
 Graphic::Graphic(char *fn)  {
@@ -827,10 +827,10 @@ void Graphic::InitTGA32(char *fn)  {
       DefSize((buf[13]<<8) + buf[12], (buf[15]<<8) + buf[14]);
       U2_FRead(buf, 1, (int)buf[0], tga);
       if(!rev) for(ctry=0; ctry<ysize; ++ctry) {
-	U2_FRead(image[ysize-(ctry+1)].ul, 1, xsize*4, tga);
+	U2_FRead(image[ysize-(ctry+1)].u32, 1, xsize*4, tga);
 	}
       else for(ctry=0; ctry<ysize; ++ctry) {
-	U2_FRead(image[ctry].ul, 1, xsize*4, tga);
+	U2_FRead(image[ctry].u32, 1, xsize*4, tga);
 	}
       }
     else if(nr == 18 && buf[1] == 0 && buf[2] == 10) {
@@ -849,7 +849,7 @@ void Graphic::InitTGA32(char *fn)  {
 	if(buf[0]&0x80) {
 	  U2_FRead(&tmpv, 1, 4, tga);
 	  for(ctr=0; ctr<sz; ++ctr) {
-	    image[y].ul[x++] = tmpv;
+	    image[y].u32[x++] = tmpv;
 	    if(x==xsize) {
 //	      fprintf(stderr, "\"%s\" breaks TGA rules!!!\n", fn);
 	      ++y; --yr; x=0;
@@ -860,10 +860,10 @@ void Graphic::InitTGA32(char *fn)  {
 	  while(x+sz>=xsize) {
 	    int sz2 = xsize-x; sz-=sz2;
 //	    fprintf(stderr, "\"%s\" breaks TGA rules!!!\n", fn);
-	    U2_FRead(&image[y].ul[x], 1, sz2<<2, tga);
+	    U2_FRead(&image[y].u32[x], 1, sz2<<2, tga);
 	    ++y; --yr; x=0;
 	    }
-	  U2_FRead(&image[y].ul[x], 1, sz<<2, tga);
+	  U2_FRead(&image[y].u32[x], 1, sz<<2, tga);
 	  x+=sz;
 	  }
 	if(x==xsize) { ++y; --yr; x=0; }
@@ -930,7 +930,7 @@ void Graphic::Init(char *fn)  {
     U2_FRead(buffer, 1, colused*4, bmp);
     DefSize(width, height);
     for(ctr = height; ctr > 0; ctr--)  {
-      int tmp = U2_FRead(image[ctr-1].uc, 1, width*bytes, bmp);
+      int tmp = U2_FRead(image[ctr-1].u8, 1, width*bytes, bmp);
       if(tmp != ((long)(width*bytes)))  {
 	U2_Exit(1, "Read error in 8-bit file \"%s\"\n", fn);
 	}
@@ -943,7 +943,7 @@ void Graphic::Init(char *fn)  {
     DefSize(width, height);
     for(ctr = height; ctr > 0; --ctr)  {
       for(ctr2 = 0; ctr2 <width; ++ctr2)  {
-	int tmp = U2_FRead(&image[ctr-1].ul[ctr2], 1, 3, bmp);
+	int tmp = U2_FRead(&image[ctr-1].u32[ctr2], 1, 3, bmp);
 	if(tmp != 3)  {
 	  U2_Exit(1, "Read error in 24-bit file \"%s\"\n", fn);
 	  }
@@ -952,15 +952,15 @@ void Graphic::Init(char *fn)  {
       }
     for(ctr = 0; ctr < height; ++ctr) {
       for(ctr2 = 0; ctr2 <width; ++ctr2) {
-	image[ctr].uc[(ctr2<<2)+3] = 0;
-	if((image[0].ul[0] & 0x0FFFFFF) != (image[ctr].ul[ctr2] & 0x0FFFFFF))
-	  image[ctr].uc[(ctr2<<2)+3] = 255;
+	image[ctr].u8[(ctr2<<2)+3] = 0;
+	if((image[0].u32[0] & 0x0FFFFFF) != (image[ctr].u32[ctr2] & 0x0FFFFFF))
+	  image[ctr].u8[(ctr2<<2)+3] = 255;
 	}
       }
     }
   linedef = height;
-  if(depth == 8) tcolor = image[0].uc[0];
-  else if(depth == 32) tcolor = image[0].uc[3]; //** 32-bit kludge
+  if(depth == 8) tcolor = image[0].u8[0];
+  else if(depth == 32) tcolor = image[0].u8[3]; //** 32-bit kludge
   else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
   UserDebug("Graphic::Init Close File");
   U2_FClose(bmp);
@@ -1006,7 +1006,7 @@ void Graphic::SaveBMP(char *fn, const Palette &pal) {
     }
   for(ctr=ysize-1; ctr>=0; ctr--)  {
     for(ctr2=0; ctr2<(int)xsize; ctr2++)
-      fprintf(bmp, "%c", image[ctr].uc[ctr2]); // 8-bit only!
+      fprintf(bmp, "%c", image[ctr].u8[ctr2]); // 8-bit only!
     for(; (ctr2 & 3) != 0; ctr2++)
       fprintf(bmp, "%c", 0);
     }
@@ -1050,9 +1050,9 @@ void Graphic::SaveBMP(char *fn)  {
 
   for(ctr=ysize-1; ctr>=0; ctr--)  {
     for(ctr2=0; ctr2<(int)xsize*(depth>>3); ctr2++)
-      if((ctr2&3) != 3) fprintf(bmp, "%c", image[ctr].uc[ctr2]);
+      if((ctr2&3) != 3) fprintf(bmp, "%c", image[ctr].u8[ctr2]);
 //    for(ctr2=0; ctr2<(int)xsize*(depth>>3); ctr2++)
-//      fprintf(bmp, "%c", image[ctr].uc[ctr2]);  // Broken!!!!!!
+//      fprintf(bmp, "%c", image[ctr].u8[ctr2]);  // Broken!!!!!!
 //    for(; (ctr2 & 3) != 0; ctr2++)
 //      fprintf(bmp, "%c", 0);
     }
@@ -1106,14 +1106,14 @@ void Graphic::Init24(char *fn, Palette &p)  {
       U2_Exit(1, "Read error in 24-bit file loading \"%s\"\n", fn);
       }
     for(ctr2 = 0; ctr2 < (int)width; ctr2++)  { //** 8-bit (maybe not an error)
-      image[ctr-1].uc[ctr2] = p.GetClosestColor(buffer[ctr2*3+2],
+      image[ctr-1].u8[ctr2] = p.GetClosestColor(buffer[ctr2*3+2],
 		buffer[ctr2*3+1], buffer[ctr2*3]);
       }
     }
 
   linedef = height;
-  if(depth == 8) tcolor = image[0].uc[0]; //** Same tcolor 8
-  else if(depth == 32) tcolor = image[0].uc[3]; //** 32-bit kludge
+  if(depth == 8) tcolor = image[0].u8[0]; //** Same tcolor 8
+  else if(depth == 32) tcolor = image[0].u8[3]; //** 32-bit kludge
   else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
   
   U2_FClose(bmp);
@@ -1137,20 +1137,20 @@ void Graphic::PasteGraphic(Graphic *g, int x, int y) {
     }
   if(depth == 8) {
     for(ctry=0; ctry<g->ysize; ++ctry) {
-      memcpy(image[ctry+y].uc+x, g->image[ctry].ul, g->xsize);
+      memcpy(image[ctry+y].u8+x, g->image[ctry].u32, g->xsize);
       }   
     }
   else if(depth == 32) {
     int ctrx;
     for(ctry=0; ctry<g->ysize; ++ctry) {
-      memcpy(image[ctry+y].ul+x, g->image[ctry].ul, (g->xsize)<<2);
+      memcpy(image[ctry+y].u32+x, g->image[ctry].u32, (g->xsize)<<2);
       for(ctrx=0; ctrx<g->xsize; ++ctrx)
-        image[ctry+y].uc[((ctrx+x)<<2)+3]=0xFF;
+        image[ctry+y].u8[((ctrx+x)<<2)+3]=0xFF;
       }   
     }
   else if(depth == 16) {
     for(ctry=0; ctry<g->ysize; ++ctry) {
-      memcpy(image[ctry+y].us+x, g->image[ctry].us, (g->xsize)<<1);
+      memcpy(image[ctry+y].u16+x, g->image[ctry].u16, (g->xsize)<<1);
       }   
     }
   UserDebug("User::Graphic::PasteGraphic() End");
@@ -1174,8 +1174,8 @@ void Graphic::PasteTransparentGraphic(Graphic *gr, int x, int y) {
     UserDebug("User::Graphic::PasteTransparentGraphic() 8bpp Write");
     for(ctry=0; ctry<gr->ysize; ++ctry) {
       for(ctrx=0; ctrx<gr->xsize; ++ctrx) {
-	if(gr->image[ctry].uc[ctrx] != tcolor)
-	  image[ctry+y].uc[ctrx+x] = gr->image[ctry].uc[ctrx];
+	if(gr->image[ctry].u8[ctrx] != tcolor)
+	  image[ctry+y].u8[ctrx+x] = gr->image[ctry].u8[ctrx];
 	}
       }   
     }
@@ -1183,17 +1183,17 @@ void Graphic::PasteTransparentGraphic(Graphic *gr, int x, int y) {
     UserDebug("User::Graphic::PasteTransparentGraphic() 32bpp Write");
     for(ctry=0; ctry<gr->ysize; ++ctry) {
       for(ctrx=0; ctrx<gr->xsize; ++ctrx) {
-	unsigned long alpha=gr->image[ctry].uc[(ctrx<<2)+3];
-	unsigned long cr = image[ctry+y].uc[((ctrx+x)<<2)]*(255-alpha);
-	unsigned long cg = image[ctry+y].uc[((ctrx+x)<<2)+1]*(255-alpha);
-	unsigned long cb = image[ctry+y].uc[((ctrx+x)<<2)+2]*(255-alpha);
-	cr += gr->image[ctry].uc[(ctrx<<2)]*alpha;   cr/=255;
-	cg += gr->image[ctry].uc[(ctrx<<2)+1]*alpha; cg/=255;
-	cb += gr->image[ctry].uc[(ctrx<<2)+2]*alpha; cb/=255;
-	image[ctry+y].uc[((ctrx+x)<<2)] = cr;
-	image[ctry+y].uc[((ctrx+x)<<2)+1] = cg;
-	image[ctry+y].uc[((ctrx+x)<<2)+2] = cb;
-	image[ctry+y].uc[((ctrx+x)<<2)+3] = 255;
+	unsigned long alpha=gr->image[ctry].u8[(ctrx<<2)+3];
+	unsigned long cr = image[ctry+y].u8[((ctrx+x)<<2)]*(255-alpha);
+	unsigned long cg = image[ctry+y].u8[((ctrx+x)<<2)+1]*(255-alpha);
+	unsigned long cb = image[ctry+y].u8[((ctrx+x)<<2)+2]*(255-alpha);
+	cr += gr->image[ctry].u8[(ctrx<<2)]*alpha;   cr/=255;
+	cg += gr->image[ctry].u8[(ctrx<<2)+1]*alpha; cg/=255;
+	cb += gr->image[ctry].u8[(ctrx<<2)+2]*alpha; cb/=255;
+	image[ctry+y].u8[((ctrx+x)<<2)] = cr;
+	image[ctry+y].u8[((ctrx+x)<<2)+1] = cg;
+	image[ctry+y].u8[((ctrx+x)<<2)+2] = cb;
+	image[ctry+y].u8[((ctrx+x)<<2)+3] = 255;
 	}
       }   
     }
@@ -1201,8 +1201,8 @@ void Graphic::PasteTransparentGraphic(Graphic *gr, int x, int y) {
     UserDebug("User::Graphic::PasteTransparentGraphic() 16bpp Write");
     for(ctry=0; ctry<gr->ysize; ++ctry) {
       for(ctrx=0; ctrx<gr->xsize; ++ctrx) {
-	if(gr->image[ctry].us[ctrx] != tcolor)
-	  image[ctry+y].us[ctrx+x] = gr->image[ctry].us[ctrx];
+	if(gr->image[ctry].u16[ctrx] != tcolor)
+	  image[ctry+y].u16[ctrx+x] = gr->image[ctry].u16[ctrx];
 	}
       }   
     }
@@ -1219,17 +1219,17 @@ void Graphic::DepthConvert(int d, const Palette &p) {
     depth = d; xsize>>=2;
     for(ctry=0; ctry<g.ysize; ctry++)  {
       for(ctrx=0; ctrx<g.xsize; ctrx++)  {
-	if(g.image[ctry].uc[ctrx] == tcolor) {
-          image[ctry].uc[(ctrx<<2)+3] = 0;
-          image[ctry].uc[(ctrx<<2)+2] = p.GetRedEntry(g.image[ctry].uc[ctrx]);
-          image[ctry].uc[(ctrx<<2)+1] = p.GetGreenEntry(g.image[ctry].uc[ctrx]);
-          image[ctry].uc[(ctrx<<2)] = p.GetBlueEntry(g.image[ctry].uc[ctrx]);
+	if(g.image[ctry].u8[ctrx] == tcolor) {
+          image[ctry].u8[(ctrx<<2)+3] = 0;
+          image[ctry].u8[(ctrx<<2)+2] = p.GetRedEntry(g.image[ctry].u8[ctrx]);
+          image[ctry].u8[(ctrx<<2)+1] = p.GetGreenEntry(g.image[ctry].u8[ctrx]);
+          image[ctry].u8[(ctrx<<2)] = p.GetBlueEntry(g.image[ctry].u8[ctrx]);
 	  }
 	else {
-          image[ctry].uc[(ctrx<<2)+3] = 0xFF;
-          image[ctry].uc[(ctrx<<2)+2] = p.GetRedEntry(g.image[ctry].uc[ctrx]);
-          image[ctry].uc[(ctrx<<2)+1] = p.GetGreenEntry(g.image[ctry].uc[ctrx]);
-          image[ctry].uc[(ctrx<<2)] = p.GetBlueEntry(g.image[ctry].uc[ctrx]);
+          image[ctry].u8[(ctrx<<2)+3] = 0xFF;
+          image[ctry].u8[(ctrx<<2)+2] = p.GetRedEntry(g.image[ctry].u8[ctrx]);
+          image[ctry].u8[(ctrx<<2)+1] = p.GetGreenEntry(g.image[ctry].u8[ctrx]);
+          image[ctry].u8[(ctrx<<2)] = p.GetBlueEntry(g.image[ctry].u8[ctrx]);
 	  }
 	}
       }
@@ -1242,14 +1242,14 @@ void Graphic::DepthConvert(int d, const Palette &p) {
     depth = d; xsize>>=2;
     for(ctry=0; ctry<g.ysize; ctry++)  {
       for(ctrx=0; ctrx<g.xsize; ctrx++)  {
-	if(g.image[ctry].uc[ctrx] == tcolor) {
-          image[ctry].ul[ctrx] = 0;
+	if(g.image[ctry].u8[ctrx] == tcolor) {
+          image[ctry].u32[ctrx] = 0;
 	  }
 	else {
-          image[ctry].uc[(ctrx<<2)+3] = 0xFF;
-          image[ctry].uc[(ctrx<<2)+2] = p.GetRedEntry(g.image[ctry].uc[ctrx]);
-          image[ctry].uc[(ctrx<<2)+1] = p.GetGreenEntry(g.image[ctry].uc[ctrx]);
-          image[ctry].uc[(ctrx<<2)] = p.GetBlueEntry(g.image[ctry].uc[ctrx]);
+          image[ctry].u8[(ctrx<<2)+3] = 0xFF;
+          image[ctry].u8[(ctrx<<2)+2] = p.GetRedEntry(g.image[ctry].u8[ctrx]);
+          image[ctry].u8[(ctrx<<2)+1] = p.GetGreenEntry(g.image[ctry].u8[ctrx]);
+          image[ctry].u8[(ctrx<<2)] = p.GetBlueEntry(g.image[ctry].u8[ctrx]);
 	  }
 	}
       }
@@ -1263,23 +1263,23 @@ void Graphic::DepthConvert(int d, const Palette &p) {
     tcolor=0xFFFFFFFF;
     for(ctry=0; ctry<g.ysize; ctry++)  {
       for(ctrx=0; ctrx<g.xsize; ctrx++)  {
-	if(g.image[ctry].uc[(ctrx<<2)+3] == 0) {
+	if(g.image[ctry].u8[(ctrx<<2)+3] == 0) {
 	  if(tcolor==0xFFFFFFFF) {
-	    tcolor = (g.image[ctry].uc[(ctrx<<2)+2] >> 3);
+	    tcolor = (g.image[ctry].u8[(ctrx<<2)+2] >> 3);
 	    tcolor <<= 6;
-	    tcolor |= (g.image[ctry].uc[(ctrx<<2)+1] >> 2);
+	    tcolor |= (g.image[ctry].u8[(ctrx<<2)+1] >> 2);
 	    tcolor <<= 5;
-	    tcolor |= (g.image[ctry].uc[ctrx<<2] >> 3);
+	    tcolor |= (g.image[ctry].u8[ctrx<<2] >> 3);
 	    }
-          image[ctry].us[ctrx] = tcolor;
+          image[ctry].u16[ctrx] = tcolor;
 	  }
 	else {
-	  unsigned long col = (g.image[ctry].uc[(ctrx<<2)+2] >> 3);
+	  unsigned long col = (g.image[ctry].u8[(ctrx<<2)+2] >> 3);
 	  col <<= 6;
-	  col |= (g.image[ctry].uc[(ctrx<<2)+1] >> 2);
+	  col |= (g.image[ctry].u8[(ctrx<<2)+1] >> 2);
 	  col <<= 5;
-	  col |= (g.image[ctry].uc[ctrx<<2] >> 3);
-	  image[ctry].us[ctrx] = col;
+	  col |= (g.image[ctry].u8[ctrx<<2] >> 3);
+	  image[ctry].u16[ctrx] = col;
 	  }
 	}
       }
@@ -1293,16 +1293,16 @@ void Graphic::Undo3ds() {
   for(ctry=0; ctry<ysize; ++ctry) {
     for(ctrx=0; ctrx<xsize; ++ctrx) {
       unsigned long cr, cg, cb, a;
-      a = image[ctry].uc[(ctrx<<2)+3];
+      a = image[ctry].u8[(ctrx<<2)+3];
       if(a) {
-        cb = image[ctry].uc[(ctrx<<2)+2];
-        cg = image[ctry].uc[(ctrx<<2)+1];
-        cr = image[ctry].uc[(ctrx<<2)+0];
+        cb = image[ctry].u8[(ctrx<<2)+2];
+        cg = image[ctry].u8[(ctrx<<2)+1];
+        cr = image[ctry].u8[(ctrx<<2)+0];
         cb*=255; cg*=255; cr*=255;
         cb/=a; cg/=a; cr/=a;
-        image[ctry].uc[(ctrx<<2)+2] = cb;
-        image[ctry].uc[(ctrx<<2)+1] = cg;
-        image[ctry].uc[(ctrx<<2)+0] = cr;
+        image[ctry].u8[(ctrx<<2)+2] = cb;
+        image[ctry].u8[(ctrx<<2)+1] = cg;
+        image[ctry].u8[(ctrx<<2)+0] = cr;
         }
       }  
     }    
@@ -1310,13 +1310,13 @@ void Graphic::Undo3ds() {
 
 color Graphic::GetPixel(int x, int y) {
   if(depth == 8) {
-    return image[y].uc[x];
+    return image[y].u8[x];
     }
   else if (depth == 16) {
-    return image[y].us[x];
+    return image[y].u16[x];
     }
   else if (depth == 32) {
-    return image[y].ul[x];
+    return image[y].u32[x];
     }
   return 0;
   }

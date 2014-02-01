@@ -253,50 +253,50 @@ int Screen::SetSize(int x, int y)  {
     }
 
   if(depth==8)  {
-    video_buffer.uc = new unsigned char[ysize*xsize];
-    background_buffer.uc = new unsigned char[ysize*xsize];
+    video_buffer.u8 = new unsigned char[ysize*xsize];
+    background_buffer.u8 = new unsigned char[ysize*xsize];
     image = new mfmt[ysize];
     backg = new mfmt[ysize];
     for(ctr=0; ctr<ysize; ctr++)  {
-      image[ctr].uc = &video_buffer.uc[xsize*ctr];
-      backg[ctr].uc = &background_buffer.uc[xsize*ctr];
+      image[ctr].u8 = &video_buffer.u8[xsize*ctr];
+      backg[ctr].u8 = &background_buffer.u8[xsize*ctr];
       for(ctr2=0; ctr2<xsize; ctr2++)  {
-//	image[ctr].uc[ctr2] = BlackPixel(_Xdisplay, 0);
-//	backg[ctr].uc[ctr2] = BlackPixel(_Xdisplay, 0);
-	image[ctr].uc[ctr2] = 0;
-	backg[ctr].uc[ctr2] = 0;
+//	image[ctr].u8[ctr2] = BlackPixel(_Xdisplay, 0);
+//	backg[ctr].u8[ctr2] = BlackPixel(_Xdisplay, 0);
+	image[ctr].u8[ctr2] = 0;
+	backg[ctr].u8[ctr2] = 0;
 	}
       }
     }
   else if(depth==32)  {
-    video_buffer.ul = new unsigned long[ysize*xsize];
-    background_buffer.ul = new unsigned long[ysize*xsize];
+    video_buffer.u32 = new unsigned int[ysize*xsize];
+    background_buffer.u32 = new unsigned int[ysize*xsize];
     image = new mfmt[ysize];
     backg = new mfmt[ysize];
     for(ctr=0; ctr<ysize; ctr++)  {
-      image[ctr].ul = &video_buffer.ul[xsize*ctr];
-      backg[ctr].ul = &background_buffer.ul[xsize*ctr];
+      image[ctr].u32 = &video_buffer.u32[xsize*ctr];
+      backg[ctr].u32 = &background_buffer.u32[xsize*ctr];
       for(ctr2=0; ctr2<xsize; ctr2++)  {
-//	image[ctr].ul[ctr2] = BlackPixel(_Xdisplay, 0);
-//	backg[ctr].ul[ctr2] = BlackPixel(_Xdisplay, 0);
-	image[ctr].ul[ctr2] = 0;
-	backg[ctr].ul[ctr2] = 0;
+//	image[ctr].u32[ctr2] = BlackPixel(_Xdisplay, 0);
+//	backg[ctr].u32[ctr2] = BlackPixel(_Xdisplay, 0);
+	image[ctr].u32[ctr2] = 0;
+	backg[ctr].u32[ctr2] = 0;
 	}
       }
     }
   else if(depth==16)  {
-    video_buffer.us = new unsigned short[ysize*xsize];
-    background_buffer.us = new unsigned short[ysize*xsize];
+    video_buffer.u16 = new unsigned short[ysize*xsize];
+    background_buffer.u16 = new unsigned short[ysize*xsize];
     image = new mfmt[ysize];
     backg = new mfmt[ysize];
     for(ctr=0; ctr<ysize; ctr++)  {
-      image[ctr].us = &video_buffer.us[xsize*ctr];
-      backg[ctr].us = &background_buffer.us[xsize*ctr];
+      image[ctr].u16 = &video_buffer.u16[xsize*ctr];
+      backg[ctr].u16 = &background_buffer.u16[xsize*ctr];
       for(ctr2=0; ctr2<xsize; ctr2++)  {
-//	image[ctr].us[ctr2] = BlackPixel(_Xdisplay, 0);
-//	backg[ctr].us[ctr2] = BlackPixel(_Xdisplay, 0);
-	image[ctr].us[ctr2] = 0;
-	backg[ctr].us[ctr2] = 0;
+//	image[ctr].u16[ctr2] = BlackPixel(_Xdisplay, 0);
+//	backg[ctr].u16[ctr2] = BlackPixel(_Xdisplay, 0);
+	image[ctr].u16[ctr2] = 0;
+	backg[ctr].u16[ctr2] = 0;
 	}
       }
     }
@@ -471,17 +471,17 @@ int Screen::SetSize(int x, int y)  {
 
       if(depth==8)  {
 	_Ximage = XCreateImage(_Xdisplay, None, 8, ZPixmap, 0,
-		video_buffer.c, xsize, ysize, 8, 0);
+		(char*)(video_buffer.u8), xsize, ysize, 8, 0);
 	}
       else if(depth==16)  {
 	_Ximage = XCreateImage(_Xdisplay, None,
 		DefaultDepth(_Xdisplay, _Xscreen), ZPixmap, 0,
-		video_buffer.c, xsize, ysize, 16, 0);
+		(char*)(video_buffer.u8), xsize, ysize, 16, 0);
 	}
       else if(depth==32)  {
 	_Ximage = XCreateImage(_Xdisplay, None,
 		DefaultDepth(_Xdisplay, _Xscreen), ZPixmap, 0,
-		video_buffer.c, xsize, ysize, 32, 0);
+		(char*)(video_buffer.u8), xsize, ysize, 32, 0);
 	}
       else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
 
@@ -529,7 +529,7 @@ int Screen::SetSize(int x, int y)  {
       DGAFlags = modes[mode].flags;
       collen = modes[mode].viewportHeight;
       DGAdev = XDGASetMode(_Xdisplay, _Xscreen, modes[mode].num);
-      frame.uc = DGAdev->data;
+      frame.u8 = DGAdev->data;
       depth = appdepth;
       pal->depth = appdepth;
       XDGASetViewport(_Xdisplay, _Xscreen, 0, 0, 0);
@@ -547,11 +547,11 @@ int Screen::SetSize(int x, int y)  {
 	_Xmap = XDGACreateColormap(_Xdisplay, _Xscreen, DGAdev, AllocAll);
 	}
       for(ctr=0; ctr<modes[mode].viewportHeight; ctr++) {
-	memset(frame.uc+((rowlen * modes[mode].bitsPerPixel / 8)*ctr), 0, 
+	memset(frame.u8+((rowlen * modes[mode].bitsPerPixel / 8)*ctr), 0, 
 		modes[mode].viewportWidth * modes[mode].bitsPerPixel / 8);
 	}
-      frame.uc += (modes[mode].viewportWidth - xsize) * modes[mode].bitsPerPixel / 16;
-      frame.uc += (modes[mode].viewportHeight - ysize) * modes[mode].bytesPerScanline / 2;
+      frame.u8 += (modes[mode].viewportWidth - xsize) * modes[mode].bitsPerPixel / 16;
+      frame.u8 += (modes[mode].viewportHeight - ysize) * modes[mode].bytesPerScanline / 2;
       delete(modes);
       }break;
     #endif
@@ -588,15 +588,15 @@ int Screen::SetSize(int x, int y)  {
       XF86DGASetViewPort(_Xdisplay, _Xscreen, 0, 0);
       if(depth == 8)  {
 	for(ctr=0; ctr<collen; ctr++)
-	  memset(frame.c+rowlen*ctr, 0, xsize);
+	  memset(frame.u8+rowlen*ctr, 0, xsize);
 	}
       else if(depth == 32)  {
 	for(ctr=0; ctr<collen; ctr++)
-	  memset(frame.ul+rowlen*ctr, 0, xsize<<2);
+	  memset(frame.u32+rowlen*ctr, 0, xsize<<2);
 	}
       else if(depth == 16)  {
 	for(ctr=0; ctr<collen; ctr++)
-	  memset(frame.uc+rowlen*ctr, 0, xsize<<1);
+	  memset(frame.u8+rowlen*ctr, 0, xsize<<1);
 	}
       else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
       }break;
@@ -714,7 +714,7 @@ void Screen::RefreshFast()  {
     }
   if(!shown) return;
   int ctrb;
-//  memset(frame.uc, 0, rowlen * ysize);
+//  memset(frame.u8, 0, rowlen * ysize);
   for(ctrb=0; ctrb<REDRAW_RECTS; ctrb++)  {
     if(rxs[ctrb] != -1) {
       switch(vtype)  {
@@ -731,22 +731,22 @@ void Screen::RefreshFast()  {
 	  int ctry;
 	  if(depth == 8) {
 	    for(ctry=rys[ctrb]; ctry<rye[ctrb]; ctry++) {
-	      memcpy(frame.uc + ctry*rowlen + rxs[ctrb],
-		image[ctry].uc + rxs[ctrb],
+	      memcpy(frame.u8 + ctry*rowlen + rxs[ctrb],
+		image[ctry].u8 + rxs[ctrb],
 		rxe[ctrb]-rxs[ctrb]);
 	      }
 	    }
 	  else if(depth == 16) {
 	    for(ctry=rys[ctrb]; ctry<rye[ctrb]; ctry++) {
-	      memcpy(frame.us + ctry*rowlen + rxs[ctrb],
-		image[ctry].us + rxs[ctrb],
+	      memcpy(frame.u16 + ctry*rowlen + rxs[ctrb],
+		image[ctry].u16 + rxs[ctrb],
 		(rxe[ctrb]-rxs[ctrb])<<1);
 	      }
 	    }
 	  else if(depth == 32) {
 	    for(ctry=rys[ctrb]; ctry<rye[ctrb]; ctry++) {
-	      memcpy(frame.ul + ctry*rowlen + rxs[ctrb],
-		image[ctry].ul + rxs[ctrb],
+	      memcpy(frame.u32 + ctry*rowlen + rxs[ctrb],
+		image[ctry].u32 + rxs[ctrb],
 		(rxe[ctrb]-rxs[ctrb])<<2);
 	      }
 	    }
@@ -781,7 +781,7 @@ void Screen::RefreshFast()  {
 	  int ctry;
 	  if(depth == 8) {
 	    for(ctry=rys[ctrb]; ctry<rye[ctrb]; ctry++) {
-	      dosmemput(image[ctry].uc+rxs[ctrb], rxe[ctrb]-rxs[ctrb],
+	      dosmemput(image[ctry].u8+rxs[ctrb], rxe[ctrb]-rxs[ctrb],
 		frame.UL+ctry*rowlen+rxs[ctrb]);
 	      }
 	    }
@@ -826,17 +826,17 @@ void Screen::RefreshFull()  {
       int ctry;
       if(depth == 8) {
 	for(ctry=0; ctry<ysize; ctry++) {
-	  memcpy(frame.uc + ctry*rowlen, image[ctry].uc, xsize);
+	  memcpy(frame.u8 + ctry*rowlen, image[ctry].u8, xsize);
 	  }
 	}
       else if(depth == 32) {
 	for(ctry=0; ctry<ysize; ctry++) {
-	  memcpy(frame.ul + ctry*rowlen, image[ctry].ul, xsize<<2);
+	  memcpy(frame.u32 + ctry*rowlen, image[ctry].u32, xsize<<2);
 	  }
 	}
       else if(depth == 16) {
 	for(ctry=0; ctry<ysize; ctry++) {
-	  memcpy(frame.us + ctry*rowlen, image[ctry].us, xsize<<1);
+	  memcpy(frame.u16 + ctry*rowlen, image[ctry].u16, xsize<<1);
 	  }
 	}
       else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
@@ -851,11 +851,11 @@ void Screen::RefreshFull()  {
 	int bank;
 	for(bank=0; bank<((rowlen*ysize)>>16); bank++) {
 	  SetBank(bank);
-	  dosmemput(&video_buffer.uc[bank<<16], 65536, frame.UL);
+	  dosmemput(&video_buffer.u8[bank<<16], 65536, frame.UL);
 	  }
 	if((rowlen*ysize)&65535) {
 	  SetBank(bank);
-	  dosmemput(&video_buffer.uc[bank<<16], (rowlen*ysize)&65535, frame.UL);
+	  dosmemput(&video_buffer.u8[bank<<16], (rowlen*ysize)&65535, frame.UL);
 	  }
 	}
       }break;
@@ -867,11 +867,11 @@ void Screen::RefreshFull()  {
       if(depth == 8) {
 	if(rowlen != xsize)  {
 	  for(ctry=0; ctry<ysize; ctry++) {
-	    dosmemput(image[ctry].uc, xsize, frame.UL+ctry*rowlen);
+	    dosmemput(image[ctry].u8, xsize, frame.UL+ctry*rowlen);
 	    }
 	  }
 	else  {
-	  dosmemput(video_buffer.uc, xsize*ysize, frame.UL);
+	  dosmemput(video_buffer.u8, xsize*ysize, frame.UL);
 	  }
 	}
       }break;
@@ -885,23 +885,23 @@ void Screen::Clear(color c)  {
   int ctr, ctr2;
   if(depth==8) {
     for(ctr=0; ctr<ysize; ctr++)  {
-      memset(image[ctr].uc, c, xsize);
-      memset(backg[ctr].uc, c, xsize);
+      memset(image[ctr].u8, c, xsize);
+      memset(backg[ctr].u8, c, xsize);
       }
     }
   else if(depth==16)  {
     for(ctr=0; ctr<ysize; ctr++)  {
       for(ctr2=0; ctr2<xsize; ctr2++)  {
-	image[ctr].us[ctr2] = c;
-	backg[ctr].us[ctr2] = c;
+	image[ctr].u16[ctr2] = c;
+	backg[ctr].u16[ctr2] = c;
 	}
       }
     }
   else if(depth==32)  {
     for(ctr=0; ctr<ysize; ctr++)  {
       for(ctr2=0; ctr2<xsize; ctr2++)  {
-	image[ctr].ul[ctr2] = c;
-	backg[ctr].ul[ctr2] = c;
+	image[ctr].u32[ctr2] = c;
+	backg[ctr].u32[ctr2] = c;
 	}
       }
     }
@@ -928,23 +928,23 @@ void Screen::ClearArea(int x, int y, int xs, int ys, color c)  {
   int ctr, ctr2;
   if(depth==8) {
     for(ctr=y; ctr<(y+ys); ctr++)  {
-      memset(&(image[ctr].uc[x]), c, xs);
-      memset(&(backg[ctr].uc[x]), c, xs);
+      memset(&(image[ctr].u8[x]), c, xs);
+      memset(&(backg[ctr].u8[x]), c, xs);
       }
     }
   else if(depth==16)  {
     for(ctr=y; ctr<y+ys; ctr++)  {
       for(ctr2=x; ctr2<x+xs; ctr2++)  {
-	image[ctr].us[ctr2] = c;
-	backg[ctr].us[ctr2] = c;
+	image[ctr].u16[ctr2] = c;
+	backg[ctr].u16[ctr2] = c;
 	}
       }
     }
   else if(depth==32)  {
     for(ctr=y; ctr<y+ys; ctr++)  {
       for(ctr2=x; ctr2<x+xs; ctr2++)  {
-	image[ctr].ul[ctr2] = c;
-	backg[ctr].ul[ctr2] = c;
+	image[ctr].u32[ctr2] = c;
+	backg[ctr].u32[ctr2] = c;
 	}
       }
     }
@@ -958,23 +958,23 @@ void Screen::DrawRectangle(int x, int y, int xs, int ys, color c)  {
   int ctrx, ctry;
   if(depth==8) {
     for(ctry=y; ctry<(y+ys); ctry++)  {
-      memset(&(image[ctry].uc[x]), c, xs);
-      memset(&(backg[ctry].uc[x]), c, xs);
+      memset(&(image[ctry].u8[x]), c, xs);
+      memset(&(backg[ctry].u8[x]), c, xs);
       }
     }
   else if(depth==32) {
     for(ctry=y; ctry<(y+ys); ctry++)  {
       for(ctrx=x; ctrx<(x+xs); ctrx++)  {
-	image[ctry].ul[ctrx] = c;
-	backg[ctry].ul[ctrx] = c;
+	image[ctry].u32[ctrx] = c;
+	backg[ctry].u32[ctrx] = c;
 	}
       }
     }
   else if(depth==16) {
     for(ctry=y; ctry<(y+ys); ctry++)  {
       for(ctrx=x; ctrx<(x+xs); ctrx++)  {
-	image[ctry].us[ctrx] = c;
-	backg[ctry].us[ctrx] = c;
+	image[ctry].u16[ctrx] = c;
+	backg[ctry].u16[ctrx] = c;
 	}
       }
     }
@@ -1029,16 +1029,16 @@ void Screen::SetPoint(int x, int y, color c)  {
     }
   InvalidateRectangle(x, y, 1, 1);
   if(depth==8)  {
-    image[y].uc[x] = c;
-    backg[y].uc[x] = c;
+    image[y].u8[x] = c;
+    backg[y].u8[x] = c;
     }
   else if(depth==32)  {
-    image[y].ul[x] = c;
-    backg[y].ul[x] = c;
+    image[y].u32[x] = c;
+    backg[y].u32[x] = c;
     }
   else if(depth==16)  {
-    image[y].us[x] = c;
-    backg[y].us[x] = c;
+    image[y].u16[x] = c;
+    backg[y].u16[x] = c;
     }
   }
 
@@ -1051,13 +1051,13 @@ void Screen::SetPointFG(int x, int y, color c)  {
     }
   InvalidateRectangle(x, y, 1, 1);
   if(depth==8)  {
-    image[y].uc[x] = c;
+    image[y].u8[x] = c;
     }
   else if(depth==32)  {
-    image[y].ul[x] = c;
+    image[y].u32[x] = c;
     }
   else if(depth==16)  {
-    image[y].us[x] = c;
+    image[y].u16[x] = c;
     }
   }
 
@@ -1093,8 +1093,8 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
 //    UserDebug("User:Screen:DrawPartialTransparentGraphicFG Depth 8");
     for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
       for(ctrx=max(xb, pxs[p]-x); ctrx<min(pxe[p]-x, xs+xb); ctrx++)  {
-	if(g.image[ctry].uc[ctrx] != g.tcolor)  {
-	  image[ctry+y].uc[ctrx+x] = g.image[ctry].uc[ctrx];
+	if(g.image[ctry].u8[ctrx] != g.tcolor)  {
+	  image[ctry+y].u8[ctrx+x] = g.image[ctry].u8[ctrx];
 	  }
 	}
       }
@@ -1103,23 +1103,23 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
 //    UserDebug("User:Screen:DrawPartialTransparentGraphicFG Depth 32");
     for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
       for(ctrx=max(xb, pxs[p]-x); ctrx<min(pxe[p]-x, xs+xb); ctrx++)  {
-	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
-	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
+	if(g.image[ctry].u8[(ctrx<<2)+3] == 0xFF)  {
+	  image[ctry+y].u32[ctrx+x] = g.image[ctry].u32[ctrx];
 	  }
-	else if(g.image[ctry].uc[(ctrx<<2)+3])  {
-	  int alpha = g.image[ctry].uc[(ctrx<<2)+3];
-	  unsigned long r1 = image[ctry+y].uc[((ctrx+x)<<2)];
-	  unsigned long g1 = image[ctry+y].uc[((ctrx+x)<<2)+1];
-	  unsigned long b1 = image[ctry+y].uc[((ctrx+x)<<2)+2];
-	  unsigned long r2 = g.image[ctry].uc[(ctrx<<2)];
-	  unsigned long g2 = g.image[ctry].uc[(ctrx<<2)+1];
-	  unsigned long b2 = g.image[ctry].uc[(ctrx<<2)+2];
+	else if(g.image[ctry].u8[(ctrx<<2)+3])  {
+	  int alpha = g.image[ctry].u8[(ctrx<<2)+3];
+	  unsigned long r1 = image[ctry+y].u8[((ctrx+x)<<2)];
+	  unsigned long g1 = image[ctry+y].u8[((ctrx+x)<<2)+1];
+	  unsigned long b1 = image[ctry+y].u8[((ctrx+x)<<2)+2];
+	  unsigned long r2 = g.image[ctry].u8[(ctrx<<2)];
+	  unsigned long g2 = g.image[ctry].u8[(ctrx<<2)+1];
+	  unsigned long b2 = g.image[ctry].u8[(ctrx<<2)+2];
           r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
           g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
           b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
-	  image[ctry+y].uc[((ctrx+x)<<2)] = r1;
-	  image[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
-	  image[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
+	  image[ctry+y].u8[((ctrx+x)<<2)] = r1;
+	  image[ctry+y].u8[((ctrx+x)<<2)+1] = g1;
+	  image[ctry+y].u8[((ctrx+x)<<2)+2] = b1;
 	  }
 	}
       }
@@ -1128,8 +1128,8 @@ void Screen::DrawPartialTransparentGraphicFG(Graphic &g, int x, int y,
 //    UserDebug("User:Screen:DrawPartialTransparentGraphicFG Depth 16");
     for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
       for(ctrx=max(xb, pxs[p]-x); ctrx<min(pxe[p]-x, xs+xb); ctrx++)  {
-	if(g.image[ctry].us[ctrx] != g.tcolor)  {
-	  image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
+	if(g.image[ctry].u16[ctrx] != g.tcolor)  {
+	  image[ctry+y].u16[ctrx+x] = g.image[ctry].u16[ctrx];
 	  }
 	}
       }
@@ -1156,19 +1156,19 @@ void Screen::DrawPartialGraphicFG(Graphic &g, int x, int y,
   if(depth == 8)  {
 //    UserDebug("User:Screen:DrawPartialGraphicFG Depth 8");
     for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
-      memcpy(image[ctry+y].uc+x+ix, g.image[ctry].uc+ix, sx);
+      memcpy(image[ctry+y].u8+x+ix, g.image[ctry].u8+ix, sx);
       }
     }
   else if(depth == 16)  {
 //    UserDebug("User:Screen:DrawPartialGraphicFG Depth 16");
     for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
-      memcpy(image[ctry+y].us+x+ix, g.image[ctry].us+ix, sx<<1);
+      memcpy(image[ctry+y].u16+x+ix, g.image[ctry].u16+ix, sx<<1);
       }
     }
   else if(depth == 32)  {
 //    UserDebug("User:Screen:DrawPartialGraphicFG Depth 32");
     for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
-      memcpy(image[ctry+y].ul+x+ix, g.image[ctry].ul+ix, sx<<2);
+      memcpy(image[ctry+y].u32+x+ix, g.image[ctry].u32+ix, sx<<2);
       }
     }
   else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
@@ -1192,8 +1192,8 @@ void Screen::RCDrawPartialTransparentGraphicFG(Graphic &g, mfmt remap,
 //    UserDebug("User:Screen:RCDrawPartialTransparentGraphicFG Depth 8");
     for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
       for(ctrx=max(xb, pxs[p]-x); ctrx<min(pxe[p]-x, xs+xb); ctrx++)  {
-	if(g.image[ctry].uc[ctrx] != g.tcolor)  {
-	  image[ctry+y].uc[ctrx+x] = remap.uc[g.image[ctry].uc[ctrx]];
+	if(g.image[ctry].u8[ctrx] != g.tcolor)  {
+	  image[ctry+y].u8[ctrx+x] = remap.u8[g.image[ctry].u8[ctrx]];
 	  }
 	}
       }
@@ -1202,23 +1202,23 @@ void Screen::RCDrawPartialTransparentGraphicFG(Graphic &g, mfmt remap,
 //    UserDebug("User:Screen:RCDrawPartialTransparentGraphicFG Depth 32");
     for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
       for(ctrx=max(xb, pxs[p]-x); ctrx<min(pxe[p]-x, xs+xb); ctrx++)  {
-	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
-	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
+	if(g.image[ctry].u8[(ctrx<<2)+3] == 0xFF)  {
+	  image[ctry+y].u32[ctrx+x] = g.image[ctry].u32[ctrx];
 	  }
-	else if(g.image[ctry].uc[(ctrx<<2)+3])  {
-	  int alpha = g.image[ctry].uc[(ctrx<<2)+3];
-	  unsigned long r1 = image[ctry+y].uc[((ctrx+x)<<2)];
-	  unsigned long g1 = image[ctry+y].uc[((ctrx+x)<<2)+1];
-	  unsigned long b1 = image[ctry+y].uc[((ctrx+x)<<2)+2];
-	  unsigned long r2 = g.image[ctry].uc[(ctrx<<2)];
-	  unsigned long g2 = g.image[ctry].uc[(ctrx<<2)+1];
-	  unsigned long b2 = g.image[ctry].uc[(ctrx<<2)+2];
+	else if(g.image[ctry].u8[(ctrx<<2)+3])  {
+	  int alpha = g.image[ctry].u8[(ctrx<<2)+3];
+	  unsigned long r1 = image[ctry+y].u8[((ctrx+x)<<2)];
+	  unsigned long g1 = image[ctry+y].u8[((ctrx+x)<<2)+1];
+	  unsigned long b1 = image[ctry+y].u8[((ctrx+x)<<2)+2];
+	  unsigned long r2 = g.image[ctry].u8[(ctrx<<2)];
+	  unsigned long g2 = g.image[ctry].u8[(ctrx<<2)+1];
+	  unsigned long b2 = g.image[ctry].u8[(ctrx<<2)+2];
           r1 *= (0xFF-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
           g1 *= (0xFF-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
           b1 *= (0xFF-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
-	  image[ctry+y].uc[((ctrx+x)<<2)] = r1;
-	  image[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
-	  image[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
+	  image[ctry+y].u8[((ctrx+x)<<2)] = r1;
+	  image[ctry+y].u8[((ctrx+x)<<2)+1] = g1;
+	  image[ctry+y].u8[((ctrx+x)<<2)+2] = b1;
 	  }
 	}
       }
@@ -1227,8 +1227,8 @@ void Screen::RCDrawPartialTransparentGraphicFG(Graphic &g, mfmt remap,
 //    UserDebug("User:Screen:RCDrawPartialTransparentGraphicFG Depth 16");
     for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
       for(ctrx=max(xb, pxs[p]-x); ctrx<min(pxe[p]-x, xs+xb); ctrx++)  {
-	if(g.image[ctry].us[ctrx] != g.tcolor)  {
-	  image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
+	if(g.image[ctry].u16[ctrx] != g.tcolor)  {
+	  image[ctry+y].u16[ctrx+x] = g.image[ctry].u16[ctrx];
 	  }
 	}
       }
@@ -1255,19 +1255,19 @@ void Screen::RCDrawPartialGraphicFG(Graphic &g, mfmt remap, int x, int y,
   if(depth == 8)  {
 //    UserDebug("User:Screen:RCDrawPartialGraphicFG Depth 8");
     for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
-      memcpy(image[ctry+y].uc+x+ix, g.image[ctry].uc+ix, sx);
+      memcpy(image[ctry+y].u8+x+ix, g.image[ctry].u8+ix, sx);
       }
     }
   else if(depth == 16)  {
 //    UserDebug("User:Screen:RCDrawPartialGraphicFG Depth 16");
     for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
-      memcpy(image[ctry+y].us+x+ix, g.image[ctry].us+ix, sx<<1);
+      memcpy(image[ctry+y].u16+x+ix, g.image[ctry].u16+ix, sx<<1);
       }
     }
   else if(depth == 32)  {
 //    UserDebug("User:Screen:RCDrawPartialGraphicFG Depth 32");
     for(ctry=max(yb, pys[p]-y); ctry<min(pye[p]-y, ys+yb); ctry++)  {
-      memcpy(image[ctry+y].ul+x+ix, g.image[ctry].ul+ix, sx<<2);
+      memcpy(image[ctry+y].u32+x+ix, g.image[ctry].u32+ix, sx<<2);
       }
     }
   else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
@@ -1291,8 +1291,8 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
     UserDebug("User:Screen:DrawTransparentGraphicFG Depth 8");
     for(ctry=max(0, pys[p]-y); ctry<min(pye[p]-y, g.ysize); ctry++)  {
       for(ctrx=max(0, pxs[p]-x); ctrx<min(pxe[p]-x, g.xsize); ctrx++)  {
-	if(g.image[ctry].uc[ctrx] != g.tcolor)  {
-	  image[ctry+y].uc[ctrx+x] = g.image[ctry].uc[ctrx];
+	if(g.image[ctry].u8[ctrx] != g.tcolor)  {
+	  image[ctry+y].u8[ctrx+x] = g.image[ctry].u8[ctrx];
 	  }
 	}
       }
@@ -1301,23 +1301,23 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
     UserDebug("User:Screen:DrawTransparentGraphicFG Depth 32");
     for(ctry=max(0, pys[p]-y); ctry<min(pye[p]-y, g.ysize); ctry++)  {
       for(ctrx=max(0, pxs[p]-x); ctrx<min(pxe[p]-x, g.xsize); ctrx++)  {
-	if(g.image[ctry].uc[(ctrx<<2)+3] == 0xFF)  {
-	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
+	if(g.image[ctry].u8[(ctrx<<2)+3] == 0xFF)  {
+	  image[ctry+y].u32[ctrx+x] = g.image[ctry].u32[ctrx];
 	  }
-	else if(g.image[ctry].uc[(ctrx<<2)+3])  {
-	  int alpha = g.image[ctry].uc[(ctrx<<2)+3];
-	  unsigned long r1 = image[ctry+y].uc[((ctrx+x)<<2)];
-	  unsigned long g1 = image[ctry+y].uc[((ctrx+x)<<2)+1];
-	  unsigned long b1 = image[ctry+y].uc[((ctrx+x)<<2)+2];
-	  unsigned long r2 = g.image[ctry].uc[(ctrx<<2)];
-	  unsigned long g2 = g.image[ctry].uc[(ctrx<<2)+1];
-	  unsigned long b2 = g.image[ctry].uc[(ctrx<<2)+2];
+	else if(g.image[ctry].u8[(ctrx<<2)+3])  {
+	  int alpha = g.image[ctry].u8[(ctrx<<2)+3];
+	  unsigned long r1 = image[ctry+y].u8[((ctrx+x)<<2)];
+	  unsigned long g1 = image[ctry+y].u8[((ctrx+x)<<2)+1];
+	  unsigned long b1 = image[ctry+y].u8[((ctrx+x)<<2)+2];
+	  unsigned long r2 = g.image[ctry].u8[(ctrx<<2)];
+	  unsigned long g2 = g.image[ctry].u8[(ctrx<<2)+1];
+	  unsigned long b2 = g.image[ctry].u8[(ctrx<<2)+2];
           r1 *= (255-alpha);  r2 *= alpha; r1 += r2; r1 /= 255;
           g1 *= (255-alpha);  g2 *= alpha; g1 += g2; g1 /= 255;
           b1 *= (255-alpha);  b2 *= alpha; b1 += b2; b1 /= 255;
-	  image[ctry+y].uc[((ctrx+x)<<2)] = r1;
-	  image[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
-	  image[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
+	  image[ctry+y].u8[((ctrx+x)<<2)] = r1;
+	  image[ctry+y].u8[((ctrx+x)<<2)+1] = g1;
+	  image[ctry+y].u8[((ctrx+x)<<2)+2] = b1;
 	  }
 	}
       }
@@ -1326,8 +1326,8 @@ void Screen::DrawTransparentGraphicFG(Graphic &g, int x, int y, Panel p)  {
     UserDebug("User:Screen:DrawTransparentGraphicFG Depth 16");
     for(ctry=max(0, pys[p]-y); ctry<min(pye[p]-y, g.ysize); ctry++)  {
       for(ctrx=max(0, pxs[p]-x); ctrx<min(pxe[p]-x, g.xsize); ctrx++)  {
-	if(g.image[ctry].us[ctrx] != g.tcolor)  {
-	  image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
+	if(g.image[ctry].u16[ctrx] != g.tcolor)  {
+	  image[ctry+y].u16[ctrx+x] = g.image[ctry].u16[ctrx];
 	  }
 	}
       }
@@ -1354,17 +1354,17 @@ void Screen::DrawGraphicFG(Graphic &g, int x, int y, Panel p)  {
   InvalidateRectangle(x+xbc, y+ybc, g.xsize-xrlen, g.ysize-yrlen);
   if(depth == 8)  {
     for(ctry=0+ybc; ctry < g.ysize-yrlen; ctry++)  {
-      memcpy(image[ctry+y].uc+x+xbc, g.image[ctry].uc+xbc, g.xsize-xrlen);
+      memcpy(image[ctry+y].u8+x+xbc, g.image[ctry].u8+xbc, g.xsize-xrlen);
       }
     }
   else if(depth == 16)  {
     for(ctry=0+ybc; ctry < g.ysize-yrlen; ctry++)  {
-      memcpy(image[ctry+y].ul+x+xbc, g.image[ctry].ul+xbc, g.xsize-xrlen);
+      memcpy(image[ctry+y].u32+x+xbc, g.image[ctry].u32+xbc, g.xsize-xrlen);
       }
     }
   else if(depth == 32)  {
     for(ctry=0+ybc; ctry < g.ysize-yrlen; ctry++)  {
-      memcpy(image[ctry+y].us+x+xbc, g.image[ctry].us+xbc, g.xsize-xrlen);
+      memcpy(image[ctry+y].u16+x+xbc, g.image[ctry].u16+xbc, g.xsize-xrlen);
       }
     }
   else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
@@ -1382,14 +1382,14 @@ void Screen::FullScreenGraphicFG(Graphic &g) {
   if(depth == 8)  {
     for(ctry=0; ctry<min(ysize, g.ysize); ctry++)  {
       for(ctrx=0; ctrx<min(xsize, g.xsize); ctrx++)  {
-	image[ctry].uc[ctrx] = g.image[ctry].uc[ctrx];
+	image[ctry].u8[ctrx] = g.image[ctry].u8[ctrx];
 	}
       }
     }
   else if(depth == 32)  {
     for(ctry=0; ctry<min(ysize, g.ysize); ctry++)  {
       for(ctrx=0; ctrx<min(xsize, g.xsize); ctrx++)  {
-	image[ctry].ul[ctrx] = g.image[ctry].ul[ctrx];
+	image[ctry].u32[ctrx] = g.image[ctry].u32[ctrx];
 	}
       }
     }
@@ -1411,9 +1411,9 @@ void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
   if(depth == 8)  {
     for(ctry=0; ctry<min(ysize-y, g.ysize); ctry++)  {
       for(ctrx=0; ctrx<min(xsize-x, g.xsize); ctrx++)  {
-	if(g.image[ctry].uc[ctrx] != g.tcolor)  {
-	  image[ctry+y].uc[ctrx+x] = g.image[ctry].uc[ctrx];
-	  backg[ctry+y].uc[ctrx+x] = g.image[ctry].uc[ctrx];
+	if(g.image[ctry].u8[ctrx] != g.tcolor)  {
+	  image[ctry+y].u8[ctrx+x] = g.image[ctry].u8[ctrx];
+	  backg[ctry+y].u8[ctrx+x] = g.image[ctry].u8[ctrx];
 	  }
 	}
       }
@@ -1422,27 +1422,27 @@ void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
     UserDebug("User:Screen:DrawTransparentGraphic Depth 32");
     for(ctry=max(0, pys[p]-y); ctry<min(pye[p]-y, g.ysize); ctry++)  {
       for(ctrx=max(0, pxs[p]-x); ctrx<min(pxe[p]-x, g.xsize); ctrx++)  {
-	if(g.image[ctry].uc[(ctrx<<2)+3] == 255)  {
-	  image[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
-	  backg[ctry+y].ul[ctrx+x] = g.image[ctry].ul[ctrx];
+	if(g.image[ctry].u8[(ctrx<<2)+3] == 255)  {
+	  image[ctry+y].u32[ctrx+x] = g.image[ctry].u32[ctrx];
+	  backg[ctry+y].u32[ctrx+x] = g.image[ctry].u32[ctrx];
 	  }
-	else if(g.image[ctry].uc[(ctrx<<2)+3])  {
-	  unsigned long alpha = g.image[ctry].uc[(ctrx<<2)+3];
-	  unsigned long r1 = backg[ctry+y].uc[((ctrx+x)<<2)];
-	  unsigned long g1 = backg[ctry+y].uc[((ctrx+x)<<2)+1];
-	  unsigned long b1 = backg[ctry+y].uc[((ctrx+x)<<2)+2];
-	  unsigned long r2 = g.image[ctry].uc[(ctrx<<2)];
-	  unsigned long g2 = g.image[ctry].uc[(ctrx<<2)+1];
-	  unsigned long b2 = g.image[ctry].uc[(ctrx<<2)+2];
+	else if(g.image[ctry].u8[(ctrx<<2)+3])  {
+	  unsigned long alpha = g.image[ctry].u8[(ctrx<<2)+3];
+	  unsigned long r1 = backg[ctry+y].u8[((ctrx+x)<<2)];
+	  unsigned long g1 = backg[ctry+y].u8[((ctrx+x)<<2)+1];
+	  unsigned long b1 = backg[ctry+y].u8[((ctrx+x)<<2)+2];
+	  unsigned long r2 = g.image[ctry].u8[(ctrx<<2)];
+	  unsigned long g2 = g.image[ctry].u8[(ctrx<<2)+1];
+	  unsigned long b2 = g.image[ctry].u8[(ctrx<<2)+2];
 	  r2 *= alpha; r1 *= (255-alpha); r1 += r2; r1 /= 255;
 	  g2 *= alpha; g1 *= (255-alpha); g1 += g2; g1 /= 255;
 	  b2 *= alpha; b1 *= (255-alpha); b1 += b2; b1 /= 255;
-	  image[ctry+y].uc[((ctrx+x)<<2)] = r1;
-	  image[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
-	  image[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
-	  backg[ctry+y].uc[((ctrx+x)<<2)] = r1;
-	  backg[ctry+y].uc[((ctrx+x)<<2)+1] = g1;
-	  backg[ctry+y].uc[((ctrx+x)<<2)+2] = b1;
+	  image[ctry+y].u8[((ctrx+x)<<2)] = r1;
+	  image[ctry+y].u8[((ctrx+x)<<2)+1] = g1;
+	  image[ctry+y].u8[((ctrx+x)<<2)+2] = b1;
+	  backg[ctry+y].u8[((ctrx+x)<<2)] = r1;
+	  backg[ctry+y].u8[((ctrx+x)<<2)+1] = g1;
+	  backg[ctry+y].u8[((ctrx+x)<<2)+2] = b1;
 	  }
 	}
       }
@@ -1450,9 +1450,9 @@ void Screen::DrawTransparentGraphic(Graphic &g, int x, int y, Panel p)  {
   else if(depth == 16)  {
     for(ctry=0; ctry<min(ysize-y, g.ysize); ctry++)  {
       for(ctrx=0; ctrx<min(xsize-x, g.xsize); ctrx++)  {
-	if(g.image[ctry].us[ctrx] != g.tcolor)  {
-	  image[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
-	  backg[ctry+y].us[ctrx+x] = g.image[ctry].us[ctrx];
+	if(g.image[ctry].u16[ctrx] != g.tcolor)  {
+	  image[ctry+y].u16[ctrx+x] = g.image[ctry].u16[ctrx];
+	  backg[ctry+y].u16[ctrx+x] = g.image[ctry].u16[ctrx];
 	  }
 	}
       }
@@ -1479,20 +1479,20 @@ void Screen::DrawPartialGraphic(Graphic &g, int x, int y,
   InvalidateRectangle(x+xbc, y+ybc, xs-xrlen, ys-yrlen);
   if(depth == 8)  {
     for(ctry=0+ybc; ctry < ys-yrlen; ctry++)  {
-      memcpy(image[ctry+y].uc+x+xbc, g.image[ctry+yb].uc+xb+xbc, xs-xrlen);
-      memcpy(backg[ctry+y].uc+x+xbc, g.image[ctry+yb].uc+xb+xbc, xs-xrlen);
+      memcpy(image[ctry+y].u8+x+xbc, g.image[ctry+yb].u8+xb+xbc, xs-xrlen);
+      memcpy(backg[ctry+y].u8+x+xbc, g.image[ctry+yb].u8+xb+xbc, xs-xrlen);
       }
     }
   else if(depth == 16)  {
     for(ctry=0+ybc; ctry < ys-yrlen; ctry++)  {
-      memcpy(image[ctry+y].ul+x+xbc, g.image[ctry+yb].ul+xb+xbc, xs-xrlen);
-      memcpy(backg[ctry+y].ul+x+xbc, g.image[ctry+yb].ul+xb+xbc, xs-xrlen);
+      memcpy(image[ctry+y].u32+x+xbc, g.image[ctry+yb].u32+xb+xbc, xs-xrlen);
+      memcpy(backg[ctry+y].u32+x+xbc, g.image[ctry+yb].u32+xb+xbc, xs-xrlen);
       }
     }
   else if(depth == 32)  {
     for(ctry=0+ybc; ctry < ys-yrlen; ctry++)  {
-      memcpy(image[ctry+y].us+x+xbc, g.image[ctry+yb].us+xb+xbc, xs-xrlen);
-      memcpy(backg[ctry+y].us+x+xbc, g.image[ctry+yb].us+xb+xbc, xs-xrlen);
+      memcpy(image[ctry+y].u16+x+xbc, g.image[ctry+yb].u16+xb+xbc, xs-xrlen);
+      memcpy(backg[ctry+y].u16+x+xbc, g.image[ctry+yb].u16+xb+xbc, xs-xrlen);
       }
     }
   else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
@@ -1516,20 +1516,20 @@ void Screen::DrawGraphic(Graphic &g, int x, int y, Panel p)  {
   InvalidateRectangle(x+xbc, y+ybc, g.xsize-xrlen, g.ysize-yrlen);
   if(depth == 8)  {
     for(ctry=0+ybc; ctry < g.ysize-yrlen; ctry++)  {
-      memcpy(image[ctry+y].uc+x+xbc, g.image[ctry].uc+xbc, g.xsize-xrlen);
-      memcpy(backg[ctry+y].uc+x+xbc, g.image[ctry].uc+xbc, g.xsize-xrlen);
+      memcpy(image[ctry+y].u8+x+xbc, g.image[ctry].u8+xbc, g.xsize-xrlen);
+      memcpy(backg[ctry+y].u8+x+xbc, g.image[ctry].u8+xbc, g.xsize-xrlen);
       }
     }
   else if(depth == 16)  {
     for(ctry=0+ybc; ctry < g.ysize-yrlen; ctry++)  {
-      memcpy(image[ctry+y].ul+x+xbc, g.image[ctry].ul+xbc, g.xsize-xrlen);
-      memcpy(backg[ctry+y].ul+x+xbc, g.image[ctry].ul+xbc, g.xsize-xrlen);
+      memcpy(image[ctry+y].u32+x+xbc, g.image[ctry].u32+xbc, g.xsize-xrlen);
+      memcpy(backg[ctry+y].u32+x+xbc, g.image[ctry].u32+xbc, g.xsize-xrlen);
       }
     }
   else if(depth == 32)  {
     for(ctry=0+ybc; ctry < g.ysize-yrlen; ctry++)  {
-      memcpy(image[ctry+y].us+x+xbc, g.image[ctry].us+xbc, g.xsize-xrlen);
-      memcpy(backg[ctry+y].us+x+xbc, g.image[ctry].us+xbc, g.xsize-xrlen);
+      memcpy(image[ctry+y].u16+x+xbc, g.image[ctry].u16+xbc, g.xsize-xrlen);
+      memcpy(backg[ctry+y].u16+x+xbc, g.image[ctry].u16+xbc, g.xsize-xrlen);
       }
     }
   else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
@@ -1547,24 +1547,24 @@ void Screen::FullScreenGraphic(Graphic &g) {
   if(depth == 8)  {
     for(ctry=0; ctry<min(ysize, g.ysize); ctry++)  {
       for(ctrx=0; ctrx<min(xsize, g.xsize); ctrx++)  {
-	image[ctry].uc[ctrx] = g.image[ctry].uc[ctrx];
-	backg[ctry].uc[ctrx] = g.image[ctry].uc[ctrx];
+	image[ctry].u8[ctrx] = g.image[ctry].u8[ctrx];
+	backg[ctry].u8[ctrx] = g.image[ctry].u8[ctrx];
 	}
       }
     }
   else if(depth == 32)  {
     for(ctry=0; ctry<min(ysize, g.ysize); ctry++)  {
       for(ctrx=0; ctrx<min(xsize, g.xsize); ctrx++)  {
-	image[ctry].ul[ctrx] = g.image[ctry].ul[ctrx];
-	backg[ctry].ul[ctrx] = g.image[ctry].ul[ctrx];
+	image[ctry].u32[ctrx] = g.image[ctry].u32[ctrx];
+	backg[ctry].u32[ctrx] = g.image[ctry].u32[ctrx];
 	}
       }
     }
   else if(depth == 16)  {
     for(ctry=0; ctry<min(ysize, g.ysize); ctry++)  {
       for(ctrx=0; ctrx<min(xsize, g.xsize); ctrx++)  {
-	image[ctry].us[ctrx] = g.image[ctry].us[ctrx];
-	backg[ctry].us[ctrx] = g.image[ctry].us[ctrx];
+	image[ctry].u16[ctrx] = g.image[ctry].u16[ctrx];
+	backg[ctry].u16[ctrx] = g.image[ctry].u16[ctrx];
 	}
       }
     }
@@ -1909,17 +1909,17 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
   UserDebug("Screen:RestoreRectangle() Before Write");
   if(depth == 8)  {
     for(ctry=y; ctry<y+ys; ctry++)  {
-      memcpy(image[ctry].uc+x, backg[ctry].uc+x, xs);
+      memcpy(image[ctry].u8+x, backg[ctry].u8+x, xs);
       }
     }
   else if(depth == 16)  {
     for(ctry=y; ctry<y+ys; ctry++)  {
-      memcpy(image[ctry].us+x, backg[ctry].us+x, xs<<1);
+      memcpy(image[ctry].u16+x, backg[ctry].u16+x, xs<<1);
       }
     }
   else if(depth == 32)  {
     for(ctry=y; ctry<y+ys; ctry++)  {
-      memcpy(image[ctry].ul+x, backg[ctry].ul+x, xs<<2);
+      memcpy(image[ctry].u32+x, backg[ctry].u32+x, xs<<2);
       }
     }
   else U2_Exit(-1, "Unknown depth error (%d) in %s\n", depth, __PRETTY_FUNCTION__);
@@ -2051,7 +2051,7 @@ void Screen::DetectVideoType()  {
 	XF86DGAQueryDirectVideo(_Xdisplay, _Xscreen, &Flags);
 	if(!(Flags & XF86DGADirectPresent)) U2_Exit(0, "Failed DGA Query\n");
 	XF86DGAGetVideo(_Xdisplay, _Xscreen,
-		&(frame.c), &rowlen, &Xbank, &Xmem);
+		(char **)&(frame.u8), &rowlen, &Xbank, &Xmem);
 //	fprintf(stderr, "Width %d, Bank %d, Mem %d\n",  rowlen, Xbank, Xmem);
 
 	if(XF86VidModeQueryVersion(_Xdisplay, &M, &m))  {
@@ -2325,8 +2325,8 @@ int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
       if(depth==8) {
 	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
 	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
-	     if(let.image[ctry].uc[ctrx] == 0) res.image[ctry].uc[ctrx] = cb;
-	     else res.image[ctry].uc[ctrx] = cf;
+	     if(let.image[ctry].u8[ctrx] == 0) res.image[ctry].u8[ctrx] = cb;
+	     else res.image[ctry].u8[ctrx] = cf;
 	     }
 	  }
         UserDebug("User::Screen::GPrint(...) Pasting character graphic (8bpp)");
@@ -2336,13 +2336,13 @@ int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
 	unsigned long alpha;
 	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
 	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
-	    alpha=let.image[ctry].uc[ctrx];
+	    alpha=let.image[ctry].u8[ctrx];
 	    if(alpha) {
-	      res.image[ctry].ul[ctrx] = cf;
+	      res.image[ctry].u32[ctrx] = cf;
 	      alpha*=((unsigned char*)&cf)[3]; alpha/=255;
-	      res.image[ctry].uc[(ctrx<<2)+3] = alpha;
+	      res.image[ctry].u8[(ctrx<<2)+3] = alpha;
 	      }
-	    else res.image[ctry].ul[ctrx]=0;
+	    else res.image[ctry].u32[ctrx]=0;
 	    }
 	  }
         UserDebug("User::Screen::GPrint(...) Pasting character graphic (32bpp)");
@@ -2352,7 +2352,7 @@ int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
 	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
 	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
 	    color cl, clf = cf, clb = cb;
-	    unsigned long alpha = let.image[ctry].uc[ctrx];
+	    unsigned long alpha = let.image[ctry].u8[ctrx];
 	    ConvertColor(clf, 16, 32);
 	    ConvertColor(clb, 16, 32);
 	    ((unsigned char*)&cl)[0] =
@@ -2366,7 +2366,7 @@ int Screen::GPrint(Graphic *g, int x, int y, color cb, color cf,
 		+ ((unsigned char*)&clb)[2]*(255-alpha))/255;
 	    ((unsigned char*)&cl)[3] = 255;
 	    ConvertColor(cl, 32, 16);
-	    res.image[ctry].us[ctrx] = cl;
+	    res.image[ctry].u16[ctrx] = cl;
 	    }
 	  }
         UserDebug("User::Screen::GPrint(...) Pasting character graphic (16bpp)");
@@ -2443,8 +2443,8 @@ int Screen::CGPrint(Graphic *g, int x, int y, color cb, color cf,
       if(depth==8) {
 	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
 	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
-	     if(let.image[ctry].uc[ctrx] == 0) res.image[ctry].uc[ctrx] = cb;
-	     else res.image[ctry].uc[ctrx] = cf;
+	     if(let.image[ctry].u8[ctrx] == 0) res.image[ctry].u8[ctrx] = cb;
+	     else res.image[ctry].u8[ctrx] = cf;
 	     }
 	  }
         UserDebug("User::Screen::CGPrint(...) Pasting character graphic (8bpp)");
@@ -2454,13 +2454,13 @@ int Screen::CGPrint(Graphic *g, int x, int y, color cb, color cf,
 	unsigned long alpha;
 	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
 	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
-	    alpha=let.image[ctry].uc[ctrx];
+	    alpha=let.image[ctry].u8[ctrx];
 	    if(alpha) {
-	      res.image[ctry].ul[ctrx] = cf;
+	      res.image[ctry].u32[ctrx] = cf;
 	      alpha*=((unsigned char*)&cf)[3]; alpha/=255;
-	      res.image[ctry].uc[(ctrx<<2)+3] = alpha;
+	      res.image[ctry].u8[(ctrx<<2)+3] = alpha;
 	      }
-	    else res.image[ctry].ul[ctrx]=0;
+	    else res.image[ctry].u32[ctrx]=0;
 	    }
 	  }
         UserDebug("User::Screen::CGPrint(...) Pasting character graphic (32bpp)");
@@ -2470,7 +2470,7 @@ int Screen::CGPrint(Graphic *g, int x, int y, color cb, color cf,
 	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
 	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
 	    color cl, clf = cf, clb = cb;
-	    unsigned long alpha = let.image[ctry].uc[ctrx];
+	    unsigned long alpha = let.image[ctry].u8[ctrx];
 	    ConvertColor(clf, 16, 32);
 	    ConvertColor(clb, 16, 32);
 	    ((unsigned char*)&cl)[0] =
@@ -2484,7 +2484,7 @@ int Screen::CGPrint(Graphic *g, int x, int y, color cb, color cf,
 		+ ((unsigned char*)&clb)[2]*(255-alpha))/255;
 	    ((unsigned char*)&cl)[3] = 255;
 	    ConvertColor(cl, 32, 16);
-	    res.image[ctry].us[ctrx] = cl;
+	    res.image[ctry].u16[ctrx] = cl;
 	    }
 	  }
         UserDebug("User::Screen::CGPrint(...) Pasting character graphic (16bpp)");
@@ -2568,8 +2568,8 @@ int Screen::Print(color cb, color cf, const char *text)  {
       if(depth==8) {
 	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
 	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
-	     if(let.image[ctry].uc[ctrx] == 0) res.image[ctry].uc[ctrx] = cb;
-	     else res.image[ctry].uc[ctrx] = cf;
+	     if(let.image[ctry].u8[ctrx] == 0) res.image[ctry].u8[ctrx] = cb;
+	     else res.image[ctry].u8[ctrx] = cf;
 	     }
 	  }
 	DrawGraphic(res, tcx-let.xcenter, tcy-let.ycenter);
@@ -2578,13 +2578,13 @@ int Screen::Print(color cb, color cf, const char *text)  {
 	unsigned long alpha;
 	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
 	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
-	    alpha=let.image[ctry].uc[ctrx];
+	    alpha=let.image[ctry].u8[ctrx];
 	    if(alpha) {
-	      res.image[ctry].ul[ctrx] = cf;
+	      res.image[ctry].u32[ctrx] = cf;
 	      alpha*=((unsigned char*)&cf)[3]; alpha/=255;
-	      res.image[ctry].uc[(ctrx<<2)+3] = alpha;
+	      res.image[ctry].u8[(ctrx<<2)+3] = alpha;
 	      }
-	    else res.image[ctry].ul[ctrx]=0;
+	    else res.image[ctry].u32[ctrx]=0;
 	    }
 	  }
 	DrawTransparentGraphic(res, tcx-let.xcenter, tcy-let.ycenter);
@@ -2593,7 +2593,7 @@ int Screen::Print(color cb, color cf, const char *text)  {
 	for(ctrx=0; ctrx<(int)let.xsize; ctrx++)  {
 	  for(ctry=0; ctry<(int)let.ysize; ctry++)  {
 	    color cl, clf = cf, clb = cb;
-	    unsigned long alpha = let.image[ctry].uc[ctrx];
+	    unsigned long alpha = let.image[ctry].u8[ctrx];
 	    ConvertColor(clf, 16, 32);
 	    ConvertColor(clb, 16, 32);
 	    ((unsigned char*)&cl)[0] =
@@ -2607,7 +2607,7 @@ int Screen::Print(color cb, color cf, const char *text)  {
 		+ ((unsigned char*)&clb)[2]*(255-alpha))/255;
 	    ((unsigned char*)&cl)[3] = 255;
 	    ConvertColor(cl, 32, 16);
-	    res.image[ctry].us[ctrx] = cl;
+	    res.image[ctry].u16[ctrx] = cl;
 	    }
 	  }
 	DrawTransparentGraphic(res, tcx-let.xcenter, tcy-let.ycenter);
@@ -2685,32 +2685,32 @@ void Screen::ScrollPanel(Panel p, int x, int y) {
   if(yd <= ys) {
     for(ctr=ys; ctr<ys+ysz; ++ctr) {
       if(depth == 8) {
-	memmove(image[ctr+ydiff].uc + xd, image[ctr].uc + xs, xsz);
-	memmove(backg[ctr+ydiff].uc + xd, backg[ctr].uc + xs, xsz);
+	memmove(image[ctr+ydiff].u8 + xd, image[ctr].u8 + xs, xsz);
+	memmove(backg[ctr+ydiff].u8 + xd, backg[ctr].u8 + xs, xsz);
 	}
       else if(depth == 32) {
-	memmove(image[ctr+ydiff].ul + xd, image[ctr].uc + xs, xsz);
-	memmove(backg[ctr+ydiff].ul + xd, backg[ctr].uc + xs, xsz);
+	memmove(image[ctr+ydiff].u32 + xd, image[ctr].u8 + xs, xsz);
+	memmove(backg[ctr+ydiff].u32 + xd, backg[ctr].u8 + xs, xsz);
 	}
       else if(depth == 16) {
-	memmove(image[ctr+ydiff].us + xd, image[ctr].uc + xs, xsz);
-	memmove(backg[ctr+ydiff].us + xd, backg[ctr].uc + xs, xsz);
+	memmove(image[ctr+ydiff].u16 + xd, image[ctr].u8 + xs, xsz);
+	memmove(backg[ctr+ydiff].u16 + xd, backg[ctr].u8 + xs, xsz);
 	}
       }
     }
   else {
     for(ctr=ys+ysz-1; ctr>=ys; --ctr) {
       if(depth == 8) {
-	memmove(image[ctr+ydiff].uc + xd, image[ctr].uc + xs, xsz);
-	memmove(backg[ctr+ydiff].uc + xd, backg[ctr].uc + xs, xsz);
+	memmove(image[ctr+ydiff].u8 + xd, image[ctr].u8 + xs, xsz);
+	memmove(backg[ctr+ydiff].u8 + xd, backg[ctr].u8 + xs, xsz);
 	}
       else if(depth == 32) {
-	memmove(image[ctr+ydiff].ul + xd, image[ctr].uc + xs, xsz);
-	memmove(backg[ctr+ydiff].ul + xd, backg[ctr].uc + xs, xsz);
+	memmove(image[ctr+ydiff].u32 + xd, image[ctr].u8 + xs, xsz);
+	memmove(backg[ctr+ydiff].u32 + xd, backg[ctr].u8 + xs, xsz);
 	}
       else if(depth == 16) {
-	memmove(image[ctr+ydiff].us + xd, image[ctr].uc + xs, xsz);
-	memmove(backg[ctr+ydiff].us + xd, backg[ctr].uc + xs, xsz);
+	memmove(image[ctr+ydiff].u16 + xd, image[ctr].u8 + xs, xsz);
+	memmove(backg[ctr+ydiff].u16 + xd, backg[ctr].u8 + xs, xsz);
 	}
       }
     }

@@ -3,13 +3,15 @@
 
 union mfmt {
   void *v;
-  char *c;
-  short *s;
-  long *l;
-  long L;
-  unsigned char *uc;
-  unsigned short *us;
-  unsigned long *ul;
+  signed char *s8;
+  signed short *s16;
+  signed int *s32;
+  signed long *s64;
+  signed long L;
+  unsigned char *u8;
+  unsigned short *u16;
+  unsigned int *u32;
+  unsigned long *u64;
   unsigned long UL;
   };
 
