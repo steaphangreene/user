@@ -1,5 +1,5 @@
-CFLAGS:=$(shell U2-CFlags)
-LIBS:=	$(shell U2-Libs)
+CFLAGS:=$(shell ./U2-CFlags)
+LIBS:=	$(shell ./U2-Libs)
 CC:=	gcc $(CFLAGS)
 OBJS:=	screen.o engine.o graphic.o palette.o sound.o speaker.o sprite.o \
 	input.o keyboard.o mouse.o resfile.o bag.o chunk.o net.o \
