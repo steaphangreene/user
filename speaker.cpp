@@ -21,6 +21,11 @@
 #include <esd.h>
 #endif
 
+#ifdef SDL_SOUND
+#include "SDL.h"
+#include "SDL_mixer.h"
+#endif
+
 #ifdef DOS_SOUND
 #include <sys/segments.h>
 #include <pc.h>
@@ -103,6 +108,12 @@ void Speaker::Reconfigure(int chan, int bts, int fr, int bfsz)  {
 #ifdef ESD_SOUND
   if(dsp>0) { close(dsp); dsp = 0; }
 #endif
+
+#ifdef SDL_SOUND
+  Mix_CloseAudio();
+  SDL_Quit();
+#endif
+
   Configure(chan, bts, fr, bfsz);
   }
 
@@ -346,6 +357,16 @@ int Speaker::Configure(int chan, int bts, int fr, int bfsz)  {
   if(bits == 8) outportb(S_WRITE, 0xD0);
   else outportb(S_WRITE, 0xD5);
   paused = 1;
+#endif
+
+#ifdef SDL_SOUND
+  stype = SOUND_SDL;
+  SDL_Init(SDL_INIT_AUDIO);
+  if(Mix_OpenAudio(44100, AUDIO_S16, 2, 2048)) {
+    fprintf(stderr, "Error initializing SDL Audio!\n");
+    fprintf(stderr, "Continuing without sound.\n");
+    return 0;
+    }
 #endif
 
 #ifdef OSS_SOUND
@@ -608,6 +629,10 @@ void Speaker::SetAsAmbient(Sound &smp) {
 void Speaker::Update() {
   UserDebug("User:Speaker:Update Begin");
   int ctr, ctr2;
+
+#ifdef SDL_SOUND
+  if(stype == SOUND_SDL) return;
+#endif
 
 #ifdef DOS_SOUND
   if(!paused) {

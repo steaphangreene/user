@@ -13,6 +13,7 @@
 #define SOUND_OSS	2
 #define SOUND_OSS_MMAP	3
 #define SOUND_ESD	4
+#define SOUND_SDL	5
 
 #define SOUND_NUM 16
 
@@ -24,8 +25,8 @@ class Sound;
 //class Music;
 
 struct Playing {
-  mfmt pos; 
-  int left; 
+  mfmt pos;
+  int left;
   };
 
 class Speaker {
@@ -55,6 +56,8 @@ class Speaker {
   int *loop;
   static volatile int freq;
 
+#ifdef SDL_SOUND
+#endif
 #ifdef OSS_SOUND
   int dsp;
 #ifdef OSS_MMAP_SOUND

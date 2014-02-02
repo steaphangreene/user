@@ -60,9 +60,10 @@
 #ifdef __DJGPP__
 	#define DOS_SOUND
 #else
-	#define OSS_SOUND
-	#define OSS_MMAP_SOUND
+//	#define OSS_SOUND
+//	#define OSS_MMAP_SOUND
 //	#define ESD_SOUND
+	#define SDL_SOUND
 #endif
 
 /*************************************

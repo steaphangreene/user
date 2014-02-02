@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include "SDL.h"
+#include "SDL_mixer.h"
 
 #include "engine.h"
 #include "speaker.h"
@@ -18,6 +20,9 @@ Sound::Sound()  {
   }
 
 Sound::Sound(char *fn)  {
+#ifdef SDL_SOUND
+  data.v = Mix_LoadWAV(fn);
+#else
   data.v = NULL;
   U2_File wave;
   wave = U2_FOpenRead(fn);
@@ -69,11 +74,15 @@ Sound::Sound(char *fn)  {
   data.u8 = new unsigned char[len];
 //  printf("Len = %d\n", len);
   FRead(wave, data.u8, (long)len);
-  
+
   U2_FClose(wave);
+#endif
   }
 
 Sound::~Sound()  {
+#ifdef SDL_SOUND
+  Mix_FreeChunk((Mix_Chunk*)data.v);
+#else
   UserDebug("User:Sound:~Sound Begin");
   if(__Da_Speaker != NULL) __Da_Speaker->StopByBuffer(data, (long)len);
   UserDebug("User:Sound:~Sound Middle");
@@ -83,24 +92,38 @@ Sound::~Sound()  {
     }
   data.v = NULL;
   UserDebug("User:Sound:~Sound End");
+#endif
   }
 
 int Sound::Play()  {
+#ifdef SDL_SOUND
+  return Mix_PlayChannel(-1, (Mix_Chunk *)(data.v), 0);
+#else
   if(__Da_Speaker != NULL) return __Da_Speaker->Play(*this);
   else return -1;
+#endif
   }
 
 int Sound::Loop()  {
+#ifdef SDL_SOUND
+  return Mix_PlayChannel(-1, (Mix_Chunk *)(data.v), -1);
+#else
   if(__Da_Speaker != NULL) return __Da_Speaker->Loop(*this);
   else return -1;
+#endif
   }
 
 void Sound::Stop(int s)  {
+#ifdef SDL_SOUND
+  Mix_HaltChannel(s);
+#else
   if(__Da_Speaker != NULL) __Da_Speaker->Stop(s);
+#endif
   }
 
 void Sound::ConvertTo(int bts, int chan, int fr)  {
   UserDebug("User:Sound:ConvertTo Begin");
+#ifndef SDL_SOUND
   if(bits == bts && chan == channels && fr == freq) return;
   int ctr; mfmt odata; odata.v = data.v;
   if(bits == 8 && bts == 16)  {
@@ -355,5 +378,6 @@ void Sound::ConvertTo(int bts, int chan, int fr)  {
     freq = fr;
     delete [] odata.s16; odata.v = data.v;
     }
+#endif
   UserDebug("User:Sound:ConvertTo End");
   }
