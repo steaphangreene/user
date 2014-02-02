@@ -21,7 +21,7 @@
 #include "palette.h"
 #include "chunk.h"
 
-typedef unsigned long color;
+typedef unsigned int color;
 
 class Graphic {
   public:
@@ -86,14 +86,14 @@ class Graphic {
   int xsize, ysize, depth;
   int xcenter, ycenter;
   mfmt * image;
-  unsigned long tcolor;
+  unsigned int tcolor;
 
   private:
   void Init(char *);
   void Init24(char *, Palette &);
   void InitTGA32(char *);
   int linedef;
-  long xdef, ydef;
+  int xdef, ydef;
   Chunk chunk;
   };
 

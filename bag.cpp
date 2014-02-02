@@ -31,6 +31,34 @@ long *LongBag::GiveUpContents()  {
   return ret;
   }
 
+IntBag::IntBag(int sz)  {
+  contents = new int[sz];
+  if(contents == NULL)
+    U2_Exit(1, "Not enough memory for IntBag!\n");
+  size = sz;
+  }
+
+IntBag::~IntBag()  {
+  if(contents != NULL) delete contents;
+  size = -1;
+  }
+
+int &IntBag::operator [](int ind)  {
+  if(size <= 0)  
+    U2_Exit(1, "Empty IntBag accessed!\n");
+  else if(ind < 0 || ind >= size)
+    U2_Exit(1, "IntBag reference out of range!\n");
+  else return contents[ind];
+  }
+
+int *IntBag::GiveUpContents()  {
+  int *ret;
+  ret = contents;
+  contents = NULL;
+  size = 0;
+  return ret;
+  }
+
 ShortBag::ShortBag(int sz)  {
   contents = new short[sz];
   if(contents == NULL)

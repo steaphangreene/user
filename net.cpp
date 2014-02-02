@@ -386,7 +386,7 @@ void Network::Send(void *mes, int len, int who)  {
     }
   }
 
-void Network::ReceiveWith(unsigned long in_seg)  {
+void Network::ReceiveWith(unsigned int in_seg)  {
 #ifdef DOS
     __dpmi_regs dregs;
     dregs.x.bx = 0x0004;
@@ -629,6 +629,6 @@ void Network::Update()  {
 #endif
   }
 
-void *Network::Receive(unsigned long who)  {
+void *Network::Receive(unsigned int who)  {
   return Receive();
   }

@@ -188,7 +188,7 @@ Graphic Graphic::Partial(int x1, int y1, int x2, int y2)  {
   int ctr;
   ret.DefSize(xsz, ysz);
   for(ctr=y1; ctr<y2; ctr++)  {
-    ret.DefLin((char *)&image[ctr].u8[x1]);  //*** 8-bit only!
+    ret.DefLin((char *)&image[ctr].u8[x1]);  // 8-bit only!
     }
   return ret;
   }
@@ -264,7 +264,7 @@ Graphic Graphic::Rotated(int angle)  {
   return ret;
   }
 
-void Graphic::SetLine(int xs, int ys, int d, unsigned long c) {
+void Graphic::SetLine(int xs, int ys, int d, unsigned int c) {
   int ctrx, ctry;
   depth=d; DefSize(abs(xs)+1,abs(ys)+1);
   tcolor=0;
@@ -333,7 +333,7 @@ void Graphic::SetLine(int xs, int ys, int d, unsigned long c) {
   else ycenter=0;
   }
 
-void Graphic::SetRect(int xs, int ys, int d, unsigned long c) {
+void Graphic::SetRect(int xs, int ys, int d, unsigned int c) {
   if(xs<1 || ys<1) return;
   tcolor=0; if(depth==8 && tcolor==c) ++tcolor;
   depth=d; DefSize(xs,ys);
@@ -363,7 +363,7 @@ void Graphic::SetRect(int xs, int ys, int d, unsigned long c) {
   else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
   }
 
-void Graphic::SetFillRect(int xs, int ys, int d, unsigned long c) {
+void Graphic::SetFillRect(int xs, int ys, int d, unsigned int c) {
   if(xs<1 || ys<1) return;
   tcolor=0; if(depth==8 && tcolor==c) ++tcolor;
   depth=d; DefSize(xs,ys);
@@ -409,7 +409,7 @@ void Graphic::ClearArea(int x, int y, int xs, int ys) {
     }
   }
 
-void Graphic::DrawPixel(int x, int y, int d, unsigned long c) {
+void Graphic::DrawPixel(int x, int y, int d, unsigned int c) {
   ConvertColor(c, d, (int)depth);
   if(depth == 8) {
     image[y].u8[x] = c;
@@ -422,7 +422,7 @@ void Graphic::DrawPixel(int x, int y, int d, unsigned long c) {
     }
   }
 
-void Graphic::DrawLine(int x, int y, int xs, int ys, int d, unsigned long c) {
+void Graphic::DrawLine(int x, int y, int xs, int ys, int d, unsigned int c) {
   Graphic *g = new Graphic;
   ConvertColor(c, d, (int)depth);
   g->SetLine(xs, ys, depth, c);
@@ -430,7 +430,7 @@ void Graphic::DrawLine(int x, int y, int xs, int ys, int d, unsigned long c) {
   delete g;
   }
 
-void Graphic::DrawRect(int x, int y, int xs, int ys, int d, unsigned long c) {
+void Graphic::DrawRect(int x, int y, int xs, int ys, int d, unsigned int c) {
   Graphic *g = new Graphic;
   ConvertColor(c, d, (int)depth);
   g->SetRect(xs, ys, depth, c);
@@ -438,7 +438,7 @@ void Graphic::DrawRect(int x, int y, int xs, int ys, int d, unsigned long c) {
   delete g;
   }
 
-void Graphic::DrawFillRect(int x, int y, int xs, int ys, int d, unsigned long c) {
+void Graphic::DrawFillRect(int x, int y, int xs, int ys, int d, unsigned int c) {
   Graphic *g = new Graphic;
   ConvertColor(c, d, (int)depth);
   g->SetFillRect(xs, ys, depth, c);
@@ -456,7 +456,7 @@ void Graphic::SetRotated(Graphic &in, int angle) {
   else  dy = (in.ysize - in.ycenter) - 1;
   size = (int)sqrt(dx*dx + dy*dy);
   size+=2;
-  
+
   double basex, basey, curcos, cursin, Tg,
 	incxx, incxy, incyx, incyy, curx, cury;
   DefSize(2*(size)+1, 2*(size)+1);
@@ -753,7 +753,7 @@ void Graphic::DefLin(char *data)  {
   linedef++;
   }
 
-void Graphic::DefLinH(char *data)  { //** 8-bit only
+void Graphic::DefLinH(char *data)  { // 8-bit only
   int ctr;
   int tmp, tmp2;
   for(ctr=0; ctr<(long)xsize; ctr++)  {
@@ -802,7 +802,7 @@ Graphic::Graphic(char *fn, Palette &p)  {
     U2_Exit(1, "I only support 8 and 24 bit Bitmap files, \"%s\" is %ld-bit!\n",
 	fn, depth);
     }
-  tcolor = image[0].u8[0]; //** 8-bit only
+  tcolor = image[0].u8[0]; // 8-bit only
   }
 
 Graphic::Graphic(char *fn)  {
@@ -960,7 +960,7 @@ void Graphic::Init(char *fn)  {
     }
   linedef = height;
   if(depth == 8) tcolor = image[0].u8[0];
-  else if(depth == 32) tcolor = image[0].u8[3]; //** 32-bit kludge
+  else if(depth == 32) tcolor = image[0].u8[3]; // 32-bit kludge
   else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
   UserDebug("Graphic::Init Close File");
   U2_FClose(bmp);
@@ -1105,17 +1105,17 @@ void Graphic::Init24(char *fn, Palette &p)  {
     if(tmp != (long)width*3+off)  {
       U2_Exit(1, "Read error in 24-bit file loading \"%s\"\n", fn);
       }
-    for(ctr2 = 0; ctr2 < (int)width; ctr2++)  { //** 8-bit (maybe not an error)
+    for(ctr2 = 0; ctr2 < (int)width; ctr2++)  { // 8-bit (maybe not an error)
       image[ctr-1].u8[ctr2] = p.GetClosestColor(buffer[ctr2*3+2],
 		buffer[ctr2*3+1], buffer[ctr2*3]);
       }
     }
 
   linedef = height;
-  if(depth == 8) tcolor = image[0].u8[0]; //** Same tcolor 8
-  else if(depth == 32) tcolor = image[0].u8[3]; //** 32-bit kludge
+  if(depth == 8) tcolor = image[0].u8[0]; // Same tcolor 8
+  else if(depth == 32) tcolor = image[0].u8[3]; // 32-bit kludge
   else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
-  
+
   U2_FClose(bmp);
   UserDebug("User::Graphic::Init24 End");
   }
@@ -1184,9 +1184,9 @@ void Graphic::PasteTransparentGraphic(Graphic *gr, int x, int y) {
     for(ctry=0; ctry<gr->ysize; ++ctry) {
       for(ctrx=0; ctrx<gr->xsize; ++ctrx) {
 	unsigned long alpha=gr->image[ctry].u8[(ctrx<<2)+3];
-	unsigned long cr = image[ctry+y].u8[((ctrx+x)<<2)]*(255-alpha);
-	unsigned long cg = image[ctry+y].u8[((ctrx+x)<<2)+1]*(255-alpha);
-	unsigned long cb = image[ctry+y].u8[((ctrx+x)<<2)+2]*(255-alpha);
+	unsigned int cr = image[ctry+y].u8[((ctrx+x)<<2)]*(255-alpha);
+	unsigned int cg = image[ctry+y].u8[((ctrx+x)<<2)+1]*(255-alpha);
+	unsigned int cb = image[ctry+y].u8[((ctrx+x)<<2)+2]*(255-alpha);
 	cr += gr->image[ctry].u8[(ctrx<<2)]*alpha;   cr/=255;
 	cg += gr->image[ctry].u8[(ctrx<<2)+1]*alpha; cg/=255;
 	cb += gr->image[ctry].u8[(ctrx<<2)+2]*alpha; cb/=255;
@@ -1274,7 +1274,7 @@ void Graphic::DepthConvert(int d, const Palette &p) {
           image[ctry].u16[ctrx] = tcolor;
 	  }
 	else {
-	  unsigned long col = (g.image[ctry].u8[(ctrx<<2)+2] >> 3);
+	  unsigned int col = (g.image[ctry].u8[(ctrx<<2)+2] >> 3);
 	  col <<= 6;
 	  col |= (g.image[ctry].u8[(ctrx<<2)+1] >> 2);
 	  col <<= 5;
@@ -1292,7 +1292,7 @@ void Graphic::Undo3ds() {
   int ctrx, ctry;
   for(ctry=0; ctry<ysize; ++ctry) {
     for(ctrx=0; ctrx<xsize; ++ctrx) {
-      unsigned long cr, cg, cb, a;
+      unsigned int cr, cg, cb, a;
       a = image[ctry].u8[(ctrx<<2)+3];
       if(a) {
         cb = image[ctry].u8[(ctrx<<2)+2];

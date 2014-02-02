@@ -8,7 +8,7 @@ struct VESAInfo {
   char    VESASignature[4] PACKED;      /* 'VESA' 4 byte signature          */
   short   VESAVersion PACKED;           /* VESA version number               */
   char    *OEMStringPtr PACKED;         /* Pointer to OEM string            */
-  long    Capabilities PACKED;          /* Capabilities of video card       */
+  int     Capabilities PACKED;          /* Capabilities of video card       */
   short   *VideoModePtr PACKED;         /* Pointer to supported modes       */
   short   TotalMemory PACKED;           /* Number of 64kb memory blocks     */
   char    reserved[236] PACKED;         /* Pad to 256 byte block size       */
@@ -46,17 +46,17 @@ struct  VESAModeInfo {
   char    DirectColorModeInfo PACKED;   /* Direct color mode attributes     */
 
   /* VESA 2.0 variables */
-  long    PhysBasePtr;                  /* physical address for flat frame buffer */
-  long    OffScreenMemOffset;           /* pointer to start of off screen memory */
+  int     PhysBasePtr;                  /* physical address for flat frame buffer */
+  int     OffScreenMemOffset;           /* pointer to start of off screen memory */
   short   OffScreenMemSize;      	/* amount of off screen memory in 1k units */
   char    res2[206] PACKED;             /* Pad to 256 byte block size       */
   };
 
 struct VBE2_PM_Info {
-   unsigned short setWindow PACKED; 
-   unsigned short setDisplayStart PACKED; 
-   unsigned short setPalette PACKED; 
-   unsigned short IOPrivInfo PACKED; 
+   unsigned short setWindow PACKED;
+   unsigned short setDisplayStart PACKED;
+   unsigned short setPalette PACKED;
+   unsigned short IOPrivInfo PACKED;
 };
 
 #pragma pack()

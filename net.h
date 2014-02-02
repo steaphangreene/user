@@ -40,9 +40,9 @@ union Other  {
   };
    
 struct ECB  {
-  unsigned long     link              __attribute__((packed)); 
+  unsigned int      link              __attribute__((packed)); 
 	/* Pointer to next ECB */
-  unsigned long     ESR               __attribute__((packed)); 
+  unsigned int      ESR               __attribute__((packed)); 
 	/* Event service routine 00000000h if none */
   unsigned char     in_use            __attribute__((packed)); 
 	/* In use flag */
@@ -58,7 +58,7 @@ struct ECB  {
 	/* Immediate local node address */
   unsigned short    fragment_count    __attribute__((packed)); 
 	/* Fragment count */
-  unsigned long     fragment_data     __attribute__((packed)); 
+  unsigned int      fragment_data     __attribute__((packed)); 
 	/* Pointer to data fragment */
   unsigned short    fragment_size     __attribute__((packed)); 
 	/* Size of data fragment */
@@ -88,12 +88,12 @@ class Network  {
   void SetIPX(char *, unsigned short);
   ~Network();
   void Send(void *, int);
-  unsigned long WhoIsThere();
-  void ReceiveWith(unsigned long);
+  unsigned int WhoIsThere();
+  void ReceiveWith(unsigned int);
   void *Receive();
   int PacketReceived();
   void Send(void *, int, int);
-  void *Receive(unsigned long);
+  void *Receive(unsigned int);
   int GetMaxPacketSize()  {return max_packet-40;};
   char Type()  {return type;};
   unsigned char *GetNetworkAddress() { return local_address; };
@@ -111,10 +111,10 @@ class Network  {
   int IPX_NewOther(unsigned char *);
   ECB secb, recb[NET_QUEUE_SIZE];
   unsigned short IPXsock;
-  unsigned long sblock_seg, sblock_offset;
-  unsigned long rblock_seg[NET_QUEUE_SIZE], rblock_offset[NET_QUEUE_SIZE];
-  unsigned long secb_seg;
-  unsigned long recb_seg[NET_QUEUE_SIZE];
+  unsigned int sblock_seg, sblock_offset;
+  unsigned int rblock_seg[NET_QUEUE_SIZE], rblock_offset[NET_QUEUE_SIZE];
+  unsigned int secb_seg;
+  unsigned int recb_seg[NET_QUEUE_SIZE];
   int OpenSocket(unsigned short);
   void CloseSocket(unsigned short);
   char type;

@@ -63,7 +63,7 @@ class Sprite;
 class IntList;
 
 typedef int Panel;
-typedef unsigned long color;
+typedef unsigned int color;
 
 #define DEFAULT_NAME "User Engine 2.0"
 
@@ -229,7 +229,7 @@ class Screen  {
   void RemoveSprite(int, Sprite *);
   friend class Sprite;
   int vtype;
-  long framedelay, lasttime, ulasttime;
+  int framedelay, lasttime, ulasttime;
   Sprite *TCursor;
   Graphic *font[256];
   int tcx, tcy;
@@ -245,8 +245,8 @@ class Screen  {
   VESAInfo vinfo;
   VESAModeInfo vminfo;
   short *vesamode;
-  long *vesax, *vesay, *vesad;
-  long numvesamodes;
+  int *vesax, *vesay, *vesad;
+  int numvesamodes;
   void (*vbe2_bank)(char);
   VBE2_PM_Info *vbe2_info;
 #endif

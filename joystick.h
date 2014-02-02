@@ -27,7 +27,7 @@ class Joystick {
   void MapActionToControl(int, Control &);
   void MapActionToControl(int, Control *);
   void MapActionToControl(int, int);
-  unsigned long Buttons();
+  unsigned int Buttons();
 
   private:
   int crit, jnum, jdev;

@@ -18,8 +18,8 @@
 #define INSOMNIA_PALETTE_H
 
 typedef unsigned char cval;
-typedef unsigned long color;
-typedef unsigned long TrueCol;
+typedef unsigned int color;
+typedef unsigned int TrueCol;
 
 class Palette  {
   public:

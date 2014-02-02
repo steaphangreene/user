@@ -10,6 +10,7 @@ class Graphic;
 class Palette;
 class Sound;
 class LongBag;
+class IntBag;
 class ShortBag;
 class CharBag;
 
@@ -21,11 +22,13 @@ class NewResFile  {
   void Add(const Palette *);
   void Add(const Sound *);
   void Add(const LongBag *);
+  void Add(const IntBag *);
   void Add(const ShortBag *);
   void Add(const CharBag *);
 
   private:
   void Write(const void *, int);
+  void WriteLong(long);
   void WriteInt(int);
   void WriteShort(short);
   void WriteChar(char);
@@ -43,6 +46,7 @@ class ResFile  {
   Palette *GetPalette();
   Sound *GetSound();
   LongBag *GetLongBag();
+  IntBag *GetIntBag();
   ShortBag *GetShortBag();
   CharBag *GetCharBag();
 
@@ -53,15 +57,17 @@ class ResFile  {
   Palette *GrabPalette();
   Sound *GrabSound();
   LongBag *GrabLongBag();
+  IntBag *GrabIntBag();
   ShortBag *GrabShortBag();
   CharBag *GrabCharBag();
   void Read(void *, int);
+  long ReadLong();
   int ReadInt();
   short ReadShort();
   char ReadChar();
   U2_File rf;
   char *fn;
-  long version;
+  int version;
   };
 
 #endif

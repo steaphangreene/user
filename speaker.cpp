@@ -791,7 +791,7 @@ s8b:
 
 #endif
 volatile int Speaker::freq;
-volatile long Speaker::bits;
+volatile int Speaker::bits;
 
 #ifdef DOS_SOUND
 volatile int Speaker::sb_dma8;
@@ -799,8 +799,8 @@ volatile int Speaker::sb_dma16;
 volatile int Speaker::sb_irq;
 volatile int Speaker::sb_addr;
 volatile double Speaker::dsp_version;
-volatile long Speaker::wav_seg;
-volatile long Speaker::count;
+volatile int Speaker::wav_seg;
+volatile int Speaker::count;
 volatile int Speaker::seglsb;
 volatile int Speaker::segmsb;
 volatile int Speaker::segpg;

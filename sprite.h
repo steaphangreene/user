@@ -15,7 +15,7 @@ class Screen;
 class Graphic;
 class IntList;
 typedef int Panel;
-typedef unsigned long color;
+typedef unsigned int color;
 
 class Sprite  {
   private:
@@ -75,7 +75,7 @@ class Sprite  {
   Graphic *image, *trueimage;
   int inum, snum, priority, xpos, ypos, angle;
   char drawn, ownimage;
-  unsigned long flags;
+  unsigned int flags;
   mfmt remap;
   Panel pan;
   friend class Screen;

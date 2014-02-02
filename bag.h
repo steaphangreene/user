@@ -14,6 +14,19 @@ class LongBag {
   int size;
   };
 
+class IntBag {
+  public:
+  IntBag(int sz);
+  ~IntBag();
+  int &operator [](int ind);
+  int *GiveUpContents();
+  int Size() const { return size; };
+
+  private:
+  int *contents;
+  int size;
+  };
+
 class ShortBag {
   public:
   ShortBag(int sz);

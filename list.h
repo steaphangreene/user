@@ -19,7 +19,7 @@ class IntList  {
       return;
       }
     else  {
-      data = new long int[size];
+      data = new int[size];
       for(ctr = 0; ctr < size; ctr++)
 	data[ctr] = from.data[ctr];
       }
@@ -38,7 +38,7 @@ class IntList  {
       return;
       }
     else  {
-      data = new long int[size];
+      data = new int[size];
       for(ctr = 0; ctr < size; ctr++)
         data[ctr] = from.data[ctr];
       }
@@ -53,14 +53,14 @@ class IntList  {
   void operator +=(int newval)  {
     if(*this == newval)  return;
     if(size < 1)  {
-      data = new long[1];
+      data = new int[1];
       data[0] = newval;
       size = 1;
       }
     else  {
       int ctr2;
-      long *tmp;
-      tmp = new long[size+1];
+      int *tmp;
+      tmp = new int[size+1];
       for(ctr2 = 0; ctr2 < size; ctr2++)
         tmp[ctr2] = data[ctr2];
       tmp[size] = newval;
@@ -93,7 +93,7 @@ class IntList  {
     IntList ret;
     int ctr;
     ret.size = IL.size + size;
-    ret.data = new long[size];
+    ret.data = new int[size];
     for(ctr = 0; ctr < size; ctr++)
       ret.data[ctr] = data[ctr];
     for(ctr = size; ctr < size+IL.size; ctr++)
@@ -135,12 +135,12 @@ class IntList  {
     return (size <= val);
     }
 
-  unsigned long GetSize()  {
+  unsigned int GetSize()  {
     return size;
     }
 
-  long operator[] (unsigned long num)  {
-    if(num < (unsigned long)size)  return data[num];
+  int operator[] (unsigned int num)  {
+    if(num < (unsigned int)size)  return data[num];
     else return 0;
     }
 
@@ -166,8 +166,8 @@ class IntList  {
     }
 
   protected:
-  long size;
-  long *data;
+  int size;
+  int *data;
   };
 
 #endif

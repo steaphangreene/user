@@ -55,7 +55,7 @@ class Keyboard {
 #ifdef DOS
   static volatile unsigned short keyboard_buf[KB_BUF_SIZE];
   static volatile unsigned short modkey_buf[KB_BUF_SIZE];
-  static volatile unsigned long buf_ind;
+  static volatile unsigned int buf_ind;
   static volatile char in_ext;
   static volatile void dummy_marker_function();
 #endif

@@ -49,7 +49,7 @@ class Speaker {
   int Configure(int, int, int, int);
   void ExpandCur();
   int bufsize, channels, cur_num, cur_alloc, ambient;
-  long writenext;
+  int writenext;
   mfmt buf, *samp;
   Playing *cur;
   int *loop;
@@ -62,7 +62,7 @@ class Speaker {
   pthread_t mmap_thread;
   friend void *__do_dma(void *);
   void dma_handler();
-  long writenow;
+  int writenow;
 #endif
 #else
 #ifdef ESD_SOUND
@@ -80,10 +80,10 @@ class Speaker {
   int wav_handle, old_count, paused;
 #endif
 
-  static volatile long bits;
+  static volatile int bits;
 
 #ifdef DOS_SOUND
-  static volatile long wav_seg, count;
+  static volatile int wav_seg, count;
   static volatile int seglsb, segmsb, segpg;
   static volatile double dsp_version;
 

@@ -22,6 +22,7 @@
 #define PALETTE_TAG	"PALT"
 #define SOUND_TAG	"DIGS"
 #define LONGBAG_TAG	"LBAG"
+#define INTBAG_TAG	"IBAG"
 #define SHORTBAG_TAG	"SBAG"
 #define CHARBAG_TAG	"CBAG"
 #define NULL_TAG	"NULL"
@@ -111,6 +112,21 @@ LongBag *ResFile::GetLongBag()  {
   return GrabLongBag();
   }
 
+IntBag *ResFile::GetIntBag()  {
+  char buf[TAG_SIZE];
+  Read(buf, TAG_SIZE);
+  if(version == 0x0200) {
+    char tmp;
+    Read(&tmp, 1);
+    if(tmp != 0) U2_Exit(-1, "BW Compat: Bad 2.0 Resfile.\n");
+    }
+  if(strncmp(buf, INTBAG_TAG, TAG_SIZE))  {
+    if(!(strncmp(buf, NULL_TAG, TAG_SIZE)))  return NULL;
+    U2_Exit(1, "Bad ResFile order, attempt to get IntBag on non-IntBag");
+    }
+  return GrabIntBag();
+  }
+
 ShortBag *ResFile::GetShortBag()  {
   char buf[TAG_SIZE];
   Read(buf, TAG_SIZE);
@@ -193,10 +209,21 @@ Sound *ResFile::GetSound()  {
 LongBag *ResFile::GrabLongBag()  {
   LongBag *ret;
   int sz, ctr;
-  sz = ReadInt();
+  sz = ReadLong();
   ret = new LongBag(sz);
   for(ctr=0; ctr<sz; ctr++)  {
-    (*(LongBag*)ret)[ctr] = ReadInt();
+    (*(LongBag*)ret)[ctr] = ReadLong();
+    }
+  return ret;
+  }
+
+IntBag *ResFile::GrabIntBag()  {
+  IntBag *ret;
+  int sz, ctr;
+  sz = ReadInt();
+  ret = new IntBag(sz);
+  for(ctr=0; ctr<sz; ctr++)  {
+    (*(IntBag*)ret)[ctr] = ReadInt();
     }
   return ret;
   }
@@ -280,25 +307,38 @@ void ResFile::Read(void *data, int ammt)  {
     }
   }
 
+long ResFile::ReadLong()  {
+  unsigned char tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8;
+  if(U2_FRead(&tmp1, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
+  if(U2_FRead(&tmp2, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
+  if(U2_FRead(&tmp3, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
+  if(U2_FRead(&tmp4, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
+  if(U2_FRead(&tmp5, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
+  if(U2_FRead(&tmp6, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
+  if(U2_FRead(&tmp7, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
+  if(U2_FRead(&tmp8, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
+  return((tmp4<<56)+(tmp3<<48)+(tmp2<<40)+(tmp1<<32)+(tmp4<<24)+(tmp3<<16)+(tmp2<<8)+tmp1);
+  }
+
 int ResFile::ReadInt()  {
   unsigned char tmp1, tmp2, tmp3, tmp4;
-  if(U2_FRead(&tmp1, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(U2_FRead(&tmp2, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(U2_FRead(&tmp3, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(U2_FRead(&tmp4, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(U2_FRead(&tmp1, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
+  if(U2_FRead(&tmp2, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
+  if(U2_FRead(&tmp3, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
+  if(U2_FRead(&tmp4, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
   return((tmp4<<24)+(tmp3<<16)+(tmp2<<8)+tmp1);
   }
 
 short ResFile::ReadShort()  {
   unsigned char tmp1, tmp2;
-  if(U2_FRead(&tmp1, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
-  if(U2_FRead(&tmp2, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(U2_FRead(&tmp1, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
+  if(U2_FRead(&tmp2, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
   return((tmp2<<8)+tmp1);
   }
 
 char ResFile::ReadChar()  {
   unsigned char ret;
-  if(U2_FRead(&ret, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn); 
+  if(U2_FRead(&ret, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
   return ret;
   }
 
@@ -329,7 +369,20 @@ void NewResFile::Add(const LongBag *in)  {
   Write(LONGBAG_TAG, TAG_SIZE);
   WriteInt(in->Size());
   for(ctr=0; ctr<in->Size(); ctr++)  {
-    WriteInt((*(LongBag*)in)[ctr]);
+    WriteLong((*(LongBag*)in)[ctr]);
+    }
+  }
+
+void NewResFile::Add(const IntBag *in)  {
+  if(in == NULL)  {
+    Write(NULL_TAG, TAG_SIZE);
+    return;
+    }
+  int ctr;
+  Write(INTBAG_TAG, TAG_SIZE);
+  WriteInt(in->Size());
+  for(ctr=0; ctr<in->Size(); ctr++)  {
+    WriteInt((*(IntBag*)in)[ctr]);
     }
   }
 
@@ -409,6 +462,26 @@ void NewResFile::Write(const void *data, int ammt)  {
   if(U2_FWrite(data, 1, ammt, rf) != (size_t)ammt)  {
     U2_Exit(1, "Write failure on \"%s\"!\n", fn);
     }
+  }
+
+void NewResFile::WriteLong(long data)  {
+  unsigned char tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8;
+  tmp8 = (data>>56) & 255;
+  tmp7 = (data>>48) & 255;
+  tmp6 = (data>>40) & 255;
+  tmp5 = (data>>32) & 255;
+  tmp4 = (data>>24) & 255;
+  tmp3 = (data>>16) & 255;
+  tmp2 = (data>>8) & 255;
+  tmp1 = data & 255;
+  if(U2_FPutC(tmp1, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(tmp2, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(tmp3, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(tmp4, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(tmp5, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(tmp6, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(tmp7, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
+  if(U2_FPutC(tmp8, rf) < 0) U2_Exit(1,"Write failure on \"%s\"!\n",fn); 
   }
 
 void NewResFile::WriteInt(int data)  {

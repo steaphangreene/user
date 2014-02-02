@@ -89,7 +89,7 @@ int Joystick::IsPressed(int k) {
   else return 0;
   }
 
-unsigned long Joystick::Buttons() {
+unsigned int Joystick::Buttons() {
   int ctr;
   unsigned long ret = 0;
   for(ctr = 0; ctr < (JS_BUTTON_MAX-JS_BUTTON); ++ctr) {

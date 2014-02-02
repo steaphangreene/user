@@ -18,7 +18,7 @@ class Sound  {
 
   private:
   Sound();
-  unsigned long len;
+  unsigned int len;
   mfmt data;
   int freq;
   char channels, bits;
