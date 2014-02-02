@@ -12,7 +12,7 @@ class Chunk {
   Chunk(int sz) { data.s8 = NULL; size = 0; Get(sz); };
 
   void SetSize(int sz) {
-    if(size == ((sz+1023)>>10)) return;
+    if(size == sz) return;
     Drop();
     Get(sz);
     };
@@ -21,43 +21,24 @@ class Chunk {
     Drop();
     };
 
-  int Size() const { return size<<10; };
+  int Size() const { return size; };
   mfmt Data() const { return data; };
-  static void DeleteAll();
 
   private:
   int size;
   mfmt data;
-  static mfmt ch[CHUNK_MAX];
 
   void Drop() {
     if(data.s8 != NULL) {
-      if(size >= CHUNK_MAX) {
-	delete [] data.s8;
-	data.s8 = NULL;
-	size = 0;
-	}
-      else {
-	(*(data.u64)) = ch[size].UL;
-	ch[size].v = data.v;
-	data.s8 = NULL;
-	size = 0;
-	}
+      delete [] data.s8;
+      data.s8 = NULL;
+      size = 0;
       }
     };
 
   void Get(int sz) {
-    size = (sz+1023)>>10;
-    if(size >= CHUNK_MAX) {
-      data.u8 = new unsigned char[size<<10];
-      }
-    else if(ch[size].v) {
-      data.v = ch[size].v;
-      ch[size].u8 = (unsigned char *)(data.UL);
-      }
-    else {
-      data.u8 = new unsigned char[size<<10];
-      }
+    size = sz;
+    data.u8 = new unsigned char[sz];
     };
   };
 

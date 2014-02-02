@@ -70,8 +70,6 @@ void StopUserEngine()  {
   __Da_Keyboard = NULL;
   __Da_Speaker = NULL;
   __Da_Screen = NULL;
-  Chunk *tmp;
-  tmp->DeleteAll();
   fprintf(stderr, "User 2.01: Engine Shut Down.\n");
   fflush(stderr);
   }
