@@ -151,7 +151,7 @@ Graphic Graphic::Hashed(color c)  {
     for(X=(Y&1); X<(long)xsize; X+=2)  {
       if(depth == 8) ret.image[Y].u8[X] = c;
       else if(depth == 32) ret.image[Y].u32[X] = c;
-      else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
   return ret;
@@ -165,7 +165,7 @@ Graphic Graphic::OffHashed(color c)  {
     for(X=(1-(Y&1)); X<(long)xsize; X+=2)  {
       if(depth == 8) ret.image[Y].u8[X] = c;
       else if(depth == 32) ret.image[Y].u32[X] = c;
-      else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
   return ret;
@@ -233,7 +233,7 @@ Graphic Graphic::RotatedCounterClock()  {
 	ret.image[ctr1].u8[ctr2] = image[ctr2].u8[(xsize-1)-ctr1];
       else if(depth == 32)
 	ret.image[ctr1].u32[ctr2] = image[ctr2].u32[(xsize-1)-ctr1];
-      else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
   ret.tcolor = tcolor;
@@ -251,7 +251,7 @@ Graphic Graphic::RotatedClock()  {
 	ret.image[ctr1].u8[ctr2] = image[(ysize-1)-ctr2].u8[ctr1];
       else if(depth == 32)
 	ret.image[ctr1].u32[ctr2] = image[(ysize-1)-ctr2].u32[ctr1];
-      else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
   ret.tcolor = tcolor;
@@ -286,7 +286,7 @@ void Graphic::SetLine(int xs, int ys, int d, unsigned int c) {
       else if(depth==16)
 	for(ctrx=0; ctrx<xsize; ++ctrx)
 	  image[(ysize-1)-((ysize*ctrx)/xsize)].u16[ctrx] = c;
-      else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     else {
       if(depth==8)
@@ -298,7 +298,7 @@ void Graphic::SetLine(int xs, int ys, int d, unsigned int c) {
       else if(depth==16)
 	for(ctrx=0; ctrx<xsize; ++ctrx)
 	  image[(ysize*ctrx)/xsize].u16[ctrx] = c;
-      else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
   else {
@@ -312,7 +312,7 @@ void Graphic::SetLine(int xs, int ys, int d, unsigned int c) {
       else if(depth==16)
 	for(ctry=0; ctry<ysize; ++ctry)
 	  image[ctry].u16[(xsize-1)-((xsize*ctry)/ysize)] = c;
-      else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     else {
       if(depth==8)
@@ -324,7 +324,7 @@ void Graphic::SetLine(int xs, int ys, int d, unsigned int c) {
       else if(depth==16)
 	for(ctry=0; ctry<ysize; ++ctry)
 	  image[ctry].u16[(xsize*ctry)/ysize] = c;
-      else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
   if(xs<0) xcenter=xsize-1;
@@ -360,7 +360,7 @@ void Graphic::SetRect(int xs, int ys, int d, unsigned int c) {
       image[ctry].u8[xsize-1] = c;
       }
     }
-  else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
   }
 
 void Graphic::SetFillRect(int xs, int ys, int d, unsigned int c) {
@@ -383,7 +383,7 @@ void Graphic::SetFillRect(int xs, int ys, int d, unsigned int c) {
       for(int ctrx=0; ctrx<xsize; ++ctrx) image[ctry].u32[ctrx] = c;
       }
     }
-  else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
   }
 
 void Graphic::Clear() {
@@ -490,16 +490,16 @@ void Graphic::SetRotated(Graphic &in, int angle) {
       if((dx>=0) && (dy>=0) && (dx < (long)in.xsize) && (dy < (long)in.ysize)) {
 	if(depth == 8) *(curpt.u8) = in.image[dy].u8[dx];
 	else if(depth == 32) *(curpt.u32) = in.image[dy].u32[dx];
-        else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+        else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
 	}
       else  {
 	if(depth == 8) *(curpt.u8) = tcolor;
 	else if(depth == 32) *(curpt.u32) = tcolor;
-        else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+        else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
 	}
       if(depth == 8) curpt.u8++;
       else if(depth == 32) curpt.u32++;
-      else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
       curx+=incxx;
       cury+=incyx;
       }
@@ -527,8 +527,6 @@ Graphic::Graphic(const Graphic &from) {
 
 void Graphic::operator =(const Graphic &from) {
   int ctr;
-  mfmt *cur;
-  cur = image;
 
   depth = from.depth;
   DefSize(from.xsize, from.ysize);
@@ -580,7 +578,7 @@ Graphic Graphic::operator +(const Graphic &from)  {
 	  ret.image[ctry+yc].u32[ctrx+xc] = image[ctry+ycenter].u32[ctrx+xcenter];
 	else ret.image[ctry+yc].u32[ctrx+xc] = 0;
 	}
-      else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+      else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
       }
     }
   return ret;
@@ -609,7 +607,7 @@ void Graphic::XFlip() {
       }
     }
   else if(depth == 32) {
-    unsigned long tmp;
+    unsigned int tmp;
     for(ctr = 0; ctr < (long)ysize; ctr++)  {
       for(ctr2 = 0; ctr2 < (long)xsize/2; ctr2++)  {
  	tmp = image[ctr].u32[ctr2];
@@ -690,7 +688,7 @@ void Graphic::Trim() {
 	memmove(image[ctry-yb].u16, &image[ctry].u16[xb], xsize*2);
     else if(depth == 32)
 	memmove(image[ctry-yb].u32, &image[ctry].u32[xb], xsize*4);
-    else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+    else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
     }
   UserDebug("Graphic:Trim()  End");
   }
@@ -746,14 +744,14 @@ Graphic::~Graphic() {
 //  UserDebug("User:Graphic:~Graphic() End");
   }
 
-void Graphic::DefLin(char *data)  {
+void Graphic::DefLin(const char *data)  {
   if(ysize == 0 || xsize == 0)  return;
   int line = linedef%ysize;
   memcpy(image[line].u8, data, xsize*(depth>>3));
   linedef++;
   }
 
-void Graphic::DefLinH(char *data)  { // 8-bit only
+void Graphic::DefLinH(const char *data)  { // 8-bit only
   int ctr;
   int tmp, tmp2;
   for(ctr=0; ctr<(long)xsize; ctr++)  {
@@ -772,7 +770,7 @@ void Graphic::DefLinH(char *data)  { // 8-bit only
   if(linedef >= (long)ysize)  linedef = 0;
   }
 
-Graphic::Graphic(char *fn, Palette &p)  {
+Graphic::Graphic(const char *fn, Palette &p)  {
   image = NULL;
   xdef = 0;  ydef = 0;
   xsize = 0;  ysize = 0;
@@ -799,13 +797,13 @@ Graphic::Graphic(char *fn, Palette &p)  {
     Init24(fn, p);
     }
   else  {
-    U2_Exit(1, "I only support 8 and 24 bit Bitmap files, \"%s\" is %ld-bit!\n",
+    U2_Exit(1, "I only support 8 and 24 bit Bitmap files, \"%s\" is %d-bit!\n",
 	fn, depth);
     }
   tcolor = image[0].u8[0]; // 8-bit only
   }
 
-Graphic::Graphic(char *fn)  {
+Graphic::Graphic(const char *fn)  {
   image = NULL;
   xdef = 0;  ydef = 0;
   xsize = 0;  ysize = 0;
@@ -813,7 +811,7 @@ Graphic::Graphic(char *fn)  {
   Init(fn);
   }
 
-void Graphic::InitTGA32(char *fn)  {
+void Graphic::InitTGA32(const char *fn)  {
   int ctry;
   unsigned char buf[256];
   U2_File tga = U2_FOpenRead(fn);
@@ -843,7 +841,7 @@ void Graphic::InitTGA32(char *fn)  {
 
       x=0; y=0; yr=0; if(!rev) yr=ysize-1;
       while(y<ysize) {
-	unsigned long tmpv;
+	unsigned int tmpv;
 	U2_FRead(buf, 1, 1, tga);
 	sz=(buf[0]&0x7F)+1;
 	if(buf[0]&0x80) {
@@ -868,7 +866,7 @@ void Graphic::InitTGA32(char *fn)  {
 	  }
 	if(x==xsize) { ++y; --yr; x=0; }
 	else if(x>xsize)
-	  U2_Exit(1, "RLE Overrun (%d>%ld) in \"%s\"\n", x, xsize, fn);
+	  U2_Exit(1, "RLE Overrun (%d>%d) in \"%s\"\n", x, xsize, fn);
 	}
       }
     else {
@@ -881,15 +879,15 @@ void Graphic::InitTGA32(char *fn)  {
     }
   }
 
-void Graphic::Init(char *fn)  {
+void Graphic::Init(const char *fn)  {
  UserDebug("Graphic::Init Begin");
  xdef = 0;  ydef = 0;
  if(!strcasecmp(".tga", &fn[strlen(fn)-4])) { InitTGA32(fn); return; }
  U2_File bmp;
  int colused;
- long size2, width, height, off = 0;
+ int size2, width, height, off = 0;
  unsigned char buffer[1280];
- long detect;
+ int detect;
  {
   bmp = U2_FOpenRead(fn);
   UserDebug("Graphic::Init First Read");
@@ -906,13 +904,13 @@ void Graphic::Init(char *fn)  {
   detect = buffer[10]+256*(buffer[11]);
   UserDebug("Graphic::Init Plane Read");
   if(detect != 1)  {
-    U2_Exit(1, "I only suport 1 plane Bitmap files, \"%s\" is %ld-plane!\n",
+    U2_Exit(1, "I only suport 1 plane Bitmap files, \"%s\" is %d-plane!\n",
         fn, detect);
     }
   depth = buffer[12]+256*(buffer[13]);
   UserDebug("Graphic::Init Depth Read");
   if(depth != 8 && depth != 24)  {
-    U2_Exit(1, "\"%s\" is %ld-bit, Only 8 and 24-bit BMPs supported w/o palette!\n",
+    U2_Exit(1, "\"%s\" is %d-bit, Only 8 and 24-bit BMPs supported w/o palette!\n",
 	fn, depth);
     }
   detect = buffer[14]+256*(buffer[15]);
@@ -961,7 +959,7 @@ void Graphic::Init(char *fn)  {
   linedef = height;
   if(depth == 8) tcolor = image[0].u8[0];
   else if(depth == 32) tcolor = image[0].u8[3]; // 32-bit kludge
-  else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
   UserDebug("Graphic::Init Close File");
   U2_FClose(bmp);
   }
@@ -970,7 +968,7 @@ void Graphic::Init(char *fn)  {
 
 #define fpint(f, i) fprintf(f, "%c%c%c%c", (char)(i&255), (char)((i>>8)&255), (char)((i>>16)&255), (char)((i>>24)&255))
 
-void Graphic::SaveBMP(char *fn, const Palette &pal) {
+void Graphic::SaveBMP(const char *fn, const Palette &pal) {
  UserDebug("User::Graphic::SaveBMP(2) Begin");
  U2_Exit(0, "Fix this function: Graphic::SaveBMP\n");
 /*
@@ -1018,11 +1016,11 @@ void Graphic::SaveBMP(char *fn, const Palette &pal) {
  UserDebug("User::Graphic::SaveBMP(2) End");
  }
 
-void Graphic::SaveBMP(char *fn)  {
+void Graphic::SaveBMP(const char *fn)  {
  UserDebug("User::Graphic::SaveBMP(1) Begin");
  U2_Exit(0, "Fix this function: Graphic::SaveBMP\n");
 /*
- if(depth != 32) U2_Exit(1, "Depth = %ld and no Palette given!\n", depth);
+ if(depth != 32) U2_Exit(1, "Depth = %d and no Palette given!\n", depth);
  U2_File bmp;
  int ctr, ctr2;
  {
@@ -1064,13 +1062,13 @@ void Graphic::SaveBMP(char *fn)  {
  UserDebug("User::Graphic::SaveBMP(1) End");
  }
 
-void Graphic::Init24(char *fn, Palette &p)  {
+void Graphic::Init24(const char *fn, Palette &p)  {
   UserDebug("User::Graphic::Init24 Begin");
   xdef = 0;  ydef = 0;
   U2_File bmp;
-  long size2, width, height;
+  int size2, width, height;
   unsigned char buffer[4096];
-  long detect;
+  int detect;
   int ctr, ctr2;
 
   bmp = U2_FOpenRead(fn);
@@ -1085,12 +1083,12 @@ void Graphic::Init24(char *fn, Palette &p)  {
   height = buffer[6]+256*(buffer[7]);
   detect = buffer[10]+256*(buffer[11]);
   if(detect != 1)  {
-    U2_Exit(1, "I only suport 1 plane Bitmap files, \"%s\" is %ld-plane!\n",
+    U2_Exit(1, "I only suport 1 plane Bitmap files, \"%s\" is %d-plane!\n",
         fn, detect);
     }
   depth = buffer[12]+256*(buffer[13]);
   if(depth != 24)  {
-    U2_Exit(1, "\"%s\" is a %ld-bit file that detected as 24-bit!?!\n", fn, depth);
+    U2_Exit(1, "\"%s\" is a %d-bit file that detected as 24-bit!?!\n", fn, depth);
     }
   detect = buffer[14]+256*(buffer[15]);
   if(detect != 0)  {
@@ -1114,7 +1112,7 @@ void Graphic::Init24(char *fn, Palette &p)  {
   linedef = height;
   if(depth == 8) tcolor = image[0].u8[0]; // Same tcolor 8
   else if(depth == 32) tcolor = image[0].u8[3]; // 32-bit kludge
-  else U2_Exit(-1, "Unknown depth error (%ld) in %s!\n", depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown depth error (%d) in %s!\n", depth, __PRETTY_FUNCTION__);
 
   U2_FClose(bmp);
   UserDebug("User::Graphic::Init24 End");
@@ -1131,7 +1129,7 @@ void Graphic::PasteGraphic(Graphic *g, int x, int y) {
     U2_Exit(1, "Depth mismatch in %s\n", __PRETTY_FUNCTION__);
   int ctry;
   if(x<0 || y<0 || x+g->xsize > xsize || y+g->ysize > ysize) {
-    fprintf(stderr, "Pasting %ldx%ld into %ldx%ld at (%d,%d)\n",
+    fprintf(stderr, "Pasting %dx%d into %dx%d at (%d,%d)\n",
 	g->xsize, g->ysize, xsize, ysize, x, y);
     U2_Exit(1, "Out of bounds error in %s\n", __PRETTY_FUNCTION__);
     }
@@ -1167,7 +1165,7 @@ void Graphic::PasteTransparentGraphic(Graphic *gr, int x, int y) {
     U2_Exit(1, "Depth mismatch in %s\n", __PRETTY_FUNCTION__);
   int ctry, ctrx;
   if(x<0 || y<0 || x+gr->xsize > xsize || y+gr->ysize > ysize)
-    U2_Exit(1, "Out of bounds error (%d->%ld, %d->%ld)->(%ldx%ld) in %s\n",
+    U2_Exit(1, "Out of bounds error (%d->%d, %d->%d)->(%dx%d) in %s\n",
 	x, x+gr->xsize, y, y+gr->ysize, xsize, ysize, __PRETTY_FUNCTION__);
   UserDebug("User::Graphic::PasteTransparentGraphic() Write");
   if(depth == 8) {
@@ -1183,7 +1181,7 @@ void Graphic::PasteTransparentGraphic(Graphic *gr, int x, int y) {
     UserDebug("User::Graphic::PasteTransparentGraphic() 32bpp Write");
     for(ctry=0; ctry<gr->ysize; ++ctry) {
       for(ctrx=0; ctrx<gr->xsize; ++ctrx) {
-	unsigned long alpha=gr->image[ctry].u8[(ctrx<<2)+3];
+	unsigned int alpha=gr->image[ctry].u8[(ctrx<<2)+3];
 	unsigned int cr = image[ctry+y].u8[((ctrx+x)<<2)]*(255-alpha);
 	unsigned int cg = image[ctry+y].u8[((ctrx+x)<<2)+1]*(255-alpha);
 	unsigned int cb = image[ctry+y].u8[((ctrx+x)<<2)+2]*(255-alpha);
@@ -1284,7 +1282,7 @@ void Graphic::DepthConvert(int d, const Palette &p) {
 	}
       }
     }
-  else U2_Exit(-1, "Unimplemented Graphic depth convert from %ld to %d\n", depth, d);
+  else U2_Exit(-1, "Unimplemented Graphic depth convert from %d to %d\n", depth, d);
   UserDebug("User::Graphic::DepthConvert End");
   }
 

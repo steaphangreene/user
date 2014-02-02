@@ -48,16 +48,18 @@ int USER_ARGC = 0;
 char **USER_ARGV = NULL;
 
 // Configuration Options
-char *U2_JoyDev[16] = { "/dev/js0", "/dev/js1", "/dev/js2", "/dev/js3",
-			"/dev/js4", "/dev/js5", "/dev/js6", "/dev/js7",
-			"/dev/js8", "/dev/js9", "/dev/js10","/dev/js11",
-			"/dev/js12","/dev/js13","/dev/js14","/dev/js15" };
+const char *U2_JoyDev[16] = {
+	"/dev/js0", "/dev/js1", "/dev/js2", "/dev/js3",
+	"/dev/js4", "/dev/js5", "/dev/js6", "/dev/js7",
+	"/dev/js8", "/dev/js9", "/dev/js10","/dev/js11",
+	"/dev/js12","/dev/js13","/dev/js14","/dev/js15"
+};
 
 void SigHand(int);
 
 #ifdef USER_DEBUG
 int debug_index=0;
-char *debug_position[16]
+const char *debug_position[16]
 	= {"","","","","","","","","","","","","","","",":USER DEBUG BEGIN:"};
 #endif
 
@@ -74,7 +76,7 @@ void StopUserEngine()  {
   fflush(stderr);
   }
 
-int CheckArgFlag(const char *flag, char **target, int c) {
+int CheckArgFlag(const char *flag, const char **target, int c) {
   if(c < USER_ARGC-1 && (!strcmp(flag, USER_ARGV[c]))) {
     (*target) = USER_ARGV[c+1];
     return 2;

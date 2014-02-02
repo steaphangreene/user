@@ -19,7 +19,7 @@ Sound::Sound()  {
   data.v = NULL;
   }
 
-Sound::Sound(char *fn)  {
+Sound::Sound(const char *fn)  {
 #ifdef SDL_SOUND
   data.v = Mix_LoadWAV(fn);
 #else

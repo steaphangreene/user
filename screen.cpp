@@ -91,18 +91,18 @@ Screen::~Screen()  {
 //  UserDebug("User::Screen::~Screen() End");
   }
 
-Screen::Screen(char *n)  {
+Screen::Screen(const char *n)  {
   name=n;
   Init();
   }
 
-Screen::Screen(int x, int y, char *n)  {
+Screen::Screen(int x, int y, const char *n)  {
   name=n;
   Init();
   SetSize(x, y);
   }
 
-Screen::Screen(int x, int y, int d, char *n)  {
+Screen::Screen(int x, int y, int d, const char *n)  {
   name=n;
   Init();
   SetApparentDepth(d);
@@ -1849,14 +1849,14 @@ void Screen::InvalidateRectangle(int x, int y, int xs, int ys)  {
   int xe=xs+x, ye=ys+y;
 
   for(ctr=0; ctr<REDRAW_RECTS && found>=REDRAW_RECTS; ctr++) {
-    if(((rxs[ctr] >= x && rxs[ctr] < xe)
-	|| (rxe[ctr] >= x && rxe[ctr] < xe))
-	&& ((rys[ctr] >= y && rys[ctr] < ye)
-	|| (rye[ctr] >= y && rye[ctr] < ye))
-    || ((x >= rxs[ctr] && x < rxe[ctr])
-	|| (xe >= rxs[ctr] && xe < rxe[ctr]))
-	&& ((y >= rys[ctr] && y < rye[ctr])
-	|| (ye >= rys[ctr] && ye < rye[ctr]))) {
+    if ((((rxs[ctr] >= x && rxs[ctr] < xe)
+	  || (rxe[ctr] >= x && rxe[ctr] < xe))
+	 && ((rys[ctr] >= y && rys[ctr] < ye)
+	  || (rye[ctr] >= y && rye[ctr] < ye)))
+	|| (((x >= rxs[ctr] && x < rxe[ctr])
+	  || (xe >= rxs[ctr] && xe < rxe[ctr]))
+	 && ((y >= rys[ctr] && y < rye[ctr])
+	  || (ye >= rys[ctr] && ye < rye[ctr])))) {
       rxs[ctr] = min(rxs[ctr], x);
       rxe[ctr] = max(rxe[ctr], xe);
       rys[ctr] = min(rys[ctr], y);
@@ -1969,7 +1969,7 @@ void Screen::RestoreRectangle(int x, int y, int xs, int ys)  {
 
   snag(huges);
 
-#undef snag(bxy)
+#undef snag
 
   UserDebug("Screen:RestoreRectangle() Before Radix Sort");
   memset(spbin2, 0, sizeof(spbin2));

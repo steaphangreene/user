@@ -28,10 +28,10 @@ class Graphic {
   Graphic();
   Graphic(int, int);
   Graphic(const Graphic &);
-  Graphic(char *);
-  Graphic(char *, Palette &);
-  void SaveBMP(char *);
-  void SaveBMP(char *, const Palette &);
+  Graphic(const char *);
+  Graphic(const char *, Palette &);
+  void SaveBMP(const char *);
+  void SaveBMP(const char *, const Palette &);
   ~Graphic();
   void operator =(const Graphic &from);
   void operator +=(const Graphic &from);
@@ -74,8 +74,8 @@ class Graphic {
   void YFlip();
   void SetCenter(int, int);
   void DefSize(int, int);
-  void DefLin(char*);
-  void DefLinH(char*);
+  void DefLin(const char *);
+  void DefLinH(const char *);
   color GetPixel(int, int);
   Graphic HalfSize() {return Scaled(xsize>>1, ysize>>1);};
   Graphic DoubleSize() {return Scaled(xsize<<1, ysize<<1);};
@@ -89,9 +89,9 @@ class Graphic {
   unsigned int tcolor;
 
   private:
-  void Init(char *);
-  void Init24(char *, Palette &);
-  void InitTGA32(char *);
+  void Init(const char *);
+  void Init24(const char *, Palette &);
+  void InitTGA32(const char *);
   int linedef;
   int xdef, ydef;
   Chunk chunk;

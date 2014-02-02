@@ -85,7 +85,7 @@ void Palette::SetPSP(const char *fn)  {
 void Palette::SetBMP(const char *fn)  {
  int coldec;
  U2_File bmp;
- unsigned size2, width, height;
+ unsigned size2;
  unsigned char buffer[1280];
  int ctr;
  {
@@ -101,8 +101,6 @@ void Palette::SetBMP(const char *fn)  {
     }
   size2 = buffer[14]+(buffer[15]<<8);
   U2_FRead(buffer, 1, (size2 - 2), bmp);
-  width = buffer[2]+(buffer[3]<<8);
-  height = buffer[6]+(buffer[7]<<8);
   coldec = buffer[30]+(buffer[31]<<8);
   if(coldec == 0)  coldec = 256;
   U2_FRead(buffer, 1, coldec<<2, bmp);

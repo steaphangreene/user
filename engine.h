@@ -33,7 +33,7 @@ int U2_FClose(U2_File fl);
 
 #ifdef USER_DEBUG
   extern int debug_index;
-  extern char *debug_position[16];
+  extern const char *debug_position[16];
   #define Debug(x) { debug_position[debug_index++] = x; debug_index&=15; }
   #ifdef USER_ENGINE_DEBUG
     #define UserDebug(x) { debug_position[debug_index++] = x; debug_index&=15; }

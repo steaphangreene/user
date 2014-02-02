@@ -80,9 +80,9 @@ typedef unsigned int color;
 
 class Screen  {
   public:
-  Screen(char *n = DEFAULT_NAME);
-  Screen(int, int, char *n = DEFAULT_NAME);
-  Screen(int, int, int, char *n = DEFAULT_NAME);
+  Screen(const char *n = DEFAULT_NAME);
+  Screen(int, int, const char *n = DEFAULT_NAME);
+  Screen(int, int, int, const char *n = DEFAULT_NAME);
   ~Screen();
   void SetApparentDepth(int);
   int GetApparentDepth() { return appdepth; }
@@ -215,7 +215,7 @@ class Screen  {
   void WaitForNextFrame();
   void DetectVideoType();
   int xsize, ysize, rowlen, collen, depth, shown, appdepth;
-  char *name;
+  const char *name;
   mfmt video_buffer, *image;
   mfmt background_buffer, *backg;
   mfmt frame;

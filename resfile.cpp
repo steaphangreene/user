@@ -317,7 +317,14 @@ long ResFile::ReadLong()  {
   if(U2_FRead(&tmp6, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
   if(U2_FRead(&tmp7, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
   if(U2_FRead(&tmp8, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
-  return((tmp4<<56)+(tmp3<<48)+(tmp2<<40)+(tmp1<<32)+(tmp4<<24)+(tmp3<<16)+(tmp2<<8)+tmp1);
+  return (((long)(tmp8))<<56)
+       + (((long)(tmp7))<<48)
+       + (((long)(tmp6))<<40)
+       + (((long)(tmp5))<<32)
+       + (((long)(tmp4))<<24)
+       + (((long)(tmp3))<<16)
+       + (((long)(tmp2))<<8)
+       + (((long)(tmp1))<<0);
   }
 
 int ResFile::ReadInt()  {
@@ -326,14 +333,18 @@ int ResFile::ReadInt()  {
   if(U2_FRead(&tmp2, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
   if(U2_FRead(&tmp3, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
   if(U2_FRead(&tmp4, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
-  return((tmp4<<24)+(tmp3<<16)+(tmp2<<8)+tmp1);
+  return (((long)(tmp4))<<24)
+       + (((long)(tmp3))<<16)
+       + (((long)(tmp2))<<8)
+       + (((long)(tmp1))<<0);
   }
 
 short ResFile::ReadShort()  {
   unsigned char tmp1, tmp2;
   if(U2_FRead(&tmp1, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
   if(U2_FRead(&tmp2, 1, 1, rf) != 1) U2_Exit(1, "Read failure on \"%s\"!\n",fn);
-  return((tmp2<<8)+tmp1);
+  return (((long)(tmp2))<<8)
+       + (((long)(tmp1))<<0);
   }
 
 char ResFile::ReadChar()  {

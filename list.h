@@ -47,7 +47,7 @@ class IntList  {
   void Print()  {
     int ctr;
     for(ctr = 0; ctr < size; ctr++)
-      printf("%ld ", data[ctr]);
+      printf("%d ", data[ctr]);
     }
 
   void operator +=(int newval)  {

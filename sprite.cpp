@@ -276,7 +276,7 @@ int Sprite::Hits(int x, int y, int xs, int ys) {
       }
     UserDebug("User:Sprite:Hits(x,y,z) 32-bit Loop End");
     }
-  else U2_Exit(-1, "Unknown Depth Error (%ld) in %s\n", image->depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown Depth Error (%d) in %s\n", image->depth, __PRETTY_FUNCTION__);
   UserDebug("User:Sprite:Hits(x,y,z) End");
   return 0;
   }
@@ -287,7 +287,7 @@ int Sprite::Hits(Sprite *s) {
 
   UserDebug("User:Sprite:Hits 0500");
   if(image->depth != s->image->depth)
-	U2_Exit(-1, "Depth Mismatch %ld->%ld!\n", image->depth, s->image->depth);
+	U2_Exit(-1, "Depth Mismatch %d->%d!\n", image->depth, s->image->depth);
   if(image == NULL || s->image == NULL) U2_Exit(-1, "Hitting Nothing!\n");
 
   if(image->depth == 8)  {
@@ -321,7 +321,7 @@ int Sprite::Hits(Sprite *s) {
 	}
       }
     }
-  else U2_Exit(-1, "Unknown Depth Error (%ld) in %s\n", image->depth, __PRETTY_FUNCTION__);
+  else U2_Exit(-1, "Unknown Depth Error (%d) in %s\n", image->depth, __PRETTY_FUNCTION__);
   UserDebug("User:Sprite:Hits 1000");
   return 0;
   }

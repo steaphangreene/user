@@ -6,7 +6,7 @@
 
 class Sound  {
   public:
-  Sound(char *);
+  Sound(const char *);
   ~Sound();
   int Play();
   int Loop();
