@@ -179,11 +179,11 @@ void U2_Exit(int code, const char *out, ...)  {
   UserDebug("In U2_Exit Function!");
   StopUserEngine();
 
-  va_list stuff;  
+  va_list stuff;
   va_start(stuff, out);
   vprintf(out, stuff);
   va_end(stuff);
-  _exit(0);
+  exit(0);
   }
 
 U2_File U2_FOpenRead(const char *fn)  {
