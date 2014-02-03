@@ -40,7 +40,12 @@ void Joystick::Create(const char *devfl) {
   memset((char *)ButtonStats, 0, 16*sizeof(char));
 
   jdev = open(devfl, O_RDONLY|O_NONBLOCK);
-  if(jdev < 0) U2_Exit(-1, "Can not open Joystick device \"%s\"\n", devfl);
+  if(jdev < 0) {
+    printf("Can not open Joystick device \"%s\"\n", devfl);
+    printf("There will be no Joystick support.\n");
+    return;
+    }
+
   crit = 0;
   for(jnum = 0; jnum < 16; ++jnum) {
     if(__Da_Joystick[jnum] == NULL) {
