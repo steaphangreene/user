@@ -8,8 +8,6 @@ int main(int argc, char **argv)  {
   Screen *screen = new Screen;
   Mouse *mouse = new Mouse;
   screen->SetPalette("cursor.bmp");
-  screen->SetPaletteEntry(255, 255, 255, 255);
-  screen->SetPaletteEntry(0, 0, 0, 0);
   screen->SetFont("basic10.sgf");
   Graphic *mc = new Graphic("cursor.bmp");
   mc->FindTrueCenter();
@@ -26,6 +24,7 @@ int main(int argc, char **argv)  {
   UserDebug("test p1003");
   screen->Show();
   Panel pan = screen->NewPanel(50, 50, 590, 430);
+  color textc = screen->GetColor(255, 255, 255);
 
   MovableClickey b("test1.bmp", "test2.bmp");
   b.Move(100, 100);
@@ -39,7 +38,7 @@ int main(int argc, char **argv)  {
     if(hit->g.type == INPUTACTION_KEYDOWN)  {
       screen->DrawRectangle(0, 0, 640, 12, 0);
       screen->TGotoXY(1, 1);
-      screen->Printf(0, 255, "%d (0x%X) \"%c\"",
+      screen->Printf(0, textc, "%d (0x%X) \"%c\"",
 		hit->k.key, hit->k.key, hit->k.chr);
       }
     else if(hit->g.type == INPUTACTION_CONTROLUP
@@ -51,11 +50,11 @@ int main(int argc, char **argv)  {
       screen->DrawRectangle(0, 12, 640, 12, 0);
       screen->TGotoXY(1, 13);
       if(hit->k.modkeys & key->ModKey(KEY_LSHIFT))
-	screen->Printf(0, 255, "Pressed w/ LSHIFT!");
+	screen->Printf(0, textc, "Pressed w/ LSHIFT!");
       else if(hit->k.modkeys & key->ModKey(KEY_RSHIFT))
-	screen->Printf(0, 255, "Pressed w/ RSHIFT!");
+	screen->Printf(0, textc, "Pressed w/ RSHIFT!");
       else
-	screen->Printf(0, 255, "Pressed!");
+	screen->Printf(0, textc, "Pressed!");
       }
     }
   UserDebug("test p1004");
